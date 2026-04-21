@@ -90,6 +90,23 @@ export async function GET(req: NextRequest) {
             is_read: false,
           })
           .eq("id", thread.id);
+
+        // Detect if this is a reply from a campaign recipient
+        if (msg.from.email.toLowerCase() !== account.email.toLowerCase()) {
+          const { data: acctCampaigns } = await supabase
+            .from("email_outreach_campaigns")
+            .select("id")
+            .eq("account_id", accountId);
+
+          if (acctCampaigns && acctCampaigns.length > 0) {
+            await supabase
+              .from("email_outreach_recipients")
+              .update({ replied_at: msg.date.toISOString(), status: "replied" })
+              .eq("email", msg.from.email)
+              .in("campaign_id", acctCampaigns.map((c: { id: string }) => c.id))
+              .is("replied_at", null);
+          }
+        }
       }
     }
 

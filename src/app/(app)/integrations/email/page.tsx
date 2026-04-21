@@ -23,6 +23,7 @@ interface CampaignDetail extends Omit<Campaign, "email_outreach_recipients"> {
 interface Recipient {
   id: string; email: string; name: string | null; status: string;
   sent_at: string | null; opened_at: string | null; clicked_at: string | null; replied_at: string | null;
+  reply_count?: number;
 }
 interface Thread {
   id: string; subject: string; participants: string[]; is_read: boolean;
@@ -127,6 +128,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   const [loadingPanel, setLoadingPanel] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [syncingReplies, setSyncingReplies] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -198,6 +200,14 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
     const data = await res.json();
     setRecipientPanel(data);
     setLoadingPanel(false);
+  };
+
+  const syncReplies = async () => {
+    if (!selected) return;
+    setSyncingReplies(true);
+    await fetch(`/api/email/inbox?account_id=${selected.account_id}&sync=1`);
+    await selectCampaign(selected.id);
+    setSyncingReplies(false);
   };
 
   const sendFollowUp = async () => {
@@ -281,6 +291,11 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0">
+                  <button onClick={syncReplies} disabled={syncingReplies} title="Pobierz odpowiedzi ze skrzynki"
+                    className="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--muted)" }}>
+                    {syncingReplies ? "…" : "↻ Synchronizuj odpowiedzi"}
+                  </button>
                   <button onClick={() => setShowSend(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--accent)" }}>Wyślij kampanię</button>
                   <button onClick={deleteCampaign} className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-red-600 transition-colors">Usuń</button>
                 </div>
@@ -334,7 +349,17 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                         <tr key={r.id} className="cursor-pointer hover:bg-[var(--ba-4)] transition-colors"
                           style={{ borderBottom: "1px solid var(--border)" }}
                           onClick={() => openRecipientPanel(r)}>
-                          <td className="py-2.5 pr-4 font-medium">{r.email}</td>
+                          <td className="py-2.5 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{r.email}</span>
+                              {(r.reply_count ?? 0) > 0 && (
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold text-white shrink-0"
+                                  style={{ background: "#dc2626", fontSize: 10 }}>
+                                  {r.reply_count}
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.name ?? "—"}</td>
                           <td className="py-2.5 pr-4"><StatusBadge status={r.status} /></td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.sent_at ? new Date(r.sent_at).toLocaleDateString("pl-PL") : "—"}</td>
