@@ -649,6 +649,8 @@ function InboxTab({ accounts }: { accounts: EmailAccount[] }) {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [reply, setReply] = useState("");
+  const [replyMode, setReplyMode] = useState<"text" | "html">("text");
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [replying, setReplying] = useState(false);
 
   const loadThreads = useCallback(async (sync = false) => {
@@ -681,8 +683,8 @@ function InboxTab({ accounts }: { accounts: EmailAccount[] }) {
         to: last?.from_email,
         to_name: last?.from_name,
         subject: `Re: ${selected.subject.replace(/^Re:\s*/i, "")}`,
-        html: `<p>${reply.replace(/\n/g, "<br>")}</p>`,
-        text: reply,
+        html: replyMode === "html" ? reply : `<p>${reply.replace(/\n/g, "<br>")}</p>`,
+        text: replyMode === "html" ? reply.replace(/<[^>]+>/g, "") : reply,
         thread_id: selected.id,
       }),
     });
@@ -767,19 +769,55 @@ function InboxTab({ accounts }: { accounts: EmailAccount[] }) {
                 </div>
               ))}
             </div>
-            {/* Reply box — always visible at bottom */}
-            <div className="shrink-0 p-4 flex gap-3 items-end"
-              style={{ borderTop: "1px solid var(--border)" }}>
-              <textarea rows={3} placeholder="Napisz odpowiedź… (Cmd+Enter aby wysłać)"
-                value={reply} onChange={e => setReply(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendReply(); } }}
-                className="flex-1 rounded-lg px-3 py-2.5 text-sm resize-none"
-                style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }} />
-              <button onClick={sendReply} disabled={replying || !reply.trim()}
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 shrink-0"
-                style={{ background: "var(--accent)" }}>
-                {replying ? "…" : "Wyślij"}
-              </button>
+            {/* Reply composer — always visible at bottom */}
+            <div className="shrink-0 flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
+              <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                <span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">Odpowiedz</span>
+                <div className="flex items-center gap-1 rounded-lg overflow-hidden text-xs font-medium"
+                  style={{ border: "1px solid var(--border)" }}>
+                  {(["text", "html"] as const).map(m => (
+                    <button key={m} onClick={() => { setReplyMode(m); setShowHtmlPreview(false); }}
+                      className="px-3 py-1 transition-colors"
+                      style={{ background: replyMode === m ? "var(--accent)" : "transparent", color: replyMode === m ? "#fff" : "var(--muted)" }}>
+                      {m === "text" ? "Tekst" : "HTML"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {replyMode === "html" && showHtmlPreview ? (
+                <div className="mx-4 mb-2 rounded-lg overflow-auto" style={{ height: 120, border: "1px solid var(--border)" }}>
+                  <iframe srcDoc={reply} sandbox="allow-same-origin" className="w-full h-full" style={{ background: "#fff" }} />
+                </div>
+              ) : (
+                <textarea rows={4} placeholder={replyMode === "html" ? "<p>Treść maila w HTML…</p>" : "Napisz odpowiedź… (Cmd+Enter aby wysłać)"}
+                  value={reply} onChange={e => setReply(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendReply(); } }}
+                  className="mx-4 mb-2 rounded-lg px-3 py-2.5 text-sm resize-none"
+                  style={{
+                    background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none",
+                    fontFamily: replyMode === "html" ? "monospace" : undefined,
+                    fontSize: replyMode === "html" ? 12 : undefined,
+                  }} />
+              )}
+
+              <div className="flex items-center justify-between px-4 pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[var(--muted)]">Ctrl+Enter aby wysłać</span>
+                  {replyMode === "html" && reply.trim() && (
+                    <button onClick={() => setShowHtmlPreview(v => !v)}
+                      className="text-xs px-2.5 py-1 rounded-lg transition-colors"
+                      style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--muted)" }}>
+                      {showHtmlPreview ? "Kod" : "Podgląd"}
+                    </button>
+                  )}
+                </div>
+                <button onClick={sendReply} disabled={replying || !reply.trim()}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                  style={{ background: "var(--accent)" }}>
+                  {replying ? "Wysyłanie…" : "Wyślij →"}
+                </button>
+              </div>
             </div>
           </Panel>
         )}
