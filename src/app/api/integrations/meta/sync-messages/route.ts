@@ -6,9 +6,10 @@ import {
   syncInstagramConversations,
 } from "@/lib/meta/sync-messages";
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export async function POST() {
+  try {
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
@@ -86,4 +87,8 @@ export async function POST() {
     messages: totalMessages,
     errors,
   });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

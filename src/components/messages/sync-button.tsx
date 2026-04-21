@@ -15,13 +15,15 @@ export function MessagesSyncButton() {
       const res = await fetch("/api/integrations/meta/sync-messages", {
         method: "POST",
       });
-      const data = await res.json() as {
-        ok?: boolean;
-        conversations?: number;
-        messages?: number;
-        errors?: string[];
-        error?: string;
-      };
+
+      let data: { ok?: boolean; conversations?: number; messages?: number; errors?: string[]; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setMsg(`Błąd serwera (${res.status} ${res.statusText})`);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         setMsg(data.error ?? "Błąd synchronizacji");
@@ -31,15 +33,16 @@ export function MessagesSyncButton() {
           parts.push(`${data.conversations} nowych konwersacji`);
         if ((data.messages ?? 0) > 0)
           parts.push(`${data.messages} wiadomości`);
+        const errInfo = data.errors?.length ? ` (${data.errors[0]})` : "";
         setMsg(
           parts.length > 0
-            ? `Zsynchronizowano: ${parts.join(", ")}`
-            : "Wszystko aktualne",
+            ? `Zsynchronizowano: ${parts.join(", ")}${errInfo}`
+            : `Wszystko aktualne${errInfo}`,
         );
         router.refresh();
       }
-    } catch {
-      setMsg("Błąd połączenia");
+    } catch (e) {
+      setMsg(`Błąd połączenia: ${e instanceof Error ? e.message : String(e)}`);
     }
     setLoading(false);
   }
