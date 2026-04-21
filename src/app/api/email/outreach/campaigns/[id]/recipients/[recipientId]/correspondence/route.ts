@@ -30,7 +30,9 @@ export async function GET(
 
   if (!recipient) return NextResponse.json({ error: "Nie znaleziono odbiorcy" }, { status: 404 });
 
-  // Find email threads involving this recipient for this account
+  // Find threads for this account and recipient, filtered by this campaign's subject
+  // to avoid showing threads from other campaigns to the same email address
+  const baseSubject = campaign.subject.replace(/^(Re:|Fwd?:)\s*/gi, "").trim();
   const { data: threads } = await supabase
     .from("email_threads")
     .select(`
@@ -43,10 +45,20 @@ export async function GET(
     .eq("workspace_id", workspaceId)
     .eq("account_id", campaign.account_id)
     .contains("participants", [recipient.email])
+    .ilike("subject", `%${baseSubject}%`)
     .order("last_message_at", { ascending: false });
 
+  // Filter messages to only those at or after the campaign email was sent to this recipient
+  const sentAt = recipient.sent_at;
+  const filteredThreads = (threads ?? []).map((thread) => ({
+    ...thread,
+    email_thread_messages: (thread.email_thread_messages ?? []).filter(
+      (msg) => !sentAt || msg.sent_at >= sentAt
+    ),
+  })).filter((thread) => thread.email_thread_messages.length > 0);
+
   // Mark all inbound messages in these threads as read
-  const threadIds = (threads ?? []).map((t) => t.id);
+  const threadIds = filteredThreads.map((t) => t.id);
   if (threadIds.length > 0) {
     await supabase
       .from("email_thread_messages")
@@ -65,6 +77,6 @@ export async function GET(
       body_text: campaign.body_text,
       body_html: campaign.body_html,
     },
-    threads: threads ?? [],
+    threads: filteredThreads,
   });
 }

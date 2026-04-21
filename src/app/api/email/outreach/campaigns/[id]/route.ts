@@ -51,20 +51,26 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   if (sentRecipients.length > 0 && campaign.account_id) {
     const { data: accountThreads } = await supabase
       .from("email_threads")
-      .select("id")
+      .select("id, subject")
       .eq("account_id", campaign.account_id)
       .eq("workspace_id", workspaceId);
 
-    const threadIds = (accountThreads ?? []).map((t: { id: string }) => t.id);
+    const threadIds = (accountThreads ?? []).map((t: { id: string; subject: string }) => t.id);
     if (threadIds.length > 0) {
       for (const r of sentRecipients) {
+        const baseSubject = campaign.subject.replace(/^(Re:|Fwd?:)\s*/gi, "").trim();
+        const campaignThreadIds = (accountThreads ?? [])
+          .filter((t: { id: string; subject: string }) =>
+            t.subject.toLowerCase().includes(baseSubject.toLowerCase())
+          )
+          .map((t: { id: string }) => t.id);
+
         const { data: inboundMsgs } = await supabase
           .from("email_thread_messages")
           .select("id")
           .eq("direction", "inbound")
-          .eq("is_read", false)
           .eq("from_email", r.email)
-          .in("thread_id", threadIds)
+          .in("thread_id", campaignThreadIds.length > 0 ? campaignThreadIds : threadIds)
           .gt("sent_at", r.sent_at!);
 
         if (inboundMsgs && inboundMsgs.length > 0) {
