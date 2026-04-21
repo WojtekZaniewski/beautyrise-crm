@@ -82,7 +82,25 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     }
   }
 
-  const recipients = allRecipients.map((r) => ({ ...r, reply_count: replyCountMap[r.email] ?? 0 }));
+  // For recipients without a lead_id, try to resolve one by matching email to leads in this workspace
+  const missingLeadEmails = allRecipients.filter((r) => !r.lead_id).map((r) => r.email.toLowerCase());
+  const emailToLeadId: Record<string, string> = {};
+  if (missingLeadEmails.length > 0) {
+    const { data: matchedLeads } = await supabase
+      .from("leads")
+      .select("id, email")
+      .eq("workspace_id", workspaceId)
+      .in("email", missingLeadEmails);
+    for (const lead of matchedLeads ?? []) {
+      if (lead.email) emailToLeadId[lead.email.toLowerCase()] = lead.id;
+    }
+  }
+
+  const recipients = allRecipients.map((r) => ({
+    ...r,
+    reply_count: replyCountMap[r.email] ?? 0,
+    lead_id: r.lead_id ?? emailToLeadId[r.email.toLowerCase()] ?? null,
+  }));
   const total = recipients.length;
   const sent = recipients.filter((r) => r.sent_at !== null).length;
   const opened = recipients.filter((r) => r.opened_at).length;
