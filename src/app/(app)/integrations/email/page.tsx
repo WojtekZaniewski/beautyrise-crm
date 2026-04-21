@@ -132,6 +132,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
   const [syncingReplies, setSyncingReplies] = useState(false);
+  const [viewedRecipients, setViewedRecipients] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,7 +149,9 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
 
   const selectCampaign = async (id: string) => {
     const res = await fetch(`/api/email/outreach/campaigns/${id}`);
-    setSelected(await res.json());
+    const data = await res.json();
+    setSelected(data);
+    if (data?.id !== selected?.id) setViewedRecipients(new Set());
   };
 
   const createCampaign = async () => {
@@ -201,13 +204,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
     setRecipientPanel(null);
     setReplyText("");
     setReplySubject(`Re: ${selected.subject}`);
-    // Immediately hide the badge
-    setSelected(prev => prev ? {
-      ...prev,
-      email_outreach_recipients: prev.email_outreach_recipients.map(rec =>
-        rec.id === r.id ? { ...rec, reply_count: 0 } : rec
-      ),
-    } : prev);
+    setViewedRecipients(prev => new Set(prev).add(r.id));
     const res = await fetch(`/api/email/outreach/campaigns/${selected.id}/recipients/${r.id}/correspondence`);
     const data = await res.json();
     setRecipientPanel(data);
@@ -369,7 +366,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                           <td className="py-2.5 pr-4">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{r.email}</span>
-                              {(r.reply_count ?? 0) > 0 && (
+                              {(r.reply_count ?? 0) > 0 && !viewedRecipients.has(r.id) && (
                                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold text-white shrink-0"
                                   style={{ background: "#dc2626", fontSize: 10 }}>
                                   {r.reply_count}
