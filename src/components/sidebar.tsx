@@ -43,6 +43,19 @@ const Icons = {
       <path d="M1.5 9.5C1.5 7 3 4.5 4.5 4.5c.8 0 1.5.7 2 1.8.5-1 1.2-1.8 2-1.8 1.5 0 3 2.5 3 5 0 1.5-.6 2.5-1.5 2.5-.6 0-1.1-.4-1.6-1.3-.4.9-.9 1.3-1.5 1.3-.6 0-1.1-.4-1.5-1.3-.5.9-1 1.3-1.6 1.3C2.1 12 1.5 11 1.5 9.5z" stroke="currentColor" strokeWidth="1.3" />
     </svg>
   ),
+  email: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <rect x="1" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1 5.5l6.5 4 6.5-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  sms: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <rect x="4" y="1" width="7" height="13" rx="1.8" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="7.5" cy="11.5" r="0.9" fill="currentColor" />
+      <path d="M6 4.5h3M6 6.5h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  ),
   clients: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path d="M2 13V5.5L7.5 2l5.5 3.5V13H9.5v-3.5h-4V13H2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
@@ -77,6 +90,8 @@ const primary = [
 
 const integrationsNav = [
   { href: "/integrations/meta", label: "Meta Ads", icon: Icons.meta },
+  { href: "/integrations/email", label: "Email", icon: Icons.email },
+  { href: "/integrations/sms", label: "SMS", icon: Icons.sms },
 ];
 
 const settingsNav = [
