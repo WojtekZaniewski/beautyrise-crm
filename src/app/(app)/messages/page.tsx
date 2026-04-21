@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { ConversationsList, type Conversation } from "@/components/messages/conversations-list";
+import { MessagesSyncButton } from "@/components/messages/sync-button";
 
 export default async function MessagesPage() {
   const supabase = createServiceClient();
@@ -35,6 +36,7 @@ export default async function MessagesPage() {
             Messenger i Instagram DM
           </p>
         </div>
+        <MessagesSyncButton />
       </div>
 
       <ConversationsList conversations={conversations} />
