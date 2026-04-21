@@ -31,9 +31,9 @@ export default async function PipelineEditorPage({
   return (
     <div className="px-8 py-8 max-w-2xl mx-auto">
       <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
-        <Link href="/settings/pipelines" className="hover:text-white">Pipeline&apos;y</Link>
+        <Link href="/settings/pipelines" className="hover:text-[var(--text)] transition-colors">Pipeline&apos;y</Link>
         <span>/</span>
-        <span className="text-white">{pipeline.name}</span>
+        <span className="text-[var(--text)]">{pipeline.name}</span>
       </div>
       <h1 className="text-2xl font-semibold mb-2">{pipeline.name}</h1>
       <p className="text-sm text-[var(--muted)] mb-6">

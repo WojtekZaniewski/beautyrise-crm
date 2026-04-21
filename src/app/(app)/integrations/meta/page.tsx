@@ -41,7 +41,10 @@ export default async function MetaIntegrationPage({
       </p>
 
       {error && (
-        <div className="mb-4 text-sm text-red-400 bg-red-950/30 border border-red-900 rounded-lg px-3 py-2">
+        <div
+          className="mb-4 text-sm px-3 py-2 rounded-lg"
+          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+        >
           {error}
         </div>
       )}
@@ -58,19 +61,23 @@ export default async function MetaIntegrationPage({
             </div>
           </div>
           <span
-            className={`ml-auto text-xs border px-2 py-1 rounded-full ${
+            className="ml-auto text-xs border px-2 py-1 rounded-full"
+            style={
               isConnected
-                ? "text-green-400 bg-green-400/10 border-green-400/20"
-                : "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
-            }`}
+                ? { color: "var(--success)", background: "rgba(22,163,74,0.08)", borderColor: "rgba(22,163,74,0.2)" }
+                : { color: "var(--warning)", background: "rgba(202,138,4,0.08)", borderColor: "rgba(202,138,4,0.2)" }
+            }
           >
             {isConnected ? "Podłączone" : "Niepodłączone"}
           </span>
         </div>
 
         {!metaConfigured && (
-          <div className="border border-yellow-900 bg-yellow-950/20 rounded-lg p-4 text-sm">
-            <div className="font-medium text-yellow-400 mb-1">
+          <div
+            className="rounded-lg p-4 text-sm"
+            style={{ background: "rgba(202,138,4,0.06)", border: "1px solid rgba(202,138,4,0.2)" }}
+          >
+            <div className="font-medium mb-1" style={{ color: "var(--warning)" }}>
               Brak konfiguracji Meta App
             </div>
             <div className="text-[var(--muted)]">
@@ -83,9 +90,9 @@ export default async function MetaIntegrationPage({
               >
                 developers.facebook.com
               </a>{" "}
-              i dodać <code className="bg-white/5 px-1 rounded">META_APP_ID</code> +{" "}
-              <code className="bg-white/5 px-1 rounded">META_APP_SECRET</code> do{" "}
-              <code className="bg-white/5 px-1 rounded">.env.local</code>. Zobacz{" "}
+              i dodać <code className="bg-[var(--ba-8)] px-1 rounded text-[var(--text)]">META_APP_ID</code> +{" "}
+              <code className="bg-[var(--ba-8)] px-1 rounded text-[var(--text)]">META_APP_SECRET</code> do{" "}
+              <code className="bg-[var(--ba-8)] px-1 rounded text-[var(--text)]">.env.local</code>. Zobacz{" "}
               <Link href="/docs/meta-setup" className="text-[var(--accent)] hover:underline">
                 instrukcję krok po kroku
               </Link>.

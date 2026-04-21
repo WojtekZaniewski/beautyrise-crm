@@ -30,10 +30,10 @@ export function MetricsChart({ data }: { data: DailyMetric[] }) {
     <div className="h-72">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+          <CartesianGrid stroke="rgba(0,0,0,0.06)" strokeDasharray="4 4" />
           <XAxis
             dataKey="date"
-            stroke="#8a8078"
+            stroke="#78716C"
             style={{ fontSize: 11.5 }}
             tickFormatter={(d) =>
               new Date(d).toLocaleDateString("pl-PL", { month: "short", day: "numeric" })
@@ -53,10 +53,12 @@ export function MetricsChart({ data }: { data: DailyMetric[] }) {
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#1a1714",
-              border: "1px solid rgba(255,255,255,0.1)",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid rgba(0,0,0,0.10)",
               borderRadius: 7,
               fontSize: 12,
+              color: "#0C0A08",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             }}
             labelFormatter={(d) => new Date(d).toLocaleDateString("pl-PL")}
             formatter={(value, name) => {

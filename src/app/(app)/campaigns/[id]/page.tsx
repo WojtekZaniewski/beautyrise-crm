@@ -65,9 +65,9 @@ export default async function CampaignDetailPage({
   return (
     <div className="px-8 py-8 max-w-6xl mx-auto">
       <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
-        <Link href="/campaigns" className="hover:text-white">Kampanie</Link>
+        <Link href="/campaigns" className="hover:text-[var(--text)] transition-colors">Kampanie</Link>
         <span>/</span>
-        <span className="text-white">{campaign.name}</span>
+        <span className="text-[var(--text)]">{campaign.name}</span>
       </div>
 
       <div className="flex items-start justify-between mb-6">

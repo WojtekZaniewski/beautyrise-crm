@@ -13,6 +13,12 @@ const FIELDS = [
   { key: "notes", label: "Notatki", required: false },
 ] as const;
 
+const selectStyle = {
+  background: "var(--ba-4)",
+  border: "1px solid var(--border-strong)",
+  color: "var(--text)",
+};
+
 export function ImportForm({ stages }: { stages: Stage[] }) {
   const router = useRouter();
   const [headers, setHeaders] = useState<string[]>([]);
@@ -100,18 +106,27 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
   return (
     <div className="flex flex-col gap-5">
       {error && (
-        <div className="text-sm text-red-400 bg-red-950/30 border border-red-900 rounded-lg px-3 py-2">
+        <div
+          className="text-sm px-3 py-2 rounded-lg"
+          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+        >
           {error}
         </div>
       )}
 
       {result && (
-        <div className="text-sm text-green-400 bg-green-950/30 border border-green-900 rounded-lg px-3 py-2">
+        <div
+          className="text-sm px-3 py-2 rounded-lg"
+          style={{ color: "var(--success)", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.2)" }}
+        >
           Zaimportowano {result.imported} leadów. Przekierowuję…
         </div>
       )}
 
-      <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-6">
+      <div
+        className="rounded-xl p-6"
+        style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+      >
         <label className="block text-sm text-[var(--muted)] mb-2">Plik CSV</label>
         <input
           type="file"
@@ -122,8 +137,11 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
       </div>
 
       {headers.length > 0 && (
-        <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-6 flex flex-col gap-4">
-          <div className="text-sm font-medium mb-2">
+        <div
+          className="rounded-xl p-6 flex flex-col gap-4"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+        >
+          <div className="text-sm font-medium mb-2 text-[var(--text)]">
             Mapowanie kolumn ({rows.length} wierszy wykrytych)
           </div>
 
@@ -135,7 +153,8 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
                 onChange={(e) =>
                   setMapping({ ...mapping, [f.key]: e.target.value })
                 }
-                className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+                className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+                style={selectStyle}
               >
                 <option value="">— nie importuj —</option>
                 {headers.map((h) => (
@@ -145,12 +164,16 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
             </div>
           ))}
 
-          <div className="flex items-center gap-3 mt-2 pt-4 border-t border-[var(--border)]">
+          <div
+            className="flex items-center gap-3 mt-2 pt-4"
+            style={{ borderTop: "1px solid var(--border)" }}
+          >
             <div className="w-44 text-sm text-[var(--muted)]">Etap startowy</div>
             <select
               value={stageId}
               onChange={(e) => setStageId(e.target.value)}
-              className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+              className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+              style={selectStyle}
             >
               {stages.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -161,7 +184,7 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
           <button
             onClick={handleSubmit}
             disabled={loading || !mapping.full_name}
-            className="mt-2 bg-[var(--accent)] hover:opacity-90 disabled:opacity-40 rounded-lg py-2.5 text-sm font-semibold transition-opacity"
+            className="mt-2 btn-primary disabled:opacity-40 rounded-lg py-2.5 text-sm font-semibold"
           >
             {loading ? "Importuję…" : `Importuj ${rows.length} leadów`}
           </button>

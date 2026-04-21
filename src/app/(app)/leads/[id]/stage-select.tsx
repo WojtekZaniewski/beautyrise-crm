@@ -47,7 +47,8 @@ export function StageSelect({
       value={value}
       onChange={(e) => handleChange(e.target.value)}
       disabled={loading}
-      className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
+      className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-colors disabled:opacity-50"
+      style={{ background: "var(--ba-4)", border: "1px solid var(--border-strong)", color: "var(--text)" }}
     >
       <option value="">— brak etapu —</option>
       {stages.map((s) => (

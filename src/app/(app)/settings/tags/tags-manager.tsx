@@ -43,15 +43,24 @@ export function TagsManager({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-5">
-        <div className="text-sm font-medium mb-3">Dodaj nowy tag</div>
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
+        <div className="text-sm font-medium mb-3 text-[var(--text)]">Dodaj nowy tag</div>
         <div className="flex gap-3 items-center">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTag()}
             placeholder="Nazwa tagu (np. VIP)"
-            className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+            className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-all"
+            style={{ background: "var(--ba-4)", border: "1px solid var(--border-strong)", color: "var(--text)" }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,76,0,0.45)";
+              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,76,0,0.08)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "var(--border-strong)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           />
           <div className="flex gap-1.5">
             {PALETTE.map((c) => (
@@ -59,7 +68,7 @@ export function TagsManager({
                 key={c}
                 onClick={() => setNewColor(c)}
                 className={`w-6 h-6 rounded-full border-2 transition-all ${
-                  newColor === c ? "border-white scale-110" : "border-transparent"
+                  newColor === c ? "border-[var(--text)] scale-110" : "border-transparent"
                 }`}
                 style={{ backgroundColor: c }}
               />
@@ -68,14 +77,14 @@ export function TagsManager({
           <button
             onClick={addTag}
             disabled={loading || !newName.trim()}
-            className="bg-[var(--accent)] hover:opacity-90 disabled:opacity-40 px-4 py-2 rounded-lg text-sm font-medium"
+            className="btn-primary disabled:opacity-40 px-4 py-2 rounded-lg text-sm font-medium"
           >
             Dodaj
           </button>
         </div>
       </div>
 
-      <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-5">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
         <div className="text-sm font-medium mb-3">
           Tagi workspace&apos;u ({tags.length})
         </div>
@@ -92,7 +101,8 @@ export function TagsManager({
                 <span>{t.name}</span>
                 <button
                   onClick={() => deleteTag(t.id)}
-                  className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-all"
+                  className="opacity-40 group-hover:opacity-100 transition-all"
+                  style={{ color: "var(--danger)" }}
                   title="Usuń tag"
                 >
                   ×

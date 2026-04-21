@@ -52,7 +52,7 @@ export function WorkspaceSwitcher({
       <button
         onClick={() => setOpen(!open)}
         disabled={switching}
-        className="w-full flex items-center gap-3 px-3.5 py-3.5 hover:bg-white/[0.03] transition-colors"
+        className="w-full flex items-center gap-3 px-3.5 py-3.5 hover:bg-[var(--ba-4)] transition-colors"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div
@@ -60,16 +60,16 @@ export function WorkspaceSwitcher({
           style={{
             background: "var(--metal)",
             boxShadow:
-              "0 0 0 1px rgba(255,76,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15), 0 3px 10px rgba(255,76,0,0.25)",
+              "0 0 0 1px rgba(255,76,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 8px rgba(255,76,0,0.18)",
           }}
         >
           {initial}
         </div>
         <div className="flex-1 text-left min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]/55 font-semibold">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]/60 font-semibold">
             Workspace
           </div>
-          <div className="text-[13px] font-semibold leading-tight truncate">
+          <div className="text-[13px] font-semibold leading-tight truncate text-[var(--text)]">
             {current?.name ?? "—"}
           </div>
         </div>
@@ -90,18 +90,17 @@ export function WorkspaceSwitcher({
         <div
           className="absolute top-full left-2 right-2 z-20 mt-1 rounded-lg overflow-hidden max-h-72 overflow-y-auto"
           style={{
-            background: "rgba(18, 16, 13, 0.97)",
+            background: "var(--surface)",
             border: "1px solid var(--border-strong)",
-            backdropFilter: "blur(8px)",
-            boxShadow: "var(--shadow-lg)",
+            boxShadow: "var(--shadow-md)",
           }}
         >
           {workspaces.map((w) => (
             <button
               key={w.id}
               onClick={() => switchTo(w.id)}
-              className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-white/[0.045] flex items-center justify-between transition-colors"
-              style={{ color: w.id === currentWorkspaceId ? "var(--accent-2)" : "var(--text)" }}
+              className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[var(--ba-4)] flex items-center justify-between transition-colors"
+              style={{ color: w.id === currentWorkspaceId ? "var(--accent)" : "var(--text)" }}
             >
               <span className="truncate">{w.name}</span>
               {w.id === currentWorkspaceId && (
@@ -115,9 +114,9 @@ export function WorkspaceSwitcher({
           <Link
             href="/settings/workspaces/new"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-white/[0.045] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-[13px] hover:bg-[var(--ba-4)] transition-colors"
             style={{
-              color: "var(--accent-2)",
+              color: "var(--accent)",
               borderTop: "1px solid var(--border)",
             }}
           >

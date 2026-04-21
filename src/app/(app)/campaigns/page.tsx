@@ -151,11 +151,11 @@ export default async function CampaignsPage() {
                           style={{
                             background:
                               c.status === "ACTIVE"
-                                ? "rgba(34,197,94,0.1)"
-                                : "rgba(255,255,255,0.05)",
+                                ? "rgba(22,163,74,0.08)"
+                                : "var(--ba-4)",
                             color:
-                              c.status === "ACTIVE" ? "#22c55e" : "var(--muted)",
-                            border: `1px solid ${c.status === "ACTIVE" ? "rgba(34,197,94,0.25)" : "var(--border)"}`,
+                              c.status === "ACTIVE" ? "var(--success)" : "var(--muted)",
+                            border: `1px solid ${c.status === "ACTIVE" ? "rgba(22,163,74,0.2)" : "var(--border)"}`,
                           }}
                         >
                           {c.status}

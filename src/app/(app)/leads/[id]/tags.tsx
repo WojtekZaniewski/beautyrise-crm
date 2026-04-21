@@ -64,7 +64,7 @@ export function LeadTags({
         <div>
           <button
             onClick={() => setOpen(!open)}
-            className="text-xs text-[var(--muted)] hover:text-white"
+            className="text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors"
           >
             {open ? "−" : "+"} dodaj tag
           </button>

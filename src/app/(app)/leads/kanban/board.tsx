@@ -49,7 +49,7 @@ function LeadCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-3 cursor-grab active:cursor-grabbing select-none"
+      className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-3 cursor-grab active:cursor-grabbing select-none shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-shadow"
     >
       <Link
         href={`/leads/${lead.id}`}
@@ -70,7 +70,7 @@ function LeadCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean }) {
 
 function DragCard({ lead }: { lead: Lead }) {
   return (
-    <div className="bg-[var(--bg)] border border-[var(--accent)] rounded-lg p-3 shadow-xl w-56 rotate-2">
+    <div className="bg-[var(--surface)] border border-[var(--accent)] rounded-lg p-3 shadow-xl w-56 rotate-2">
       <div className="font-medium text-sm">{lead.full_name}</div>
       {lead.phone && (
         <div className="text-xs text-[var(--muted)]">{lead.phone}</div>
@@ -152,12 +152,12 @@ export function KanbanBoard({
             <div
               key={stage.id}
               id={stage.id}
-              className="shrink-0 w-64 bg-[var(--panel)] border border-[var(--border)] rounded-xl flex flex-col"
+              className="shrink-0 w-64 bg-[var(--bg-2)] border border-[var(--border)] rounded-xl flex flex-col"
               style={{ borderTopColor: stage.color, borderTopWidth: 3 }}
             >
               <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--border)]">
                 <span className="text-sm font-medium">{stage.name}</span>
-                <span className="text-xs text-[var(--muted)] bg-[var(--bg)] px-2 py-0.5 rounded-full">
+                <span className="text-xs text-[var(--muted)] bg-[var(--surface)] px-2 py-0.5 rounded-full border border-[var(--border)]">
                   {stageLeads.length}
                 </span>
               </div>

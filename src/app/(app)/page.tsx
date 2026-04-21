@@ -128,7 +128,7 @@ export default async function Dashboard() {
                 key={stage.id}
                 className="rounded-md px-3.5 py-3"
                 style={{
-                  background: "rgba(255,255,255,0.025)",
+                  background: "var(--ba-2)",
                   border: "1px solid var(--border)",
                   borderLeft: `2.5px solid ${stage.color}`,
                 }}

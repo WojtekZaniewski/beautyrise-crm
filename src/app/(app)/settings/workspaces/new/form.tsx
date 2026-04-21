@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const inputClass = "w-full rounded-lg px-3 py-2 text-sm outline-none transition-all";
+const inputStyle = {
+  background: "var(--ba-4)",
+  border: "1px solid var(--border-strong)",
+  color: "var(--text)",
+};
+
 export function NewWorkspaceForm() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -14,7 +21,7 @@ export function NewWorkspaceForm() {
     return v
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[̀-ͯ]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
   }
@@ -43,9 +50,16 @@ export function NewWorkspaceForm() {
   }
 
   return (
-    <form onSubmit={submit} className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-6 flex flex-col gap-4">
+    <form
+      onSubmit={submit}
+      className="rounded-xl p-6 flex flex-col gap-4"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+    >
       {error && (
-        <div className="text-sm text-red-400 bg-red-950/30 border border-red-900 rounded-lg px-3 py-2">
+        <div
+          className="text-sm px-3 py-2 rounded-lg"
+          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+        >
           {error}
         </div>
       )}
@@ -60,7 +74,8 @@ export function NewWorkspaceForm() {
             if (!slug) setSlug(slugify(e.target.value));
           }}
           placeholder="np. Salon Monika"
-          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+          className={inputClass}
+          style={inputStyle}
           required
         />
       </div>
@@ -72,7 +87,8 @@ export function NewWorkspaceForm() {
           value={slug}
           onChange={(e) => setSlug(slugify(e.target.value))}
           placeholder="salon-monika"
-          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+          className={inputClass}
+          style={inputStyle}
         />
         <div className="text-xs text-[var(--muted)] mt-1">
           Używany wewnętrznie. Generowany automatycznie z nazwy.
@@ -82,7 +98,7 @@ export function NewWorkspaceForm() {
       <button
         type="submit"
         disabled={loading || !name.trim()}
-        className="bg-[var(--accent)] hover:opacity-90 disabled:opacity-40 rounded-lg py-2.5 text-sm font-semibold transition-opacity"
+        className="btn-primary disabled:opacity-40 rounded-lg py-2.5 text-sm font-semibold"
       >
         {loading ? "Tworzę…" : "Utwórz klienta"}
       </button>

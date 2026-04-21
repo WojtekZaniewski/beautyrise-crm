@@ -38,7 +38,8 @@ export function ValueEdit({ leadId, value }: { leadId: string; value: number | n
         type="number"
         value={val}
         onChange={(e) => setVal(e.target.value)}
-        className="bg-[var(--bg)] border border-[var(--accent)] rounded px-2 py-0.5 text-sm w-28"
+        className="rounded px-2 py-0.5 text-sm w-28 outline-none"
+        style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }}
         autoFocus
         onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
       />

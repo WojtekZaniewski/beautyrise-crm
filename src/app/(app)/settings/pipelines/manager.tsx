@@ -63,10 +63,10 @@ export function PipelinesManager({
 
   return (
     <>
-      <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-5 mb-6">
-        <div className="text-sm font-medium mb-3">Nowy pipeline</div>
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 mb-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+        <div className="text-sm font-medium mb-3 text-[var(--text)]">Nowy pipeline</div>
         {error && (
-          <div className="text-sm text-red-400 bg-red-950/30 border border-red-900 rounded-lg px-3 py-2 mb-3">
+          <div className="text-sm mb-3 px-3 py-2 rounded-lg" style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}>
             {error}
           </div>
         )}
@@ -77,19 +77,28 @@ export function PipelinesManager({
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && create()}
             placeholder="np. Outreach ręczny, Leady od taty"
-            className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)]"
+            className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition-all"
+            style={{ background: "var(--ba-4)", border: "1px solid var(--border-strong)", color: "var(--text)" }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,76,0,0.45)";
+              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,76,0,0.08)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "var(--border-strong)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           />
           <button
             onClick={create}
             disabled={loading || !newName.trim()}
-            className="bg-[var(--accent)] hover:opacity-90 disabled:opacity-40 px-4 py-2 rounded-lg text-sm font-semibold"
+            className="btn-primary disabled:opacity-40 px-4 py-2 rounded-lg text-sm font-semibold"
           >
             {loading ? "…" : "Utwórz"}
           </button>
         </div>
       </div>
 
-      <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
         {initialPipelines.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-[var(--muted)]">
             Brak pipeline&apos;ów. Utwórz pierwszy powyżej.
@@ -124,13 +133,13 @@ export function PipelinesManager({
                   <td className="px-5 py-3 text-right">
                     <button
                       onClick={() => rename(p.id, p.name)}
-                      className="text-xs text-[var(--muted)] hover:text-white mr-3"
+                      className="text-xs text-[var(--muted)] hover:text-[var(--text)] mr-3"
                     >
                       Zmień nazwę
                     </button>
                     <button
                       onClick={() => remove(p.id, p.name)}
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="text-xs transition-colors" style={{ color: "var(--danger)" }}
                     >
                       Usuń
                     </button>

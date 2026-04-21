@@ -32,7 +32,8 @@ export function PipelineSelect({
     <select
       value={currentPipelineId ?? ""}
       onChange={(e) => switchTo(e.target.value)}
-      className="bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[var(--accent)]"
+      className="rounded-lg px-3 py-1.5 text-sm outline-none transition-colors"
+      style={{ background: "var(--ba-4)", border: "1px solid var(--border-strong)", color: "var(--text)" }}
     >
       {pipelines.map((p) => (
         <option key={p.id} value={p.id}>

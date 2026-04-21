@@ -100,32 +100,13 @@ function NavLink({
     <Link
       href={href}
       prefetch
-      className={`relative flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all ${
+      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
         active
-          ? "text-white"
-          : "text-[var(--muted)] hover:text-[#d4cfc9] hover:bg-white/[0.035]"
+          ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+          : "text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)]"
       }`}
-      style={
-        active
-          ? {
-              background: "var(--accent-subtle)",
-              color: "white",
-            }
-          : undefined
-      }
     >
-      {active && (
-        <span
-          className="absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full"
-          style={{ background: "var(--accent)" }}
-        />
-      )}
-      <span
-        className="shrink-0"
-        style={{ color: active ? "var(--accent-2)" : "currentColor" }}
-      >
-        {icon}
-      </span>
+      <span className="shrink-0">{icon}</span>
       <span className="tracking-tight">{label}</span>
     </Link>
   );
@@ -133,7 +114,7 @@ function NavLink({
 
 function Section({ label }: { label: string }) {
   return (
-    <div className="text-[10px] uppercase tracking-[0.11em] text-[var(--muted)]/50 px-3 pt-5 pb-1 font-semibold">
+    <div className="text-[10px] uppercase tracking-[0.11em] text-[var(--muted)]/60 px-3 pt-5 pb-1 font-semibold">
       {label}
     </div>
   );
@@ -155,9 +136,7 @@ export function Sidebar({
       className="w-[220px] shrink-0 flex flex-col h-screen sticky top-0"
       style={{
         borderRight: "1px solid var(--border)",
-        background: "rgba(14, 12, 10, 0.95)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
+        background: "var(--surface)",
       }}
     >
       <WorkspaceSwitcher
@@ -188,13 +167,13 @@ export function Sidebar({
         <form action="/api/auth/signout" method="POST">
           <button
             type="submit"
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium text-[var(--muted)] hover:text-[#d4cfc9] hover:bg-white/[0.035] transition-all"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)] transition-all"
           >
             <span className="shrink-0">{Icons.signout}</span>
             <span className="tracking-tight">Wyloguj</span>
           </button>
         </form>
-        <p className="text-[10px] text-[var(--muted)]/30 px-3 pt-1">v1.0.0</p>
+        <p className="text-[10px] text-[var(--muted)]/40 px-3 pt-1">v1.0.0</p>
       </div>
     </aside>
   );

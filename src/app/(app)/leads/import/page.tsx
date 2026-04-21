@@ -12,7 +12,7 @@ export default async function ImportPage() {
     <div className="px-8 py-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-semibold mb-2">Import CSV</h1>
       <p className="text-sm text-[var(--muted)] mb-6">
-        Wczytaj plik CSV i zmapuj kolumny. Leady trafią do pipeline&apos;u ze źródłem <code className="bg-white/5 px-1 rounded">import</code>.
+        Wczytaj plik CSV i zmapuj kolumny. Leady trafią do pipeline&apos;u ze źródłem <code className="bg-[var(--ba-8)] px-1 rounded text-[var(--text)]">import</code>.
       </p>
       <ImportForm stages={stages ?? []} />
     </div>

@@ -7,7 +7,7 @@ type Stage = { id: string; name: string; color: string };
 type Tag = { id: string; name: string; color: string };
 
 const inputStyle = {
-  background: "rgba(255,255,255,0.04)",
+  background: "var(--ba-4)",
   border: "1px solid var(--border-strong)",
   borderRadius: "6px",
   color: "var(--text)",

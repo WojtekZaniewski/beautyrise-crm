@@ -27,17 +27,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      {/* Ambient glow */}
-      <div
-        className="pointer-events-none fixed inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 700px 500px at 50% 30%, rgba(255,76,0,0.06), transparent 70%)",
-        }}
-      />
-
-      <div className="w-full max-w-[360px] relative">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: "var(--bg)" }}
+    >
+      <div className="w-full max-w-[360px]">
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-8 justify-center">
           <div
@@ -45,7 +39,7 @@ export default function LoginPage() {
             style={{
               background: "var(--metal)",
               boxShadow:
-                "0 0 0 1px rgba(255,76,0,0.45), 0 4px 14px rgba(255,76,0,0.28), inset 0 1px 0 rgba(255,255,255,0.16)",
+                "0 0 0 1px rgba(255,76,0,0.35), 0 2px 8px rgba(255,76,0,0.22), inset 0 1px 0 rgba(255,255,255,0.18)",
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -56,18 +50,18 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <span className="text-[15px] font-semibold tracking-tight">BeautyRise CRM</span>
+          <span className="text-[15px] font-semibold tracking-tight text-[var(--text)]">BeautyRise CRM</span>
         </div>
 
         <div
           className="rounded-xl p-7"
           style={{
-            background: "var(--panel-solid)",
+            background: "var(--surface)",
             border: "1px solid var(--border-strong)",
-            boxShadow: "var(--shadow-lg)",
+            boxShadow: "var(--shadow-md)",
           }}
         >
-          <h1 className="text-[15px] font-semibold text-center mb-6 tracking-tight">
+          <h1 className="text-[15px] font-semibold text-center mb-6 tracking-tight text-[var(--text)]">
             Zaloguj się
           </h1>
 
@@ -75,9 +69,9 @@ export default function LoginPage() {
             <div
               className="text-[13px] mb-4 px-3 py-2.5 rounded-lg"
               style={{
-                color: "#fca5a5",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.2)",
+                color: "#b91c1c",
+                background: "rgba(220,38,38,0.06)",
+                border: "1px solid rgba(220,38,38,0.16)",
               }}
             >
               {error}
@@ -96,17 +90,19 @@ export default function LoginPage() {
                 required
                 className="rounded-md px-3 py-2 text-[13.5px] outline-none transition-all"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
+                  background: "var(--ba-4)",
                   border: "1px solid var(--border-strong)",
                   color: "var(--text)",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,76,0,0.5)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,76,0,0.1)";
+                  e.currentTarget.style.borderColor = "rgba(255,76,0,0.45)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,76,0,0.08)";
+                  e.currentTarget.style.background = "var(--surface)";
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = "var(--border-strong)";
                   e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "var(--ba-4)";
                 }}
                 placeholder="ty@example.com"
               />
@@ -123,17 +119,19 @@ export default function LoginPage() {
                 required
                 className="rounded-md px-3 py-2 text-[13.5px] outline-none transition-all"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
+                  background: "var(--ba-4)",
                   border: "1px solid var(--border-strong)",
                   color: "var(--text)",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,76,0,0.5)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,76,0,0.1)";
+                  e.currentTarget.style.borderColor = "rgba(255,76,0,0.45)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(255,76,0,0.08)";
+                  e.currentTarget.style.background = "var(--surface)";
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = "var(--border-strong)";
                   e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "var(--ba-4)";
                 }}
                 placeholder="••••••••"
               />

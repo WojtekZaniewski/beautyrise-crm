@@ -32,12 +32,13 @@ export function AddNote({ leadId }: { leadId: string }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Dodaj notatkę…"
-        className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent)] transition-colors"
+        className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+        style={{ background: "var(--ba-4)", border: "1px solid var(--border-strong)", color: "var(--text)" }}
       />
       <button
         type="submit"
         disabled={loading || !text.trim()}
-        className="bg-[var(--accent)] hover:opacity-90 disabled:opacity-40 px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
+        className="btn-primary disabled:opacity-40 px-4 py-2 rounded-lg text-sm font-medium"
       >
         {loading ? "…" : "Dodaj"}
       </button>

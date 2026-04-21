@@ -49,7 +49,10 @@ export function AccountSelector({
   return (
     <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-6 flex flex-col gap-4">
       {error && (
-        <div className="text-sm text-red-400 bg-red-950/30 border border-red-900 rounded-lg px-3 py-2">
+        <div
+          className="text-sm px-3 py-2 rounded-lg"
+          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+        >
           {error}
         </div>
       )}
