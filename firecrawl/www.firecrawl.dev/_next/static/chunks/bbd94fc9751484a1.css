@@ -1,0 +1,61 @@
+.string,
+.language-html .tag:not(.punctuation, .attr-name, .attr-value, .special-attr) {
+    color: var(--heat-100) !important
+}
+
+.punctuation,
+.operator {
+    color: #c2c2c2 !important
+}
+
+.language-html .attr-name {
+    color: var(--black-alpha-64)
+}
+
+.comment {
+    color: #999 !important
+}
+
+code:not(.language-html) .property:not(.literal-property),
+.class-name,
+code:not(.language-html) .function,
+.language-json .boolean {
+    color: #9061ff;
+    color: color(display-p3 .566 .38 1)
+}
+
+.language-json .property {
+    color: inherit !important
+}
+
+.prismjs {
+    font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    letter-spacing: 0;
+    padding-top: 20px;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 22px
+}
+
+.prismjs pre,
+.prismjs code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important
+}
+
+.prismjs code {
+    color: var(--accent-black) !important
+}
+
+.linenumber {
+    width: 48px;
+    padding: 0;
+    font-style: normal;
+    text-align: left !important;
+    color: var(--black-alpha-12) !important;
+    padding-left: 20px !important;
+    padding-right: 0 !important
+}
+
+/*# sourceMappingURL=9a616890838cc56c.css.map*/

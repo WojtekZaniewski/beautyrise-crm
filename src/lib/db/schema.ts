@@ -1,0 +1,294 @@
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  integer,
+  jsonb,
+  pgEnum,
+  boolean,
+  numeric,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+export const leadSourceEnum = pgEnum("lead_source", [
+  "manual",
+  "import",
+  "meta_ads",
+  "webhook",
+]);
+
+export const leadEventTypeEnum = pgEnum("lead_event_type", [
+  "created",
+  "stage_change",
+  "note",
+  "call",
+  "sms_sent",
+  "email_sent",
+  "meta_form_submitted",
+]);
+
+export const integrationTypeEnum = pgEnum("integration_type", [
+  "meta_ads",
+  "sms_gateway",
+  "email",
+]);
+
+export const workspaceMemberRoleEnum = pgEnum("workspace_member_role", [
+  "owner",
+  "admin",
+  "member",
+]);
+
+// ─── Workspaces ───────────────────────────────────────────────────────────────
+
+export const workspaces = pgTable("workspaces", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── Workspace members ────────────────────────────────────────────────────────
+
+export const workspaceMembers = pgTable("workspace_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull(),
+  role: workspaceMemberRoleEnum("role").notNull().default("member"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Pipelines & Stages ───────────────────────────────────────────────────────
+
+export const pipelines = pgTable("pipelines", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pipelineStages = pgTable("pipeline_stages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  pipelineId: uuid("pipeline_id")
+    .notNull()
+    .references(() => pipelines.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#7c5cff"),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Leads ────────────────────────────────────────────────────────────────────
+
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  source: leadSourceEnum("source").notNull().default("manual"),
+  sourceCampaignId: uuid("source_campaign_id"),
+  stageId: uuid("stage_id").references(() => pipelineStages.id, {
+    onDelete: "set null",
+  }),
+  ownerId: uuid("owner_id"),
+  valuePln: numeric("value_pln", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  customFields: jsonb("custom_fields").default({}),
+  archived: boolean("archived").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── Lead Events (timeline) ───────────────────────────────────────────────────
+
+export const leadEvents = pgTable("lead_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leads.id, { onDelete: "cascade" }),
+  type: leadEventTypeEnum("type").notNull(),
+  payload: jsonb("payload").default({}),
+  actorId: uuid("actor_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+
+export const tags = pgTable("tags", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#8b8d9a"),
+});
+
+export const leadTags = pgTable("lead_tags", {
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leads.id, { onDelete: "cascade" }),
+  tagId: uuid("tag_id")
+    .notNull()
+    .references(() => tags.id, { onDelete: "cascade" }),
+});
+
+// ─── Integrations ─────────────────────────────────────────────────────────────
+
+export const integrations = pgTable("integrations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  type: integrationTypeEnum("type").notNull(),
+  credentials: jsonb("credentials").default({}),
+  status: text("status").notNull().default("disconnected"),
+  connectedAt: timestamp("connected_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── Campaigns (cache z Meta) ─────────────────────────────────────────────────
+
+export const campaigns = pgTable("campaigns", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  externalId: text("external_id").notNull(),
+  platform: text("platform").notNull().default("meta"),
+  name: text("name").notNull(),
+  objective: text("objective"),
+  status: text("status"),
+  dailyBudget: numeric("daily_budget", { precision: 10, scale: 2 }),
+  syncedAt: timestamp("synced_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Campaign Metrics (daily snapshots) ──────────────────────────────────────
+
+export const campaignMetricsDaily = pgTable("campaign_metrics_daily", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, { onDelete: "cascade" }),
+  date: text("date").notNull(), // YYYY-MM-DD
+  spend: numeric("spend", { precision: 10, scale: 2 }),
+  impressions: integer("impressions"),
+  clicks: integer("clicks"),
+  leadsCount: integer("leads_count"),
+  cpc: numeric("cpc", { precision: 10, scale: 4 }),
+  cpl: numeric("cpl", { precision: 10, scale: 4 }),
+  ctr: numeric("ctr", { precision: 10, scale: 4 }),
+  conversionRate: numeric("conversion_rate", { precision: 10, scale: 4 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Future modules (tables only, no UI yet) ─────────────────────────────────
+
+export const smsMessages = pgTable("sms_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull(),
+  leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+  to: text("to").notNull(),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("pending"),
+  externalId: text("external_id"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const emailMessages = pgTable("email_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull(),
+  leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+  to: text("to").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("pending"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const automations = pgTable("automations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull(),
+  name: text("name").notNull(),
+  triggerType: text("trigger_type").notNull(),
+  triggerConfig: jsonb("trigger_config").default({}),
+  active: boolean("active").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const automationSteps = pgTable("automation_steps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  automationId: uuid("automation_id")
+    .notNull()
+    .references(() => automations.id, { onDelete: "cascade" }),
+  order: integer("order").notNull(),
+  type: text("type").notNull(),
+  config: jsonb("config").default({}),
+});
+
+// ─── Relations ────────────────────────────────────────────────────────────────
+
+export const workspacesRelations = relations(workspaces, ({ many }) => ({
+  members: many(workspaceMembers),
+  pipelines: many(pipelines),
+  leads: many(leads),
+  integrations: many(integrations),
+  campaigns: many(campaigns),
+  tags: many(tags),
+}));
+
+export const pipelinesRelations = relations(pipelines, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [pipelines.workspaceId],
+    references: [workspaces.id],
+  }),
+  stages: many(pipelineStages),
+}));
+
+export const pipelineStagesRelations = relations(
+  pipelineStages,
+  ({ one, many }) => ({
+    pipeline: one(pipelines, {
+      fields: [pipelineStages.pipelineId],
+      references: [pipelines.id],
+    }),
+    leads: many(leads),
+  }),
+);
+
+export const leadsRelations = relations(leads, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [leads.workspaceId],
+    references: [workspaces.id],
+  }),
+  stage: one(pipelineStages, {
+    fields: [leads.stageId],
+    references: [pipelineStages.id],
+  }),
+  events: many(leadEvents),
+  tags: many(leadTags),
+}));
+
+export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [campaigns.workspaceId],
+    references: [workspaces.id],
+  }),
+  metrics: many(campaignMetricsDaily),
+}));

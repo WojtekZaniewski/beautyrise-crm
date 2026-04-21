@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-meta-insights",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"--heat-\\\\|--surface\\\\|--accent\\\\|--black-alpha\" \"D:/Dokumenty/GitHub/beautyrise-crm/firecrawl/www.firecrawl.dev/_next/static/chunks\" --include=\"*.css\")",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(git -C D:/Dokumenty/GitHub/beautyrise-crm log --oneline -3)",
+      "Bash(git -C D:/Dokumenty/GitHub/beautyrise-crm stash)",
+      "Bash(npm --prefix D:/Dokumenty/GitHub/beautyrise-crm run build)",
+      "Bash(git -C D:/Dokumenty/GitHub/beautyrise-crm stash pop)",
+      "Bash(node -e \"const {GeistSans} = require\\('geist/font/sans'\\); console.log\\('Geist loaded:', !!GeistSans.variable\\)\")",
+      "Bash(git -C D:/Dokumenty/GitHub/beautyrise-crm status --short)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
+    ]
+  }
+}

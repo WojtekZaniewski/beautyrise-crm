@@ -1,0 +1,44 @@
+.ai-chats-chat-thinking {
+    background: linear-gradient(to right, transparent 0%, #0009 25%, transparent 50%, transparent 100%), var(--black-alpha-48);
+    -webkit-text-fill-color: transparent;
+    background-position: 100% 0;
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    animation: 3.5s linear infinite ai-chats-chat-shine;
+    display: inline-block;
+    position: relative;
+    overflow: hidden
+}
+
+@keyframes ai-chats-chat-shine {
+    0% {
+        background-position: 100% 0
+    }
+    50%,
+    to {
+        background-position: -100% 0
+    }
+}
+
+.ai-chats-realtime-indicator {
+    animation: 3s infinite ai-chats-realtime-indicator;
+    transform: scale(.5)
+}
+
+@keyframes ai-chats-realtime-indicator {
+    0% {
+        opacity: .5;
+        transform: scale(.5)
+    }
+    60% {
+        opacity: 0
+    }
+    75%,
+    to {
+        opacity: 0;
+        filter: blur(4px);
+        transform: scale(4)
+    }
+}
+
+/*# sourceMappingURL=c0ec9e68f6f85a55.css.map*/

@@ -1,0 +1,1 @@
+chrome-extension://gcmahhkjkpigcpfpmdjnbiakmbdegfeh/data/js/extension/worker-content-script.js

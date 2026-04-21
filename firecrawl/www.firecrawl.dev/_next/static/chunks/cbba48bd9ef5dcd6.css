@@ -1,0 +1,21 @@
+.hero-scraping-highlight:before {
+    animation: 1s linear infinite hero-scraping-highlight-before;
+    transition: none !important
+}
+
+@keyframes hero-scraping-highlight-before {
+    0% {
+        border-color: var(--border-loud);
+        opacity: 1
+    }
+    40% {
+        opacity: .25;
+        border-color: var(--heat-100)
+    }
+    80% {
+        border-color: var(--border-loud);
+        opacity: 1
+    }
+}
+
+/*# sourceMappingURL=67971cbfbe3194fe.css.map*/
