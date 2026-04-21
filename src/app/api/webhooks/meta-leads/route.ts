@@ -271,21 +271,33 @@ async function processMessagingEvents(
 
   const pageToWorkspace = new Map<
     string,
-    { workspaceId: string; pageToken: string }
+    { workspaceId: string; pageToken: string; fbPageId: string }
   >();
   for (const int of integrations ?? []) {
     const creds = int.credentials as {
-      pages?: Array<{ id: string; access_token: string }>;
+      pages?: Array<{ id: string; access_token: string; instagram_account_id?: string | null }>;
       selected_page_id?: string | null;
     };
     for (const page of creds.pages ?? []) {
-      if (!pageIds.includes(page.id)) continue;
-      // If a specific page is selected, only accept messages for that page
-      if (creds.selected_page_id && page.id !== creds.selected_page_id) continue;
-      pageToWorkspace.set(page.id, {
-        workspaceId: int.workspace_id,
-        pageToken: page.access_token,
-      });
+      const selectedOk = !creds.selected_page_id || page.id === creds.selected_page_id;
+      if (!selectedOk) continue;
+
+      // Messenger: entry.id === FB page ID
+      if (pageIds.includes(page.id)) {
+        pageToWorkspace.set(page.id, {
+          workspaceId: int.workspace_id,
+          pageToken: page.access_token,
+          fbPageId: page.id,
+        });
+      }
+      // Instagram: entry.id === IG account ID — map to FB page ID for storage
+      if (page.instagram_account_id && pageIds.includes(page.instagram_account_id)) {
+        pageToWorkspace.set(page.instagram_account_id, {
+          workspaceId: int.workspace_id,
+          pageToken: page.access_token,
+          fbPageId: page.id,
+        });
+      }
     }
   }
 
@@ -293,7 +305,7 @@ async function processMessagingEvents(
     const mapping = pageToWorkspace.get(event.pageId);
     if (!mapping) continue;
 
-    const { workspaceId, pageToken } = mapping;
+    const { workspaceId, pageToken, fbPageId } = mapping;
 
     // Upsert conversation: check existence first for atomic unread_count increment
     const { data: existing } = await supabase
@@ -301,7 +313,7 @@ async function processMessagingEvents(
       .select("id, unread_count")
       .eq("workspace_id", workspaceId)
       .eq("sender_psid", event.senderPsid)
-      .eq("page_id", event.pageId)
+      .eq("page_id", fbPageId)
       .maybeSingle();
 
     let conversationId: string;
@@ -324,7 +336,7 @@ async function processMessagingEvents(
           workspace_id: workspaceId,
           channel: event.channel,
           sender_psid: event.senderPsid,
-          page_id: event.pageId,
+          page_id: fbPageId,
           last_message_at: new Date(event.timestamp).toISOString(),
           last_message_preview: event.text?.slice(0, 100) ?? null,
           unread_count: 1,
