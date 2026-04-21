@@ -736,36 +736,40 @@ function InboxTab({ accounts }: { accounts: EmailAccount[] }) {
         </Panel>
       </div>
 
-      {/* Thread detail + reply */}
-      <div className="flex-1 min-w-0 flex flex-col gap-3 min-h-0">
+      {/* Thread detail + reply — single panel, fixed layout */}
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col">
         {!selected ? (
           <Panel className="flex-1"><EmptyState text="Wybierz wątek z listy" /></Panel>
         ) : (
-          <>
-            <Panel className="flex-1 overflow-auto p-5 flex flex-col gap-3 min-h-0">
-              <h2 className="text-base font-semibold pb-2.5 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>{selected.subject}</h2>
-              <div className="flex-1 overflow-auto flex flex-col gap-3">
-                {sortedMessages.map(msg => (
-                  <div key={msg.id}
-                    className={`rounded-xl p-4 text-sm ${msg.direction === "outbound" ? "ml-auto" : ""}`}
-                    style={{
-                      maxWidth: "85%",
-                      background: msg.direction === "outbound" ? "var(--accent-subtle)" : "var(--ba-4)",
-                      border: `1px solid ${msg.direction === "outbound" ? "rgba(255,76,0,0.18)" : "var(--border)"}`,
-                    }}>
-                    <div className="flex justify-between items-center gap-4 mb-2">
-                      <span className="font-medium text-xs">{msg.from_name || msg.from_email}</span>
-                      <span className="text-xs text-[var(--muted)] shrink-0">{new Date(msg.sent_at).toLocaleString("pl-PL")}</span>
-                    </div>
-                    <div style={{ whiteSpace: "pre-wrap", color: "var(--text)", lineHeight: 1.6 }}>
-                      {msg.body_text || msg.body_html?.replace(/<[^>]+>/g, "") || ""}
-                    </div>
+          <Panel className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {/* Subject */}
+            <h2 className="shrink-0 px-5 pt-5 pb-3 text-base font-semibold"
+              style={{ borderBottom: "1px solid var(--border)" }}>
+              {selected.subject}
+            </h2>
+            {/* Scrollable messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 min-h-0">
+              {sortedMessages.map(msg => (
+                <div key={msg.id}
+                  className={`rounded-xl p-4 text-sm ${msg.direction === "outbound" ? "ml-auto" : ""}`}
+                  style={{
+                    maxWidth: "85%",
+                    background: msg.direction === "outbound" ? "var(--accent-subtle)" : "var(--ba-4)",
+                    border: `1px solid ${msg.direction === "outbound" ? "rgba(255,76,0,0.18)" : "var(--border)"}`,
+                  }}>
+                  <div className="flex justify-between items-center gap-4 mb-2">
+                    <span className="font-medium text-xs">{msg.from_name || msg.from_email}</span>
+                    <span className="text-xs text-[var(--muted)] shrink-0">{new Date(msg.sent_at).toLocaleString("pl-PL")}</span>
                   </div>
-                ))}
-              </div>
-            </Panel>
-
-            <Panel className="p-4 flex gap-3 items-end shrink-0">
+                  <div style={{ whiteSpace: "pre-wrap", color: "var(--text)", lineHeight: 1.6 }}>
+                    {msg.body_text || msg.body_html?.replace(/<[^>]+>/g, "") || ""}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Reply box — always visible at bottom */}
+            <div className="shrink-0 p-4 flex gap-3 items-end"
+              style={{ borderTop: "1px solid var(--border)" }}>
               <textarea rows={3} placeholder="Napisz odpowiedź… (Cmd+Enter aby wysłać)"
                 value={reply} onChange={e => setReply(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendReply(); } }}
@@ -776,8 +780,8 @@ function InboxTab({ accounts }: { accounts: EmailAccount[] }) {
                 style={{ background: "var(--accent)" }}>
                 {replying ? "…" : "Wyślij"}
               </button>
-            </Panel>
-          </>
+            </div>
+          </Panel>
         )}
       </div>
     </div>
