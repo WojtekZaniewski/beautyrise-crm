@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { ConversationsList, type Conversation } from "@/components/messages/conversations-list";
+import { ConversationsLive } from "@/components/messages/conversations-live";
+import { type Conversation } from "@/components/messages/conversations-list";
 import { MessagesSyncButton } from "@/components/messages/sync-button";
 
 export default async function MessagesPage() {
@@ -39,9 +40,23 @@ export default async function MessagesPage() {
     query = query.eq("page_id", selectedPageId);
   }
 
-  const { data } = await query;
+  const [{ data }, { data: lastMsg }] = await Promise.all([
+    query,
+    supabase
+      .from("messages")
+      .select("created_at")
+      .eq("workspace_id", WORKSPACE_ID)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   const conversations = (data ?? []) as unknown as Conversation[];
+
+  const hoursAgo = lastMsg
+    ? Math.floor((Date.now() - new Date(lastMsg.created_at).getTime()) / 3_600_000)
+    : null;
+  const isStale = integration !== null && (hoursAgo === null || hoursAgo > 24);
 
   return (
     <div className="px-7 py-7 max-w-4xl mx-auto anim-page">
@@ -54,10 +69,27 @@ export default async function MessagesPage() {
             Messenger i Instagram DM
           </p>
         </div>
-        <MessagesSyncButton />
+        <div className="flex items-center gap-3">
+          {isStale && (
+            <div
+              className="text-[11.5px] px-3 py-1.5 rounded-lg"
+              style={{
+                color: "var(--warning, #f59e0b)",
+                background: "rgba(251,191,36,0.08)",
+                border: "1px solid rgba(251,191,36,0.2)",
+              }}
+            >
+              ⚠ Brak nowych wiadomości od {hoursAgo != null ? `${hoursAgo}h` : "dawna"}
+            </div>
+          )}
+          <MessagesSyncButton />
+        </div>
       </div>
 
-      <ConversationsList conversations={conversations} />
+      <ConversationsLive
+        initialConversations={conversations}
+        workspaceId={WORKSPACE_ID}
+      />
     </div>
   );
 }

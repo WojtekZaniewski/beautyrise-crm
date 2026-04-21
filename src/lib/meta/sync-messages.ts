@@ -148,28 +148,22 @@ export async function syncInstagramConversations(
   const client = new MetaClient(pageToken);
 
   // Resolve Instagram Business Account ID from the page
-  let igAccountId: string;
-  try {
-    const pageData = await client.get<{
-      instagram_business_account?: { id: string };
-    }>(`${pageId}`, { fields: "instagram_business_account" });
-    igAccountId = pageData.instagram_business_account?.id ?? "";
-  } catch {
-    return { conversations: 0, messages: 0 };
-  }
+  const pageData = await client.get<{
+    instagram_business_account?: { id: string };
+  }>(`${pageId}`, { fields: "instagram_business_account" });
 
-  if (!igAccountId) return { conversations: 0, messages: 0 };
-
-  let convData: MetaConversation[] = [];
-  try {
-    convData = await client.paginate<MetaConversation>(
-      `${igAccountId}/conversations`,
-      { platform: "instagram", fields: "id,participants,updated_time,snippet" },
-      20,
+  const igAccountId = pageData.instagram_business_account?.id ?? "";
+  if (!igAccountId) {
+    throw new Error(
+      "Brak konta Instagram Business powiązanego z tą stroną. Połącz Instagram z Facebook Page w Meta Business Suite.",
     );
-  } catch {
-    return { conversations: 0, messages: 0 };
   }
+
+  const convData = await client.paginate<MetaConversation>(
+    `${igAccountId}/conversations`,
+    { platform: "instagram", fields: "id,participants,updated_time,snippet" },
+    20,
+  );
 
   let convCount = 0;
   let msgCount = 0;

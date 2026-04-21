@@ -44,6 +44,17 @@ export function ChatWindow({
               return prev;
             return [...prev, newMsg];
           });
+          if (
+            newMsg.direction === "inbound" &&
+            "Notification" in window &&
+            Notification.permission === "granted" &&
+            document.visibilityState !== "visible"
+          ) {
+            new Notification("Nowa wiadomość", {
+              body: newMsg.text ?? "",
+              icon: "/favicon.ico",
+            });
+          }
         },
       )
       .subscribe();

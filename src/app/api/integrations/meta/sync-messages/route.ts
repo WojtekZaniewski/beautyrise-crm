@@ -53,6 +53,17 @@ export async function POST() {
     );
   }
 
+  // Clean up conversations from pages that are NOT the selected page
+  let cleaned = 0;
+  if (creds.selected_page_id) {
+    const { count } = await supabase
+      .from("conversations")
+      .delete({ count: "exact" })
+      .eq("workspace_id", WORKSPACE_ID)
+      .neq("page_id", creds.selected_page_id);
+    cleaned = count ?? 0;
+  }
+
   let totalConversations = 0;
   let totalMessages = 0;
   const errors: string[] = [];
@@ -75,7 +86,7 @@ export async function POST() {
         );
       }
 
-      // Instagram DM (gracefully skipped if scope not granted)
+      // Instagram DM
       try {
         const r = await syncInstagramConversations(
           supabase,
@@ -86,7 +97,6 @@ export async function POST() {
         totalConversations += r.conversations;
         totalMessages += r.messages;
       } catch (e) {
-        // Silent — Instagram scope often not available
         errors.push(
           `Instagram [${page.name}]: ${e instanceof Error ? e.message : String(e)}`,
         );
@@ -98,6 +108,7 @@ export async function POST() {
     ok: true,
     conversations: totalConversations,
     messages: totalMessages,
+    cleaned,
     errors,
   });
   } catch (e) {
