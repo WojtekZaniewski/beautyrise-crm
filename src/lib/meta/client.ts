@@ -51,6 +51,48 @@ export class MetaClient {
     return res.json() as Promise<T>;
   }
 
+  async post<T = unknown>(
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<T> {
+    const clean = path.startsWith("/") ? path.slice(1) : path;
+    const u = new URL(`${BASE}/${clean}`);
+    u.searchParams.set("access_token", this.accessToken);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(u.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        const msg =
+          (errBody as { error?: { message?: string } })?.error?.message ??
+          JSON.stringify(errBody);
+        throw new MetaApiError(`Meta API POST ${res.status}: ${msg}`, res.status, errBody);
+      }
+      return res.json() as Promise<T>;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async sendMessage(
+    pageId: string,
+    recipientPsid: string,
+    text: string,
+  ): Promise<{ message_id: string; recipient_id: string }> {
+    return this.post(`${pageId}/messages`, {
+      recipient: { id: recipientPsid },
+      message: { text },
+      messaging_type: "RESPONSE",
+    });
+  }
+
   async paginate<T>(
     path: string,
     params: Record<string, string | number> = {},
@@ -144,6 +186,9 @@ export function buildOAuthUrl(state: string): string {
     "pages_manage_metadata",
     "pages_manage_ads",
     "business_management",
+    "pages_read_engagement",
+    "pages_messaging",
+    "instagram_manage_messages",
   ];
 
   const url = new URL(`https://www.facebook.com/${API_VERSION}/dialog/oauth`);

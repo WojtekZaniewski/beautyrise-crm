@@ -23,6 +23,7 @@ type Page = {
   id: string;
   name: string;
   access_token: string;
+  instagram_business_account?: { id: string };
 };
 
 export async function GET(request: Request) {
@@ -64,22 +65,36 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    // Subscribe each page to leadgen webhook events automatically
+    // Subscribe each page to webhook events and fetch Instagram Business Account ID
     const pages = pagesResp.data ?? [];
     await Promise.allSettled(
-      pages.map((page) =>
-        fetch(
+      pages.map(async (page) => {
+        // Subscribe webhook fields
+        await fetch(
           `https://graph.facebook.com/v21.0/${page.id}/subscribed_apps`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              subscribed_fields: ["leadgen"],
+              subscribed_fields: ["leadgen", "messages"],
               access_token: page.access_token,
             }),
           },
-        ),
-      ),
+        );
+        // Fetch linked Instagram Business Account using the page token
+        try {
+          const igRes = await fetch(
+            `https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`,
+            { cache: "no-store" },
+          );
+          if (igRes.ok) {
+            const igData = await igRes.json() as { instagram_business_account?: { id: string } };
+            page.instagram_business_account = igData.instagram_business_account;
+          }
+        } catch {
+          // No Instagram account linked — fine, skip
+        }
+      }),
     );
 
     const supabase = createServiceClient();
@@ -96,7 +111,12 @@ export async function GET(request: Request) {
           access_token: longToken.access_token,
           expires_at: expiresAt,
           ad_accounts: accountsResp.data ?? [],
-          pages: pages.map((p) => ({ id: p.id, name: p.name, access_token: p.access_token })),
+          pages: pages.map((p) => ({
+            id: p.id,
+            name: p.name,
+            access_token: p.access_token,
+            instagram_account_id: p.instagram_business_account?.id ?? null,
+          })),
           selected_ad_account_id: null,
         },
         status: "connected",

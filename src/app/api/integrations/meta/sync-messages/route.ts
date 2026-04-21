@@ -1,0 +1,119 @@
+import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentWorkspaceId } from "@/lib/workspace";
+import {
+  syncMessengerConversations,
+  syncInstagramConversations,
+} from "@/lib/meta/sync-messages";
+
+export const maxDuration = 60;
+
+export async function POST() {
+  try {
+  const supabase = createServiceClient();
+  const WORKSPACE_ID = await getCurrentWorkspaceId();
+
+  const { data: integration } = await supabase
+    .from("integrations")
+    .select("credentials")
+    .eq("workspace_id", WORKSPACE_ID)
+    .eq("type", "meta_ads")
+    .eq("status", "connected")
+    .single();
+
+  if (!integration) {
+    return NextResponse.json(
+      { error: "Brak połączonej integracji Meta" },
+      { status: 400 },
+    );
+  }
+
+  const creds = integration.credentials as {
+    pages?: Array<{ id: string; access_token: string; name: string; instagram_account_id?: string | null }>;
+    selected_page_id?: string | null;
+  };
+
+  const allPages = creds.pages ?? [];
+  if (allPages.length === 0) {
+    return NextResponse.json(
+      { error: "Brak stron Facebook w integracji — połącz ponownie" },
+      { status: 400 },
+    );
+  }
+
+  // Only sync the selected page; fall back to all pages if none selected
+  const pages = creds.selected_page_id
+    ? allPages.filter((p) => p.id === creds.selected_page_id)
+    : allPages;
+
+  if (pages.length === 0) {
+    return NextResponse.json(
+      { error: "Wybrana strona nie istnieje w integracji — wybierz stronę w ustawieniach" },
+      { status: 400 },
+    );
+  }
+
+  // Clean up conversations from pages that are NOT the selected page
+  let cleaned = 0;
+  if (creds.selected_page_id) {
+    const { count } = await supabase
+      .from("conversations")
+      .delete({ count: "exact" })
+      .eq("workspace_id", WORKSPACE_ID)
+      .neq("page_id", creds.selected_page_id);
+    cleaned = count ?? 0;
+  }
+
+  let totalConversations = 0;
+  let totalMessages = 0;
+  const errors: string[] = [];
+
+  await Promise.allSettled(
+    pages.map(async (page) => {
+      // Messenger
+      try {
+        const r = await syncMessengerConversations(
+          supabase,
+          page.id,
+          page.access_token,
+          WORKSPACE_ID,
+        );
+        totalConversations += r.conversations;
+        totalMessages += r.messages;
+      } catch (e) {
+        errors.push(
+          `Messenger [${page.name}]: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+
+      // Instagram DM
+      try {
+        const r = await syncInstagramConversations(
+          supabase,
+          page.id,
+          page.access_token,
+          WORKSPACE_ID,
+          page.instagram_account_id,
+        );
+        totalConversations += r.conversations;
+        totalMessages += r.messages;
+      } catch (e) {
+        errors.push(
+          `Instagram [${page.name}]: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }),
+  );
+
+  return NextResponse.json({
+    ok: true,
+    conversations: totalConversations,
+    messages: totalMessages,
+    cleaned,
+    errors,
+  });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
 type Workspace = { id: string; name: string; slug: string };
@@ -73,6 +75,23 @@ const Icons = {
       <circle cx="4.8" cy="4.8" r="1.1" fill="currentColor" opacity=".7" />
     </svg>
   ),
+  messages: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path
+        d="M1.5 2.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4.5l-3 2.5V3.5a1 1 0 0 1 1-1z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.5 6h6M4.5 8.5h3.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity=".6"
+      />
+    </svg>
+  ),
   signout: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path d="M6 2H2.5A1.5 1.5 0 0 0 1 3.5v8A1.5 1.5 0 0 0 2.5 13H6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
@@ -86,6 +105,7 @@ const primary = [
   { href: "/leads", label: "Leady", icon: Icons.leads },
   { href: "/leads/kanban", label: "Kanban", icon: Icons.kanban },
   { href: "/campaigns", label: "Kampanie", icon: Icons.campaigns },
+  { href: "/messages", label: "Wiadomości", icon: Icons.messages, isMessages: true },
 ];
 
 const integrationsNav = [
@@ -105,11 +125,13 @@ function NavLink({
   label,
   icon,
   active,
+  badge,
 }: {
   href: string;
   label: string;
   icon: React.ReactNode;
   active: boolean;
+  badge?: number;
 }) {
   return (
     <Link
@@ -122,7 +144,15 @@ function NavLink({
       }`}
     >
       <span className="shrink-0">{icon}</span>
-      <span className="tracking-tight">{label}</span>
+      <span className="tracking-tight flex-1">{label}</span>
+      {badge != null && badge > 0 && (
+        <span
+          className="min-w-[18px] h-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center px-1 shrink-0"
+          style={{ background: "var(--accent)", color: "white" }}
+        >
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -146,6 +176,47 @@ export function Sidebar({
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
 
+  const [totalUnread, setTotalUnread] = useState(0);
+  const supabase = createClient();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchCount() {
+      try {
+        const res = await fetch("/api/messages/unread-count");
+        if (!res.ok || cancelled) return;
+        const data = await res.json() as { total: number };
+        setTotalUnread(data.total ?? 0);
+      } catch {
+        // silently ignore — badge stays at 0
+      }
+    }
+
+    fetchCount();
+
+    const channel = supabase
+      .channel(`sidebar-convs:${currentWorkspaceId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "conversations",
+          filter: `workspace_id=eq.${currentWorkspaceId}`,
+        },
+        () => {
+          fetchCount();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [currentWorkspaceId, supabase]);
+
   return (
     <aside
       className="w-[220px] shrink-0 flex flex-col h-screen sticky top-0"
@@ -161,7 +232,14 @@ export function Sidebar({
 
       <nav className="flex-1 px-2.5 py-2.5 flex flex-col gap-0.5 overflow-y-auto">
         {primary.map((item) => (
-          <NavLink key={item.href} {...item} active={isActive(item.href)} />
+          <NavLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={isActive(item.href)}
+            badge={item.isMessages ? totalUnread : undefined}
+          />
         ))}
 
         <Section label="Integracje" />
