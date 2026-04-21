@@ -127,6 +127,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   } | null>(null);
   const [loadingPanel, setLoadingPanel] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [replySubject, setReplySubject] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [syncingReplies, setSyncingReplies] = useState(false);
 
@@ -196,17 +197,24 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
     if (!selected) return;
     setLoadingPanel(true);
     setRecipientPanel(null);
+    setReplyText("");
+    setReplySubject(`Re: ${selected.subject}`);
     const res = await fetch(`/api/email/outreach/campaigns/${selected.id}/recipients/${r.id}/correspondence`);
     const data = await res.json();
     setRecipientPanel(data);
     setLoadingPanel(false);
   };
 
-  const syncReplies = async () => {
+  const syncReplies = async (recipientId?: string) => {
     if (!selected) return;
     setSyncingReplies(true);
     await fetch(`/api/email/inbox?account_id=${selected.account_id}&sync=1`);
     await selectCampaign(selected.id);
+    const panelRecipientId = recipientId ?? recipientPanel?.recipient.id;
+    if (panelRecipientId) {
+      const res = await fetch(`/api/email/outreach/campaigns/${selected.id}/recipients/${panelRecipientId}/correspondence`);
+      setRecipientPanel(await res.json());
+    }
     setSyncingReplies(false);
   };
 
@@ -222,7 +230,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
         account_id: campaign.account_id,
         to: recipient.email,
         to_name: recipient.name ?? undefined,
-        subject: `Re: ${campaign.subject}`,
+        subject: replySubject || `Re: ${campaign.subject}`,
         html: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
         text: replyText,
         thread_id: existingThread?.id ?? undefined,
@@ -291,7 +299,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button onClick={syncReplies} disabled={syncingReplies} title="Pobierz odpowiedzi ze skrzynki"
+                  <button onClick={() => syncReplies()} disabled={syncingReplies} title="Pobierz odpowiedzi ze skrzynki"
                     className="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                     style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--muted)" }}>
                     {syncingReplies ? "…" : "↻ Synchronizuj odpowiedzi"}
@@ -480,8 +488,16 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
 
                   {/* Thread messages */}
                   {recipientPanel?.threads.length === 0 ? (
-                    <div className="text-xs text-center text-[var(--muted)] py-3">
-                      Brak odpowiedzi — zsynchronizuj skrzynkę w zakładce Kontakt aby zobaczyć replies
+                    <div className="flex flex-col items-center gap-3 py-6">
+                      <p className="text-xs text-center text-[var(--muted)]">
+                        Brak odpowiedzi w bazie — pobierz skrzynkę aby wczytać replies.
+                      </p>
+                      <button onClick={() => syncReplies(recipientPanel?.recipient.id)}
+                        disabled={syncingReplies}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)" }}>
+                        {syncingReplies ? "Pobieranie…" : "↻ Pobierz odpowiedzi ze skrzynki"}
+                      </button>
                     </div>
                   ) : (
                     recipientPanel?.threads.flatMap(thread =>
@@ -513,19 +529,34 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
               )}
             </div>
 
-            {/* Reply box */}
-            <div className="p-4 shrink-0 flex gap-3 items-end"
-              style={{ borderTop: "1px solid var(--border)" }}>
-              <textarea rows={3} placeholder="Napisz odpowiedź… (Ctrl+Enter aby wysłać)"
+            {/* Reply composer */}
+            <div className="shrink-0 flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
+              <div className="px-5 pt-3 pb-1 text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">
+                Odpowiedz
+              </div>
+              <div className="flex items-center gap-3 px-5 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+                <span className="text-xs text-[var(--muted)] w-12 shrink-0">Do:</span>
+                <span className="text-sm">{recipientPanel?.recipient.email ?? ""}</span>
+              </div>
+              <div className="flex items-center gap-3 px-5 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+                <span className="text-xs text-[var(--muted)] w-12 shrink-0">Temat:</span>
+                <input value={replySubject} onChange={e => setReplySubject(e.target.value)}
+                  className="flex-1 text-sm bg-transparent outline-none"
+                  style={{ color: "var(--text)" }} />
+              </div>
+              <textarea rows={4} placeholder="Treść wiadomości…"
                 value={replyText} onChange={e => setReplyText(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendFollowUp(); } }}
-                className="flex-1 rounded-lg px-3 py-2.5 text-sm resize-none"
+                className="mx-5 my-3 rounded-lg px-3 py-2.5 text-sm resize-none"
                 style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }} />
-              <button onClick={sendFollowUp} disabled={sendingReply || !replyText.trim()}
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 shrink-0"
-                style={{ background: "var(--accent)" }}>
-                {sendingReply ? "…" : "Wyślij"}
-              </button>
+              <div className="flex items-center justify-between px-5 pb-4">
+                <span className="text-xs text-[var(--muted)]">Ctrl+Enter aby wysłać</span>
+                <button onClick={sendFollowUp} disabled={sendingReply || !replyText.trim()}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+                  style={{ background: "var(--accent)" }}>
+                  {sendingReply ? "Wysyłanie…" : "Wyślij →"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
