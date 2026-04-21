@@ -1,14 +1,21 @@
 -- ─── Messaging: Messenger + Instagram DM ─────────────────────────────────────
 
-CREATE TYPE "public"."conversation_channel" AS ENUM('messenger', 'instagram');
-CREATE TYPE "public"."message_direction" AS ENUM('inbound', 'outbound');
+DO $$ BEGIN
+  CREATE TYPE "public"."conversation_channel" AS ENUM('messenger', 'instagram');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "public"."message_direction" AS ENUM('inbound', 'outbound');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 ALTER TYPE "public"."lead_event_type" ADD VALUE IF NOT EXISTS 'message_received';
 ALTER TYPE "public"."lead_event_type" ADD VALUE IF NOT EXISTS 'message_sent';
 
 -- ─── Conversations ─────────────────────────────────────────────────────────────
 
-CREATE TABLE "conversations" (
+CREATE TABLE IF NOT EXISTS "conversations" (
   "id"                   uuid        PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "workspace_id"         uuid        NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   "channel"              conversation_channel NOT NULL,
@@ -26,7 +33,7 @@ CREATE TABLE "conversations" (
 
 -- ─── Messages ──────────────────────────────────────────────────────────────────
 
-CREATE TABLE "messages" (
+CREATE TABLE IF NOT EXISTS "messages" (
   "id"               uuid            PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "conversation_id"  uuid            NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   "workspace_id"     uuid            NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
@@ -41,17 +48,14 @@ CREATE TABLE "messages" (
 -- ─── Indexes ───────────────────────────────────────────────────────────────────
 
 -- Unique conversation per sender+page+workspace (used for upsert logic)
-CREATE UNIQUE INDEX conversations_workspace_psid_page_idx
+CREATE UNIQUE INDEX IF NOT EXISTS conversations_workspace_psid_page_idx
   ON conversations(workspace_id, sender_psid, page_id);
 
--- Fast list ordered by recency
-CREATE INDEX conversations_workspace_last_msg_idx
+CREATE INDEX IF NOT EXISTS conversations_workspace_last_msg_idx
   ON conversations(workspace_id, last_message_at DESC);
 
--- Fast message history per conversation
-CREATE INDEX messages_conversation_created_idx
+CREATE INDEX IF NOT EXISTS messages_conversation_created_idx
   ON messages(conversation_id, created_at ASC);
 
--- Idempotency: one row per Meta message_id
-CREATE UNIQUE INDEX messages_meta_message_id_idx
+CREATE UNIQUE INDEX IF NOT EXISTS messages_meta_message_id_idx
   ON messages(meta_message_id);
