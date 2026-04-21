@@ -29,7 +29,7 @@ export async function POST() {
   }
 
   const creds = integration.credentials as {
-    pages?: Array<{ id: string; access_token: string; name: string }>;
+    pages?: Array<{ id: string; access_token: string; name: string; instagram_account_id?: string | null }>;
     selected_page_id?: string | null;
   };
 
@@ -93,6 +93,7 @@ export async function POST() {
           page.id,
           page.access_token,
           WORKSPACE_ID,
+          page.instagram_account_id,
         );
         totalConversations += r.conversations;
         totalMessages += r.messages;

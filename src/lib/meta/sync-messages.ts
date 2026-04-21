@@ -168,22 +168,19 @@ export async function syncInstagramConversations(
   pageId: string,
   pageToken: string,
   workspaceId: string,
+  igAccountId?: string | null,
 ): Promise<{ conversations: number; messages: number }> {
-  const client = new MetaClient(pageToken);
-
-  const pageData = await client.get<{
-    instagram_business_account?: { id: string };
-  }>(`${pageId}`, { fields: "instagram_business_account" });
-
-  const igAccountId = pageData.instagram_business_account?.id ?? "";
-  if (!igAccountId) {
+  const resolvedIgAccountId = igAccountId ?? "";
+  if (!resolvedIgAccountId) {
     throw new Error(
       "Brak konta Instagram Business powiązanego z tą stroną. Połącz Instagram z Facebook Page w Meta Business Suite.",
     );
   }
 
+  const client = new MetaClient(pageToken);
+
   const convData = await client.paginate<MetaConversation>(
-    `${igAccountId}/conversations`,
+    `${resolvedIgAccountId}/conversations`,
     { platform: "instagram", fields: "id,participants,updated_time,snippet" },
     3,
   );
@@ -193,7 +190,7 @@ export async function syncInstagramConversations(
   type ConvEntry = { customer: MetaParticipant; metaConv: MetaConversation };
   const entries: ConvEntry[] = [];
   for (const metaConv of convData) {
-    const customer = metaConv.participants?.data?.find((p) => p.id !== igAccountId);
+    const customer = metaConv.participants?.data?.find((p) => p.id !== resolvedIgAccountId);
     if (customer) entries.push({ customer, metaConv });
   }
 
@@ -270,7 +267,7 @@ export async function syncInstagramConversations(
       conversation_id: conversationId,
       workspace_id: workspaceId,
       meta_message_id: msg.id,
-      direction: (msg.from.id === igAccountId ? "outbound" : "inbound") as "outbound" | "inbound",
+      direction: (msg.from.id === resolvedIgAccountId ? "outbound" : "inbound") as "outbound" | "inbound",
       text: msg.message || null,
       attachments: [],
       created_at: msg.created_time,
