@@ -13,7 +13,11 @@
       "Bash(git -C D:/Dokumenty/GitHub/beautyrise-crm status --short)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(xargs ls *)",
+      "Bash(grep -o 'heat-100[^,;{\\)]*' \"D:/Dokumenty/GitHub/beautyrise-crm-main2/firecrawl/www.firecrawl.dev/_next/static/chunks/09c3746c8c376d56.js\")",
+      "Bash(grep -oE 'heat.{0,200}' \"D:/Dokumenty/GitHub/beautyrise-crm-main2/firecrawl/www.firecrawl.dev/_next/static/chunks/56f0fda76cbf46cd.js\")",
+      "Bash(grep -oE \"#[a-fA-F0-9]{3,8}\")"
     ]
   }
 }
