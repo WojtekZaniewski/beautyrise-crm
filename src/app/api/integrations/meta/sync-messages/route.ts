@@ -30,12 +30,25 @@ export async function POST() {
 
   const creds = integration.credentials as {
     pages?: Array<{ id: string; access_token: string; name: string }>;
+    selected_page_id?: string | null;
   };
 
-  const pages = creds.pages ?? [];
-  if (pages.length === 0) {
+  const allPages = creds.pages ?? [];
+  if (allPages.length === 0) {
     return NextResponse.json(
       { error: "Brak stron Facebook w integracji — połącz ponownie" },
+      { status: 400 },
+    );
+  }
+
+  // Only sync the selected page; fall back to all pages if none selected
+  const pages = creds.selected_page_id
+    ? allPages.filter((p) => p.id === creds.selected_page_id)
+    : allPages;
+
+  if (pages.length === 0) {
+    return NextResponse.json(
+      { error: "Wybrana strona nie istnieje w integracji — wybierz stronę w ustawieniach" },
       { status: 400 },
     );
   }

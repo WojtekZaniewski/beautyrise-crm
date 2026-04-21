@@ -276,14 +276,16 @@ async function processMessagingEvents(
   for (const int of integrations ?? []) {
     const creds = int.credentials as {
       pages?: Array<{ id: string; access_token: string }>;
+      selected_page_id?: string | null;
     };
     for (const page of creds.pages ?? []) {
-      if (pageIds.includes(page.id)) {
-        pageToWorkspace.set(page.id, {
-          workspaceId: int.workspace_id,
-          pageToken: page.access_token,
-        });
-      }
+      if (!pageIds.includes(page.id)) continue;
+      // If a specific page is selected, only accept messages for that page
+      if (creds.selected_page_id && page.id !== creds.selected_page_id) continue;
+      pageToWorkspace.set(page.id, {
+        workspaceId: int.workspace_id,
+        pageToken: page.access_token,
+      });
     }
   }
 

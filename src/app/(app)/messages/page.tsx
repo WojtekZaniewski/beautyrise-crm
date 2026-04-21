@@ -7,7 +7,19 @@ export default async function MessagesPage() {
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
-  const { data } = await supabase
+  // Get selected_page_id to filter conversations
+  const { data: integration } = await supabase
+    .from("integrations")
+    .select("credentials")
+    .eq("workspace_id", WORKSPACE_ID)
+    .eq("type", "meta_ads")
+    .maybeSingle();
+
+  const selectedPageId = (
+    integration?.credentials as { selected_page_id?: string | null }
+  )?.selected_page_id ?? null;
+
+  let query = supabase
     .from("conversations")
     .select(`
       id,
@@ -22,6 +34,12 @@ export default async function MessagesPage() {
     .eq("workspace_id", WORKSPACE_ID)
     .order("last_message_at", { ascending: false })
     .limit(100);
+
+  if (selectedPageId) {
+    query = query.eq("page_id", selectedPageId);
+  }
+
+  const { data } = await query;
 
   const conversations = (data ?? []) as unknown as Conversation[];
 
