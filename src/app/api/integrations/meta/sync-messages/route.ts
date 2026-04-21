@@ -98,8 +98,11 @@ export async function POST() {
         totalConversations += r.conversations;
         totalMessages += r.messages;
       } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // Suppress known "app not configured for Instagram" error — not actionable at runtime
+        if (msg.includes("does not have the capability") || msg.includes("(#3)")) return;
         errors.push(
-          `Instagram [${page.name}]: ${e instanceof Error ? e.message : String(e)}`,
+          `Instagram [${page.name}]: ${msg}`,
         );
       }
     }),
