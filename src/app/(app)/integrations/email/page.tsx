@@ -128,6 +128,8 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   const [loadingPanel, setLoadingPanel] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replySubject, setReplySubject] = useState("");
+  const [replyMode, setReplyMode] = useState<"text" | "html">("text");
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
   const [syncingReplies, setSyncingReplies] = useState(false);
 
@@ -231,8 +233,8 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
         to: recipient.email,
         to_name: recipient.name ?? undefined,
         subject: replySubject || `Re: ${campaign.subject}`,
-        html: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
-        text: replyText,
+        html: replyMode === "html" ? replyText : `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+        text: replyMode === "html" ? replyText.replace(/<[^>]+>/g, "") : replyText,
         thread_id: existingThread?.id ?? undefined,
       }),
     });
@@ -531,10 +533,26 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
 
             {/* Reply composer */}
             <div className="shrink-0 flex flex-col" style={{ borderTop: "1px solid var(--border)" }}>
-              <div className="px-5 pt-3 pb-1 text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">
-                Odpowiedz
+              {/* Composer header row */}
+              <div className="flex items-center justify-between px-5 pt-3 pb-2">
+                <span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wide">Odpowiedz</span>
+                <div className="flex items-center gap-1 rounded-lg overflow-hidden text-xs font-medium"
+                  style={{ border: "1px solid var(--border)" }}>
+                  {(["text", "html"] as const).map(m => (
+                    <button key={m} onClick={() => { setReplyMode(m); setShowHtmlPreview(false); }}
+                      className="px-3 py-1 transition-colors"
+                      style={{
+                        background: replyMode === m ? "var(--accent)" : "transparent",
+                        color: replyMode === m ? "#fff" : "var(--muted)",
+                      }}>
+                      {m === "text" ? "Tekst" : "HTML"}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-3 px-5 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+
+              {/* To / Subject */}
+              <div className="flex items-center gap-3 px-5 py-2" style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
                 <span className="text-xs text-[var(--muted)] w-12 shrink-0">Do:</span>
                 <span className="text-sm">{recipientPanel?.recipient.email ?? ""}</span>
               </div>
@@ -544,13 +562,41 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                   className="flex-1 text-sm bg-transparent outline-none"
                   style={{ color: "var(--text)" }} />
               </div>
-              <textarea rows={4} placeholder="Treść wiadomości…"
-                value={replyText} onChange={e => setReplyText(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendFollowUp(); } }}
-                className="mx-5 my-3 rounded-lg px-3 py-2.5 text-sm resize-none"
-                style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }} />
+
+              {/* Body — code editor in HTML mode */}
+              {replyMode === "html" && showHtmlPreview ? (
+                <div className="mx-5 my-3 rounded-lg overflow-auto" style={{ height: 140, border: "1px solid var(--border)" }}>
+                  <iframe
+                    srcDoc={replyText}
+                    sandbox="allow-same-origin"
+                    className="w-full h-full"
+                    style={{ background: "#fff" }}
+                  />
+                </div>
+              ) : (
+                <textarea rows={5} placeholder={replyMode === "html" ? "<p>Treść maila w HTML…</p>" : "Treść wiadomości…"}
+                  value={replyText} onChange={e => setReplyText(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendFollowUp(); } }}
+                  className="mx-5 my-3 rounded-lg px-3 py-2.5 text-sm resize-none"
+                  style={{
+                    background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none",
+                    fontFamily: replyMode === "html" ? "monospace" : undefined,
+                    fontSize: replyMode === "html" ? 12 : undefined,
+                  }} />
+              )}
+
+              {/* Footer */}
               <div className="flex items-center justify-between px-5 pb-4">
-                <span className="text-xs text-[var(--muted)]">Ctrl+Enter aby wysłać</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[var(--muted)]">Ctrl+Enter aby wysłać</span>
+                  {replyMode === "html" && replyText.trim() && (
+                    <button onClick={() => setShowHtmlPreview(v => !v)}
+                      className="text-xs px-2.5 py-1 rounded-lg transition-colors"
+                      style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--muted)" }}>
+                      {showHtmlPreview ? "Kod" : "Podgląd"}
+                    </button>
+                  )}
+                </div>
                 <button onClick={sendFollowUp} disabled={sendingReply || !replyText.trim()}
                   className="px-5 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
                   style={{ background: "var(--accent)" }}>
