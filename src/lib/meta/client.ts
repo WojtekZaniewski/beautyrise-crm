@@ -187,7 +187,6 @@ export function buildOAuthUrl(state: string): string {
     "pages_manage_ads",
     "business_management",
     "pages_messaging",
-    "instagram_manage_messages",
   ];
 
   const url = new URL(`https://www.facebook.com/${API_VERSION}/dialog/oauth`);
