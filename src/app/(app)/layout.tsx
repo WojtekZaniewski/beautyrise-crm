@@ -8,9 +8,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ]);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar workspaces={workspaces} currentWorkspaceId={currentWorkspaceId} />
-      <main className="flex-1 overflow-auto dot-grid">
+      <main className="flex-1 overflow-auto dot-grid min-h-0">
         {children}
       </main>
     </div>
