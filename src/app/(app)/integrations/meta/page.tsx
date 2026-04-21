@@ -34,11 +34,13 @@ export default async function MetaIntegrationPage({
     : null;
 
   return (
-    <div className="px-8 py-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-2">Meta Ads</h1>
-      <p className="text-sm text-[var(--muted)] mb-6">
-        Połącz konto Meta Business aby synchronizować kampanie i metryki.
-      </p>
+    <div className="px-8 py-8 max-w-2xl mx-auto anim-page">
+      <div className="heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
+        <h1 className="text-2xl font-semibold mb-1">Meta Ads</h1>
+        <p className="text-sm text-[var(--muted)]">
+          Połącz konto Meta Business aby synchronizować kampanie i metryki.
+        </p>
+      </div>
 
       {error && (
         <div

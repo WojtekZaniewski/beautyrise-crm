@@ -51,9 +51,9 @@ export default async function Dashboard() {
   ];
 
   return (
-    <div className="px-7 py-7 max-w-6xl mx-auto">
+    <div className="px-7 py-7 max-w-6xl mx-auto anim-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-7">
+      <div className="flex items-center justify-between mb-7 heat-glow -mx-7 -mt-7 px-7 pt-7 pb-5 mb-6">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Dashboard</h1>
           <p className="text-[13px] text-[var(--muted)] mt-0.5">Przegląd aktywności</p>
@@ -67,7 +67,7 @@ export default async function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 anim-stagger">
         {stats.map((s, i) => (
           <div
             key={s.label}

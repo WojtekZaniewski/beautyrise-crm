@@ -76,9 +76,9 @@ export default async function LeadsPage({
   const activeSource = sourceParam ?? "meta_ads";
 
   return (
-    <div className="px-7 py-7 max-w-6xl mx-auto">
+    <div className="px-7 py-7 max-w-6xl mx-auto anim-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between heat-glow -mx-7 -mt-7 px-7 pt-7 pb-5 mb-6">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Leady</h1>
           <p className="text-[13px] text-[var(--muted)] mt-0.5">

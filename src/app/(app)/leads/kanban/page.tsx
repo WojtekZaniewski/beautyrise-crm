@@ -27,8 +27,8 @@ export default async function KanbanPage() {
     : { data: [] };
 
   return (
-    <div className="px-8 py-8">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="px-8 py-8 anim-page">
+      <div className="flex items-center gap-3 heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
         <h1 className="text-2xl font-semibold">Kanban</h1>
         <PipelineSelect pipelines={pipelines} currentPipelineId={currentPipelineId} />
       </div>

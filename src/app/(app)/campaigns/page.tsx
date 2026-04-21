@@ -49,8 +49,8 @@ export default async function CampaignsPage() {
   };
 
   return (
-    <div className="px-7 py-7 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-7 py-7 max-w-6xl mx-auto anim-page">
+      <div className="flex items-center justify-between heat-glow -mx-7 -mt-7 px-7 pt-7 pb-5 mb-6">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Kampanie</h1>
           <p className="text-[13px] mt-0.5" style={{ color: "var(--muted)" }}>
