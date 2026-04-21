@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
           body_html: msg.bodyHtml,
           body_text: msg.bodyText,
           direction: "inbound",
-          is_read: msg.isRead,
+          is_read: false,
           sent_at: msg.date.toISOString(),
         });
 
