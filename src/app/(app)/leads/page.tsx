@@ -4,6 +4,7 @@ import { getStagesForWorkspace } from "@/lib/pipeline";
 import { sourceLabel } from "@/lib/constants";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
+import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
 type SearchParams = Promise<{
   q?: string;
@@ -158,7 +159,7 @@ export default async function LeadsPage({
         <table className="w-full text-[13px]">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
-              {["Imię i nazwisko", "Telefon", "E-mail", "Etap", "Tagi", "Źródło", "Data"].map(
+              {["Imię i nazwisko", "Telefon", "E-mail", "Etap", "Tagi", "Źródło", "Data", ""].map(
                 (h) => (
                   <th
                     key={h}
@@ -276,6 +277,9 @@ export default async function LeadsPage({
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} />
                     </td>
                   </tr>
                 );

@@ -14,6 +14,7 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
 type Stage = { id: string; name: string; color: string };
 type Lead = {
@@ -61,8 +62,11 @@ function LeadCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean }) {
       {lead.phone && (
         <div className="text-xs text-[var(--muted)]">{lead.phone}</div>
       )}
-      <div className="text-xs text-[var(--muted)] mt-1">
-        {sourceLabel[lead.source] ?? lead.source}
+      <div className="flex items-center justify-between mt-1.5">
+        <div className="text-xs text-[var(--muted)]">
+          {sourceLabel[lead.source] ?? lead.source}
+        </div>
+        <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} />
       </div>
     </div>
   );
