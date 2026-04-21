@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 type Workspace = { id: string; name: string; slug: string };
 
@@ -55,16 +56,13 @@ export function WorkspaceSwitcher({
         className="w-full flex items-center gap-3 px-3.5 py-3.5 hover:bg-[var(--ba-4)] transition-colors"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
-        <div
-          className="w-7 h-7 rounded-md flex items-center justify-center text-[13px] font-bold shrink-0 text-white"
-          style={{
-            background: "var(--metal)",
-            boxShadow:
-              "0 0 0 1px rgba(255,76,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18), 0 2px 8px rgba(255,76,0,0.18)",
-          }}
-        >
-          {initial}
-        </div>
+        <Image
+          src="/logo.png"
+          alt="BeautyRise"
+          width={28}
+          height={28}
+          className="shrink-0 object-contain"
+        />
         <div className="flex-1 text-left min-w-0">
           <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]/60 font-semibold">
             Workspace
