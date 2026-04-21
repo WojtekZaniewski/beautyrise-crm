@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ interface CampaignDetail extends Omit<Campaign, "email_outreach_recipients"> {
 interface Recipient {
   id: string; email: string; name: string | null; status: string;
   sent_at: string | null; opened_at: string | null; clicked_at: string | null; replied_at: string | null;
-  reply_count?: number;
+  reply_count?: number; lead_id?: string | null;
 }
 interface Thread {
   id: string; subject: string; participants: string[]; is_read: boolean;
@@ -353,7 +354,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-xs text-[var(--muted)]" style={{ borderBottom: "1px solid var(--border)" }}>
-                        {["Email", "Imię", "Status", "Wysłano", "Otwarto", ""].map(h => (
+                        {["Email", "Imię", "Status", "Wysłano", "Otwarto", "Notatki", ""].map(h => (
                           <th key={h} className="text-left pb-2.5 pr-4 font-medium">{h}</th>
                         ))}
                       </tr>
@@ -378,6 +379,13 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                           <td className="py-2.5 pr-4"><StatusBadge status={r.status} /></td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.sent_at ? new Date(r.sent_at).toLocaleDateString("pl-PL") : "—"}</td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.opened_at ? new Date(r.opened_at).toLocaleDateString("pl-PL") : "—"}</td>
+                          <td className="py-2.5 pr-4" onClick={e => e.stopPropagation()}>
+                            {r.lead_id ? (
+                              <LeadNotesPanel leadId={r.lead_id} leadName={r.name ?? r.email} />
+                            ) : (
+                              <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
+                            )}
+                          </td>
                           <td className="py-2.5">
                             <span className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
                               style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>

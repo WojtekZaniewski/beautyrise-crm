@@ -12,7 +12,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     .select(`
       *,
       email_accounts ( email, display_name ),
-      email_outreach_recipients ( id, email, name, status, sent_at, opened_at, clicked_at, replied_at )
+      email_outreach_recipients ( id, email, name, status, sent_at, opened_at, clicked_at, replied_at, lead_id )
     `)
     .eq("id", id)
     .eq("workspace_id", workspaceId)
@@ -44,6 +44,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   const allRecipients = (campaign.email_outreach_recipients ?? []) as Array<{
     id: string; email: string; name: string | null; status: string;
     sent_at: string | null; opened_at: string | null; clicked_at: string | null; replied_at: string | null;
+    lead_id: string | null;
   }>;
   const sentRecipients = allRecipients.filter((r) => r.sent_at !== null);
   const replyCountMap: Record<string, number> = {};
