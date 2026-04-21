@@ -73,6 +73,23 @@ const Icons = {
       <circle cx="4.8" cy="4.8" r="1.1" fill="currentColor" opacity=".7" />
     </svg>
   ),
+  messages: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path
+        d="M1.5 2.5h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4.5l-3 2.5V3.5a1 1 0 0 1 1-1z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.5 6h6M4.5 8.5h3.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity=".6"
+      />
+    </svg>
+  ),
   signout: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path d="M6 2H2.5A1.5 1.5 0 0 0 1 3.5v8A1.5 1.5 0 0 0 2.5 13H6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
@@ -86,6 +103,7 @@ const primary = [
   { href: "/leads", label: "Leady", icon: Icons.leads },
   { href: "/leads/kanban", label: "Kanban", icon: Icons.kanban },
   { href: "/campaigns", label: "Kampanie", icon: Icons.campaigns },
+  { href: "/messages", label: "Wiadomości", icon: Icons.messages },
 ];
 
 const integrationsNav = [

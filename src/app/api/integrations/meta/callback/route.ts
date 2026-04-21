@@ -74,7 +74,7 @@ export async function GET(request: Request) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              subscribed_fields: ["leadgen"],
+              subscribed_fields: ["leadgen", "messages"],
               access_token: page.access_token,
             }),
           },

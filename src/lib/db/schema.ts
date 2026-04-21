@@ -28,6 +28,18 @@ export const leadEventTypeEnum = pgEnum("lead_event_type", [
   "sms_sent",
   "email_sent",
   "meta_form_submitted",
+  "message_received",
+  "message_sent",
+]);
+
+export const conversationChannelEnum = pgEnum("conversation_channel", [
+  "messenger",
+  "instagram",
+]);
+
+export const messageDirectionEnum = pgEnum("message_direction", [
+  "inbound",
+  "outbound",
 ]);
 
 export const integrationTypeEnum = pgEnum("integration_type", [
@@ -242,6 +254,42 @@ export const automationSteps = pgTable("automation_steps", {
   config: jsonb("config").default({}),
 });
 
+// ─── Messaging (Messenger + Instagram DM) ────────────────────────────────────
+
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  channel: conversationChannelEnum("channel").notNull(),
+  senderPsid: text("sender_psid").notNull(),
+  pageId: text("page_id").notNull(),
+  senderName: text("sender_name"),
+  senderProfilePic: text("sender_profile_pic"),
+  leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+  lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
+  lastMessagePreview: text("last_message_preview"),
+  unreadCount: integer("unread_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id")
+    .notNull()
+    .references(() => conversations.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  metaMessageId: text("meta_message_id").notNull(),
+  direction: messageDirectionEnum("direction").notNull(),
+  text: text("text"),
+  attachments: jsonb("attachments").default([]),
+  sentByUserId: uuid("sent_by_user_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
@@ -251,6 +299,7 @@ export const workspacesRelations = relations(workspaces, ({ many }) => ({
   integrations: many(integrations),
   campaigns: many(campaigns),
   tags: many(tags),
+  conversations: many(conversations),
 }));
 
 export const pipelinesRelations = relations(pipelines, ({ one, many }) => ({
@@ -291,4 +340,27 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
     references: [workspaces.id],
   }),
   metrics: many(campaignMetricsDaily),
+}));
+
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  workspace: one(workspaces, {
+    fields: [conversations.workspaceId],
+    references: [workspaces.id],
+  }),
+  lead: one(leads, {
+    fields: [conversations.leadId],
+    references: [leads.id],
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [messages.workspaceId],
+    references: [workspaces.id],
+  }),
 }));
