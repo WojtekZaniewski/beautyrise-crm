@@ -194,6 +194,7 @@ export function Sidebar({
             <span className="tracking-tight">Wyloguj</span>
           </button>
         </form>
+        <p className="text-[10px] text-[var(--muted)]/30 px-3 pt-1">v1.0.0</p>
       </div>
     </aside>
   );
