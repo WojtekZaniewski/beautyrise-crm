@@ -92,6 +92,7 @@ export async function GET(req: NextRequest) {
           .eq("id", thread.id);
 
         // Detect if this is a reply from a campaign recipient
+        // Only mark recipients that were actually sent an email (sent_at is not null)
         if (msg.from.email.toLowerCase() !== account.email.toLowerCase()) {
           const { data: acctCampaigns } = await supabase
             .from("email_outreach_campaigns")
@@ -104,7 +105,8 @@ export async function GET(req: NextRequest) {
               .update({ replied_at: msg.date.toISOString(), status: "replied" })
               .eq("email", msg.from.email)
               .in("campaign_id", acctCampaigns.map((c: { id: string }) => c.id))
-              .is("replied_at", null);
+              .is("replied_at", null)
+              .not("sent_at", "is", null);
           }
         }
       }

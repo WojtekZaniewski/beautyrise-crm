@@ -38,15 +38,17 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     .map(([date, v]) => ({ date, ...v }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Count inbound reply messages per recipient email
+  // Count unread inbound reply messages per recipient email
+  // Only count for recipients that were actually sent an email (sent_at not null)
+  // and only messages received after the campaign email was sent to them
   const allRecipients = (campaign.email_outreach_recipients ?? []) as Array<{
     id: string; email: string; name: string | null; status: string;
     sent_at: string | null; opened_at: string | null; clicked_at: string | null; replied_at: string | null;
   }>;
-  const recipientEmails = allRecipients.map((r) => r.email);
+  const sentRecipients = allRecipients.filter((r) => r.sent_at !== null);
   const replyCountMap: Record<string, number> = {};
 
-  if (recipientEmails.length > 0 && campaign.account_id) {
+  if (sentRecipients.length > 0 && campaign.account_id) {
     const { data: accountThreads } = await supabase
       .from("email_threads")
       .select("id")
@@ -55,23 +57,26 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
     const threadIds = (accountThreads ?? []).map((t: { id: string }) => t.id);
     if (threadIds.length > 0) {
-      const { data: inboundMsgs } = await supabase
-        .from("email_thread_messages")
-        .select("from_email")
-        .eq("direction", "inbound")
-        .eq("is_read", false)
-        .in("thread_id", threadIds)
-        .in("from_email", recipientEmails);
+      for (const r of sentRecipients) {
+        const { data: inboundMsgs } = await supabase
+          .from("email_thread_messages")
+          .select("id")
+          .eq("direction", "inbound")
+          .eq("is_read", false)
+          .eq("from_email", r.email)
+          .in("thread_id", threadIds)
+          .gt("sent_at", r.sent_at!);
 
-      for (const m of inboundMsgs ?? []) {
-        replyCountMap[m.from_email] = (replyCountMap[m.from_email] ?? 0) + 1;
+        if (inboundMsgs && inboundMsgs.length > 0) {
+          replyCountMap[r.email] = inboundMsgs.length;
+        }
       }
     }
   }
 
   const recipients = allRecipients.map((r) => ({ ...r, reply_count: replyCountMap[r.email] ?? 0 }));
   const total = recipients.length;
-  const sent = recipients.filter((r) => r.status === "sent").length;
+  const sent = recipients.filter((r) => r.sent_at !== null).length;
   const opened = recipients.filter((r) => r.opened_at).length;
   const clicked = recipients.filter((r) => r.clicked_at).length;
   const replied = recipients.filter((r) => r.replied_at || r.reply_count > 0).length;
