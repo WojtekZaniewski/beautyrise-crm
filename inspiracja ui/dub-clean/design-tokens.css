@@ -1,0 +1,325 @@
+/* ============================================================
+   DUB.CO — Design Tokens & Custom Animations
+   Wyekstrahowane bezpośrednio z dub.co/styles.css
+   Używaj tego jako reference w Claude Code
+   ============================================================ */
+
+/* ─── LIGHT MODE TOKENS ─────────────────────────────── */
+.light,
+:root {
+    --bg-default: 255 255 255;
+    --bg-muted: 250 250 250;
+    --bg-subtle: 245 245 245;
+    --bg-emphasis: 229 229 229;
+    --bg-inverted: 23 23 23;
+    --bg-info: 191 219 254;
+    --bg-success: 220 252 231;
+    --bg-attention: 255 237 213;
+    --bg-error: 254 226 226;
+    --border-emphasis: 163 163 163;
+    --border-default: 212 212 212;
+    --border-muted: 245 245 245;
+    --border-subtle: 229 229 229;
+    --content-inverted: 255 255 255;
+    --content-muted: 163 163 163;
+    --content-subtle: 115 115 115;
+    --content-default: 64 64 64;
+    --content-emphasis: 23 23 23;
+    --content-info: 29 78 216;
+    --content-success: 21 128 61;
+    --content-attention: 194 65 12;
+    --content-error: 185 28 28
+}
+
+/* ─── DARK MODE TOKENS ──────────────────────────────── */
+.dark {
+    --bg-default: 0 0 0;
+    --bg-muted: 23 23 23;
+    --bg-subtle: 38 38 38;
+    --bg-emphasis: 64 64 64;
+    --bg-inverted: 250 250 250;
+    --bg-info: 29 78 216;
+    --bg-success: 21 128 61;
+    --bg-attention: 194 65 12;
+    --bg-error: 185 28 28;
+    --border-muted: 38 38 38;
+    --border-subtle: 64 64 64;
+    --border-default: 82 82 82;
+    --border-emphasis: 115 115 115;
+    --content-inverted: 0 0 0;
+    --content-muted: 82 82 82;
+    --content-subtle: 163 163 163;
+    --content-default: 212 212 212;
+    --content-emphasis: 250 250 250;
+    --content-info: 191 219 254;
+    --content-success: 220 252 231;
+    --content-attention: 255 237 213;
+    --content-error: 254 226 226
+}
+
+/* ─── KEYFRAMES ─────────────────────────────────────── */
+@keyframes blink {
+    0% {
+        opacity: .2
+    }
+    20% {
+        opacity: 1
+    }
+    to {
+        opacity: .2
+    }
+}
+
+@keyframes infinite-scroll {
+    0% {
+        transform: translateX(0)
+    }
+    to {
+        transform: translateX(var(--scroll, -200%))
+    }
+}
+
+@keyframes infinite-scroll-y {
+    0% {
+        transform: translateY(0)
+    }
+    to {
+        transform: translateY(var(--scroll, -200%))
+    }
+}
+
+@keyframes offset-move {
+    0% {
+        offset-distance: var(--offset-start, 0)
+    }
+    to {
+        offset-distance: var(--offset-end, 100%)
+    }
+}
+
+@keyframes ping {
+    75%,
+    to {
+        transform: scale(2);
+        opacity: 0
+    }
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .5
+    }
+    0% {
+        opacity: 0
+    }
+    to {
+        opacity: 1
+    }
+}
+
+@keyframes pulse-in {
+    0% {
+        opacity: 0;
+        transform: scale(var(--from-scale, .5))
+    }
+    50% {
+        opacity: 1;
+        transform: scale(var(--to-scale, 1.05))
+    }
+    to {
+        transform: scale(1)
+    }
+}
+
+@keyframes scale-in {
+    0% {
+        transform: scale(var(--from-scale, .95))
+    }
+    to {
+        transform: scale(var(--to-scale, 1))
+    }
+}
+
+@keyframes scale-in-fade {
+    0% {
+        transform: scale(var(--from-scale, .95));
+        opacity: 0
+    }
+    to {
+        transform: scale(1);
+        opacity: 1
+    }
+}
+
+@keyframes slide-down-fade {
+    0% {
+        opacity: 0;
+        transform: translateY(var(--offset, -2px))
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes slide-left-fade {
+    0% {
+        opacity: 0;
+        transform: translateX(var(--offset, 2px))
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0)
+    }
+}
+
+@keyframes slide-up-fade {
+    0% {
+        opacity: 0;
+        transform: translateY(var(--offset, 2px))
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes spinner {
+    0% {
+        opacity: 1
+    }
+    to {
+        opacity: 0
+    }
+}
+
+@keyframes enter-from-right{0%{transform:translateX(200px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+@keyframes enter-from-left{0%{transform:translateX(-200px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+@keyframes exit-to-right{0%{transform:translateX(0);opacity:1}to{transform:translateX(200px);opacity:0}}
+
+@keyframes exit-to-left{0%{transform:translateX(0);opacity:1}to{transform:translateX(-200px);opacity:0}}
+
+@keyframes accordion-up{0%{height:var(--radix-accordion-content-height)}to{height:0;opacity:.5}}
+
+@keyframes collapsible-up{0%{height:var(--radix-collapsible-content-height)}to{height:0;opacity:0}}
+
+@keyframes dialog-out{0%{transform:scale(1) translate(-50%)}to{transform:scale(.95) translateY(-50%,0);opacity:0}}
+
+@keyframes popover-out{0%{opacity:1;transform:scale(1) translateY(0)}to{opacity:0;transform:scale(.95) translateY(-10px)}}
+
+@keyframes scale-out-content{0%{transform:rotateX(0deg) scale(1);opacity:1}to{transform:rotateX(-10deg) scale(.95);opacity:0}}
+
+@keyframes fade-out{to{opacity:0}}
+
+@keyframes accordion-down{0%{height:0;opacity:.5}to{height:var(--radix-accordion-content-height)}}
+
+@keyframes collapsible-down{0%{height:0;opacity:0}to{height:var(--radix-collapsible-content-height)}}
+
+@keyframes dialog-in{0%{transform:scale(.95) translate(-50%);opacity:0}to{transform:scale(1) translate(-50%)}}
+
+@keyframes fade-in{0%{opacity:0}to{opacity:1}}
+
+@keyframes popover-in{0%{opacity:0;transform:scale(.95) translateY(-10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+@keyframes scale-in-content{0%{transform:rotateX(-30deg) scale(.9);opacity:0}to{transform:rotateX(0deg) scale(1);opacity:1}}
+
+@keyframes infinite-scroll{0%{transform:translateX(0)}to{transform:translateX(var(--scroll,-200%))}}
+
+@keyframes infinite-scroll-y{0%{transform:translateY(0)}to{transform:translateY(var(--scroll,-200%))}}
+
+@keyframes fade-in{0%{opacity:0}to{opacity:1}}
+
+@keyframes sidebar-collapse{0%,to{top:0;height:100dvh;border-radius:none}}
+
+@keyframes spin{to{transform:rotate(1turn)}}
+
+/* ─── ANIMATE CLASSES ───────────────────────────────── */
+.animate-blink {
+    animation: blink 1.4s infinite both
+}
+
+.animate-fade-in {
+    animation: fade-in .2s ease-out forwards
+}
+
+.animate-infinite-scroll {
+    animation: infinite-scroll 20s linear infinite
+}
+
+.animate-infinite-scroll-y {
+    animation: infinite-scroll-y 20s linear infinite
+}
+
+.animate-none {
+    animation: none
+}
+
+.animate-offset-move {
+    animation: offset-move 10s linear infinite
+}
+
+.animate-ping {
+    animation: ping 1s cubic-bezier(0, 0, .2, 1) infinite
+}
+
+.animate-pulse {
+    animation: pulse 1s linear infinite alternate
+}
+
+.animate-pulse-in {
+    animation: pulse-in .5s ease-in-out
+}
+
+.animate-scale-in {
+    animation: scale-in .2s cubic-bezier(.16, 1, .3, 1)
+}
+
+.animate-scale-in-fade {
+    animation: scale-in-fade .2s ease-out forwards
+}
+
+.animate-slide-down-fade {
+    animation: slide-down-fade .4s cubic-bezier(.16, 1, .3, 1)
+}
+
+.animate-slide-left-fade {
+    animation: slide-left-fade .4s cubic-bezier(.16, 1, .3, 1)
+}
+
+.animate-slide-up-fade {
+    animation: slide-up-fade .4s cubic-bezier(.16, 1, .3, 1)
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite
+}
+
+.animate-spinner {
+    animation: spinner 1.2s linear infinite
+}
+
+/* ─── CUSTOM CLASSES ────────────────────────────────── */
+.animate-blink {
+    animation: blink 1.4s infinite both
+}
+
+.animate-spinner {
+    animation: spinner 1.2s linear infinite
+}
+
+.grid-section~.\[\.grid-section_\~_\&\]\:border-t-0,.grid-section~.\[\.grid-section_\~_\&_\>_div\]\:border-t-0>div{border-top-width:0}
+
+.cursor-alias {
+    cursor: alias
+}
+
+.cursor-col-resize {
+    cursor: col-resize
+}
+
+.cursor-copy {
+    cursor: copy
+}
+
