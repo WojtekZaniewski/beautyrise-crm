@@ -201,6 +201,13 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
     setRecipientPanel(null);
     setReplyText("");
     setReplySubject(`Re: ${selected.subject}`);
+    // Immediately hide the badge
+    setSelected(prev => prev ? {
+      ...prev,
+      email_outreach_recipients: prev.email_outreach_recipients.map(rec =>
+        rec.id === r.id ? { ...rec, reply_count: 0 } : rec
+      ),
+    } : prev);
     const res = await fetch(`/api/email/outreach/campaigns/${selected.id}/recipients/${r.id}/correspondence`);
     const data = await res.json();
     setRecipientPanel(data);

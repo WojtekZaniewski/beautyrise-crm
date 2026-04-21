@@ -45,6 +45,17 @@ export async function GET(
     .contains("participants", [recipient.email])
     .order("last_message_at", { ascending: false });
 
+  // Mark all inbound messages in these threads as read
+  const threadIds = (threads ?? []).map((t) => t.id);
+  if (threadIds.length > 0) {
+    await supabase
+      .from("email_thread_messages")
+      .update({ is_read: true })
+      .in("thread_id", threadIds)
+      .eq("direction", "inbound")
+      .eq("is_read", false);
+  }
+
   return NextResponse.json({
     recipient,
     campaign: {

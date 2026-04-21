@@ -59,6 +59,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
         .from("email_thread_messages")
         .select("from_email")
         .eq("direction", "inbound")
+        .eq("is_read", false)
         .in("thread_id", threadIds)
         .in("from_email", recipientEmails);
 
