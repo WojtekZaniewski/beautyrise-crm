@@ -119,6 +119,14 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   const [newForm, setNewForm] = useState({ name: "", subject: "", body_html: "", body_text: "", account_id: "" });
   const [recipientsText, setRecipientsText] = useState("");
   const [sending, setSending] = useState(false);
+  const [recipientPanel, setRecipientPanel] = useState<{
+    recipient: Recipient;
+    campaign: { id: string; account_id: string; subject: string; body_text: string; body_html: string };
+    threads: Thread[];
+  } | null>(null);
+  const [loadingPanel, setLoadingPanel] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -181,6 +189,40 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   };
 
   const recipientCount = recipientsText.split(/[\n,;]/).map(s => s.trim()).filter(Boolean).length;
+
+  const openRecipientPanel = async (r: Recipient) => {
+    if (!selected) return;
+    setLoadingPanel(true);
+    setRecipientPanel(null);
+    const res = await fetch(`/api/email/outreach/campaigns/${selected.id}/recipients/${r.id}/correspondence`);
+    const data = await res.json();
+    setRecipientPanel(data);
+    setLoadingPanel(false);
+  };
+
+  const sendFollowUp = async () => {
+    if (!recipientPanel || !replyText.trim() || !selected) return;
+    setSendingReply(true);
+    const { recipient, campaign, threads } = recipientPanel;
+    const existingThread = threads[0];
+    await fetch("/api/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        account_id: campaign.account_id,
+        to: recipient.email,
+        to_name: recipient.name ?? undefined,
+        subject: `Re: ${campaign.subject}`,
+        html: `<p>${replyText.replace(/\n/g, "<br>")}</p>`,
+        text: replyText,
+        thread_id: existingThread?.id ?? undefined,
+      }),
+    });
+    setReplyText("");
+    setSendingReply(false);
+    const res = await fetch(`/api/email/outreach/campaigns/${selected.id}/recipients/${recipient.id}/correspondence`);
+    setRecipientPanel(await res.json());
+  };
 
   return (
     <div className="flex gap-4 h-full min-h-0">
@@ -282,19 +324,27 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-xs text-[var(--muted)]" style={{ borderBottom: "1px solid var(--border)" }}>
-                        {["Email", "Imię", "Status", "Wysłano", "Otwarto"].map(h => (
+                        {["Email", "Imię", "Status", "Wysłano", "Otwarto", ""].map(h => (
                           <th key={h} className="text-left pb-2.5 pr-4 font-medium">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {selected.email_outreach_recipients.map(r => (
-                        <tr key={r.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                          <td className="py-2.5 pr-4">{r.email}</td>
+                        <tr key={r.id} className="cursor-pointer hover:bg-[var(--ba-4)] transition-colors"
+                          style={{ borderBottom: "1px solid var(--border)" }}
+                          onClick={() => openRecipientPanel(r)}>
+                          <td className="py-2.5 pr-4 font-medium">{r.email}</td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.name ?? "—"}</td>
                           <td className="py-2.5 pr-4"><StatusBadge status={r.status} /></td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.sent_at ? new Date(r.sent_at).toLocaleDateString("pl-PL") : "—"}</td>
-                          <td className="py-2.5 text-[var(--muted)]">{r.opened_at ? new Date(r.opened_at).toLocaleDateString("pl-PL") : "—"}</td>
+                          <td className="py-2.5 pr-4 text-[var(--muted)]">{r.opened_at ? new Date(r.opened_at).toLocaleDateString("pl-PL") : "—"}</td>
+                          <td className="py-2.5">
+                            <span className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
+                              style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                              Korespondencja →
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -345,6 +395,115 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
             </>
           )}
         </Modal>
+      )}
+
+      {/* Recipient correspondence drawer */}
+      {(loadingPanel || recipientPanel) && (
+        <div className="fixed inset-0 z-40 flex justify-end" onClick={e => e.target === e.currentTarget && setRecipientPanel(null)}>
+          <div className="w-full max-w-lg h-full flex flex-col shadow-2xl"
+            style={{ background: "var(--surface)", borderLeft: "1px solid var(--border)" }}>
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-5 py-4 shrink-0"
+              style={{ borderBottom: "1px solid var(--border)" }}>
+              <div className="min-w-0">
+                <div className="font-semibold truncate">
+                  {recipientPanel?.recipient.name
+                    ? `${recipientPanel.recipient.name} — ${recipientPanel.recipient.email}`
+                    : recipientPanel?.recipient.email ?? "Ładowanie…"}
+                </div>
+                {recipientPanel && (
+                  <div className="text-xs text-[var(--muted)] mt-0.5 flex items-center gap-2">
+                    <StatusBadge status={recipientPanel.recipient.status} />
+                    {recipientPanel.recipient.sent_at && (
+                      <span>Wysłano {new Date(recipientPanel.recipient.sent_at).toLocaleDateString("pl-PL")}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => { setRecipientPanel(null); setReplyText(""); }}
+                className="ml-4 shrink-0 text-[var(--muted)] hover:text-[var(--text)] transition-colors text-lg leading-none">✕</button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-auto p-5 flex flex-col gap-3">
+              {loadingPanel && !recipientPanel ? (
+                <div className="text-sm text-[var(--muted)]">Ładowanie korespondencji…</div>
+              ) : (
+                <>
+                  {/* Original campaign email */}
+                  <div className="rounded-xl p-4 text-sm"
+                    style={{ background: "var(--accent-subtle)", border: "1px solid rgba(255,76,0,0.18)" }}>
+                    <div className="flex justify-between items-center gap-4 mb-2">
+                      <span className="font-medium text-xs">
+                        {recipientPanel?.campaign.subject
+                          ? `📧 ${recipientPanel.campaign.subject}`
+                          : "Oryginalny email kampanii"}
+                      </span>
+                      {recipientPanel?.recipient.sent_at && (
+                        <span className="text-xs text-[var(--muted)] shrink-0">
+                          {new Date(recipientPanel.recipient.sent_at).toLocaleString("pl-PL")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--muted)] mb-1">Wysłano jako część kampanii</div>
+                    <div className="text-sm" style={{ whiteSpace: "pre-wrap", color: "var(--text)", lineHeight: 1.6 }}>
+                      {recipientPanel?.campaign.body_text
+                        || recipientPanel?.campaign.body_html?.replace(/<[^>]+>/g, "")
+                        || ""}
+                    </div>
+                  </div>
+
+                  {/* Thread messages */}
+                  {recipientPanel?.threads.length === 0 ? (
+                    <div className="text-xs text-center text-[var(--muted)] py-3">
+                      Brak odpowiedzi — zsynchronizuj skrzynkę w zakładce Kontakt aby zobaczyć replies
+                    </div>
+                  ) : (
+                    recipientPanel?.threads.flatMap(thread =>
+                      [...(thread.email_thread_messages ?? [])]
+                        .sort((a, b) => a.sent_at.localeCompare(b.sent_at))
+                        .map(msg => (
+                          <div key={msg.id}
+                            className={`rounded-xl p-4 text-sm ${msg.direction === "outbound" ? "ml-4" : "mr-4"}`}
+                            style={{
+                              background: msg.direction === "outbound" ? "var(--accent-subtle)" : "var(--ba-4)",
+                              border: `1px solid ${msg.direction === "outbound" ? "rgba(255,76,0,0.18)" : "var(--border)"}`,
+                            }}>
+                            <div className="flex justify-between items-center gap-4 mb-2">
+                              <span className="font-medium text-xs">
+                                {msg.direction === "outbound" ? "Ty" : (msg.from_name || msg.from_email)}
+                              </span>
+                              <span className="text-xs text-[var(--muted)] shrink-0">
+                                {new Date(msg.sent_at).toLocaleString("pl-PL")}
+                              </span>
+                            </div>
+                            <div style={{ whiteSpace: "pre-wrap", color: "var(--text)", lineHeight: 1.6 }}>
+                              {msg.body_text || msg.body_html?.replace(/<[^>]+>/g, "") || ""}
+                            </div>
+                          </div>
+                        ))
+                    )
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Reply box */}
+            <div className="p-4 shrink-0 flex gap-3 items-end"
+              style={{ borderTop: "1px solid var(--border)" }}>
+              <textarea rows={3} placeholder="Napisz odpowiedź… (Ctrl+Enter aby wysłać)"
+                value={replyText} onChange={e => setReplyText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendFollowUp(); } }}
+                className="flex-1 rounded-lg px-3 py-2.5 text-sm resize-none"
+                style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }} />
+              <button onClick={sendFollowUp} disabled={sendingReply || !replyText.trim()}
+                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 shrink-0"
+                style={{ background: "var(--accent)" }}>
+                {sendingReply ? "…" : "Wyślij"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Send modal */}
