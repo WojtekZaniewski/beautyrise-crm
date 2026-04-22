@@ -15,51 +15,79 @@ function formatDate(iso: string) {
 }
 
 export function LeadNotesPanel({
-  leadId,
-  leadName,
+  leadId: initialLeadId,
+  leadName: initialLeadName,
   initialCount,
+  fallbackEmail,
+  fallbackName,
 }: {
-  leadId: string;
-  leadName: string;
+  leadId?: string | null;
+  leadName?: string;
   initialCount?: number;
+  fallbackEmail?: string;
+  fallbackName?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [resolvedLeadId, setResolvedLeadId] = useState<string | null>(initialLeadId ?? null);
+  const [resolvedLeadName, setResolvedLeadName] = useState<string>(initialLeadName ?? fallbackName ?? fallbackEmail ?? "Lead");
+  const [resolving, setResolving] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/leads/${leadId}/notes`);
+  const load = useCallback(async (lid: string) => {
+    const res = await fetch(`/api/leads/${lid}/notes`);
     if (res.ok) {
       const data = await res.json();
       setNotes(data.notes ?? []);
     }
-  }, [leadId]);
+  }, []);
 
   useEffect(() => {
-    if (open) load();
-  }, [open, load]);
+    if (open && resolvedLeadId) load(resolvedLeadId);
+  }, [open, resolvedLeadId, load]);
+
+  async function handleOpen(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (resolvedLeadId) { setOpen(true); return; }
+    if (!fallbackEmail) return;
+    setResolving(true);
+    const res = await fetch("/api/leads/find-or-create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: fallbackEmail, name: fallbackName }),
+    });
+    if (res.ok) {
+      const lead = await res.json();
+      setResolvedLeadId(lead.id);
+      setResolvedLeadName(lead.full_name);
+    }
+    setResolving(false);
+    setOpen(true);
+  }
 
   async function addNote(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || !resolvedLeadId) return;
     setLoading(true);
-    const res = await fetch(`/api/leads/${leadId}/notes`, {
+    const res = await fetch(`/api/leads/${resolvedLeadId}/notes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
     if (res.ok) {
       setText("");
-      await load();
+      await load(resolvedLeadId);
     }
     setLoading(false);
   }
 
   async function deleteNote(eventId: string) {
+    if (!resolvedLeadId) return;
     setDeleting(eventId);
-    await fetch(`/api/leads/${leadId}/notes?eventId=${eventId}`, { method: "DELETE" });
+    await fetch(`/api/leads/${resolvedLeadId}/notes?eventId=${eventId}`, { method: "DELETE" });
     setNotes((prev) => prev.filter((n) => n.id !== eventId));
     setDeleting(null);
   }
@@ -69,8 +97,9 @@ export function LeadNotesPanel({
   return (
     <>
       <button
-        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setOpen(true); }}
+        onClick={handleOpen}
         onPointerDown={(e) => e.stopPropagation()}
+        disabled={resolving}
         title="Notatki"
         style={{
           display: "inline-flex",
@@ -95,13 +124,15 @@ export function LeadNotesPanel({
           (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
         }}
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-          <polyline points="10 9 9 9 8 9" />
-        </svg>
+        {resolving ? "…" : (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+        )}
         {count > 0 && (
           <span style={{
             background: "var(--accent)",
@@ -158,7 +189,7 @@ export function LeadNotesPanel({
                   Notatki
                 </div>
                 <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "2px" }}>
-                  {leadName}
+                  {resolvedLeadName}
                 </div>
               </div>
               <button

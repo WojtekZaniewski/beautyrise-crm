@@ -380,11 +380,12 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.sent_at ? new Date(r.sent_at).toLocaleDateString("pl-PL") : "—"}</td>
                           <td className="py-2.5 pr-4 text-[var(--muted)]">{r.opened_at ? new Date(r.opened_at).toLocaleDateString("pl-PL") : "—"}</td>
                           <td className="py-2.5 pr-4" onClick={e => e.stopPropagation()}>
-                            {r.lead_id ? (
-                              <LeadNotesPanel leadId={r.lead_id} leadName={r.name ?? r.email} />
-                            ) : (
-                              <span style={{ color: "var(--muted)", fontSize: 12 }}>—</span>
-                            )}
+                            <LeadNotesPanel
+                              leadId={r.lead_id}
+                              leadName={r.name ?? r.email}
+                              fallbackEmail={r.email}
+                              fallbackName={r.name ?? undefined}
+                            />
                           </td>
                           <td className="py-2.5">
                             <span className="text-xs px-2.5 py-1 rounded-lg font-medium transition-colors"
