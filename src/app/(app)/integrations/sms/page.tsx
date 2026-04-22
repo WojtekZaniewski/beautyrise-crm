@@ -857,11 +857,13 @@ function KorespondencjaTab({ configured }: { configured: boolean }) {
                     )}
                   </div>
                 </div>
-                {selectedConv.lead_id && (
-                  <div onClick={e => e.stopPropagation()}>
-                    <LeadNotesPanel leadId={selectedConv.lead_id} leadName={selectedConv.leads?.full_name ?? selectedConv.phone} />
-                  </div>
-                )}
+                <div onClick={e => e.stopPropagation()}>
+                  <LeadNotesPanel
+                    leadId={selectedConv.lead_id ?? undefined}
+                    leadName={selectedConv.leads?.full_name ?? selectedConv.phone}
+                    fallbackName={selectedConv.leads?.full_name ?? selectedConv.phone}
+                  />
+                </div>
               </div>
 
               {/* Messages */}
@@ -968,7 +970,7 @@ function HistoryTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-[var(--muted)]" style={{ borderBottom: "1px solid var(--border)" }}>
-                    {["Odbiorca", "Lead", "Treść", "Status", "Data"].map(h => <th key={h} className="text-left px-5 py-3 font-medium">{h}</th>)}
+                    {["Odbiorca", "Lead", "Treść", "Status", "Data", ""].map(h => <th key={h} className="text-left px-5 py-3 font-medium">{h}</th>)}
                   </tr>
                 </thead>
                 <tbody>
@@ -979,6 +981,13 @@ function HistoryTab() {
                       <td className="px-5 py-3 max-w-xs"><span className="line-clamp-2 text-xs text-[var(--muted)]">{m.body}</span></td>
                       <td className="px-5 py-3"><StatusBadge status={m.status} /></td>
                       <td className="px-5 py-3 text-xs text-[var(--muted)] whitespace-nowrap">{new Date(m.sent_at ?? m.created_at).toLocaleString("pl-PL")}</td>
+                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                        <LeadNotesPanel
+                          leadId={m.lead_id ?? undefined}
+                          leadName={m.leads?.full_name ?? m.to}
+                          fallbackName={m.leads?.full_name ?? m.to}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
