@@ -6,12 +6,11 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
 
-  const { to, message, lead_id } = await req.json();
+  const { to, message, lead_id, campaign_id } = await req.json();
   if (!to?.trim() || !message?.trim()) {
     return NextResponse.json({ error: "Brak numeru lub treści" }, { status: 400 });
   }
 
-  // Fetch API key
   const { data: integration } = await supabase
     .from("integrations")
     .select("credentials, status")
@@ -23,11 +22,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "SMS nie skonfigurowany" }, { status: 400 });
   }
 
-  const creds = integration.credentials as Record<string, string>;
-  const apikey = creds?.apikey;
+  const apikey = (integration.credentials as Record<string, string>)?.apikey;
   if (!apikey) return NextResponse.json({ error: "Brak API Key" }, { status: 400 });
 
-  // Send via SMSMobileAPI
   const params = new URLSearchParams({
     apikey,
     recipients: to.trim(),
@@ -53,7 +50,28 @@ export async function POST(req: NextRequest) {
     status = "failed";
   }
 
-  // Save to sms_messages
+  // Upsert conversation (only on success)
+  let conversationId: string | null = null;
+  if (status === "sent") {
+    const now = new Date().toISOString();
+    const { data: conv } = await supabase
+      .from("sms_conversations")
+      .upsert(
+        {
+          workspace_id: workspaceId,
+          phone: to.trim(),
+          lead_id: lead_id ?? null,
+          campaign_id: campaign_id ?? null,
+          last_message_at: now,
+          last_message_preview: message.trim().slice(0, 120),
+        },
+        { onConflict: "workspace_id,phone" },
+      )
+      .select("id")
+      .single();
+    conversationId = conv?.id ?? null;
+  }
+
   const { data: msg } = await supabase
     .from("sms_messages")
     .insert({
@@ -62,13 +80,15 @@ export async function POST(req: NextRequest) {
       to: to.trim(),
       body: message.trim(),
       status,
+      direction: "outbound",
+      campaign_id: campaign_id ?? null,
+      conversation_id: conversationId,
       external_id: externalId,
       sent_at: status === "sent" ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
 
-  // Log event on lead timeline
   if (lead_id && status === "sent") {
     await supabase.from("lead_events").insert({
       lead_id,
@@ -81,5 +101,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Nie udało się wysłać SMS" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id: msg?.id });
+  return NextResponse.json({ ok: true, id: msg?.id, conversation_id: conversationId });
 }

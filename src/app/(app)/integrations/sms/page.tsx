@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -309,17 +310,40 @@ function CampaignTab({ configured }: { configured: boolean }) {
     if (!recipients.length || !template.trim()) return;
     setSending(true); setDone(false); stopRef.current = false;
     setProgress({ done: 0, total: recipients.length, failed: 0 });
+
+    // Create campaign record with recipients upfront
+    const campaignRes = await fetch("/api/sms/campaigns", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `Kampania SMS ${new Date().toLocaleDateString("pl-PL")}`,
+        template,
+        recipients: recipients.map(r => ({ phone: r.phone, name: r.name, lead_id: r.lead_id, message_body: applyTemplate(template, r) })),
+      }),
+    });
+    const campaignData = campaignRes.ok ? await campaignRes.json() : {};
+    const campaignId: string | null = campaignData.id ?? null;
+
     let failed = 0;
     for (let i = 0; i < recipients.length; i++) {
       if (stopRef.current) break;
       const r = recipients[i];
       const message = applyTemplate(template, r);
       try {
-        const res = await fetch("/api/sms/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: r.phone, message, lead_id: r.lead_id }) });
+        const res = await fetch("/api/sms/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: r.phone, message, lead_id: r.lead_id, campaign_id: campaignId }) });
         if (!res.ok) failed++;
       } catch { failed++; }
       setProgress({ done: i + 1, total: recipients.length, failed });
     }
+
+    if (campaignId) {
+      await fetch(`/api/sms/campaigns/${campaignId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "sent", total_sent: recipients.length - failed }),
+      });
+    }
+
     setSending(false); setDone(true);
   };
 
@@ -553,6 +577,365 @@ function CampaignTab({ configured }: { configured: boolean }) {
   );
 }
 
+// ─── Korespondencja Tab ───────────────────────────────────────────────────────
+
+function getWorkspaceIdFromCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)current_workspace_id=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+type SmsCampaign = { id: string; name: string; status: string; total_sent: number; created_at: string };
+type SmsConversation = {
+  id: string; phone: string; last_message_at: string; last_message_preview: string | null;
+  unread_count: number; lead_id: string | null; campaign_id: string | null;
+  leads?: { full_name: string } | null;
+  sms_campaigns?: { name: string } | null;
+};
+type SmsThreadMsg = { id: string; direction: "inbound" | "outbound"; body: string; status: string; created_at: string; sent_at: string | null };
+
+function KorespondencjaTab({ configured }: { configured: boolean }) {
+  const supabase = createClient();
+  const [campaigns, setCampaigns] = useState<SmsCampaign[]>([]);
+  const [filterCampaignId, setFilterCampaignId] = useState<string>("all");
+  const [conversations, setConversations] = useState<SmsConversation[]>([]);
+  const [convLoading, setConvLoading] = useState(true);
+  const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<SmsThreadMsg[]>([]);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [replySending, setReplySending] = useState(false);
+  const [replyError, setReplyError] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const selectedConv = conversations.find(c => c.id === selectedConvId) ?? null;
+
+  // Load campaigns
+  useEffect(() => {
+    fetch("/api/sms/campaigns").then(r => r.json()).then(d => setCampaigns(Array.isArray(d) ? d : []));
+  }, []);
+
+  // Load conversations
+  const loadConversations = useCallback(async () => {
+    setConvLoading(true);
+    const url = filterCampaignId !== "all"
+      ? `/api/sms/conversations?campaign_id=${filterCampaignId}`
+      : "/api/sms/conversations";
+    const data = await fetch(url).then(r => r.json());
+    setConversations(Array.isArray(data) ? data : []);
+    setConvLoading(false);
+  }, [filterCampaignId]);
+
+  useEffect(() => { loadConversations(); }, [loadConversations]);
+
+  // Realtime subscription to sms_conversations
+  useEffect(() => {
+    const workspaceId = getWorkspaceIdFromCookie();
+    if (!workspaceId) return;
+
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const channel = supabase
+      .channel(`sms_convs:${workspaceId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "sms_conversations",
+        filter: `workspace_id=eq.${workspaceId}`,
+      }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          const conv = payload.new as SmsConversation;
+          setConversations(prev => {
+            if (prev.some(c => c.id === conv.id)) return prev;
+            return [conv, ...prev];
+          });
+          if (conv.unread_count > 0 && Notification.permission === "granted" && document.visibilityState !== "visible") {
+            new Notification(conv.leads?.full_name ?? conv.phone, {
+              body: conv.last_message_preview ?? "Nowa wiadomość SMS",
+              icon: "/favicon.ico",
+            });
+          }
+        } else if (payload.eventType === "UPDATE") {
+          const updated = payload.new as SmsConversation;
+          setConversations(prev =>
+            [...prev.map(c => c.id === updated.id ? { ...c, ...updated } : c)]
+              .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()),
+          );
+          if (updated.unread_count > 0 && updated.id !== selectedConvId && Notification.permission === "granted" && document.visibilityState !== "visible") {
+            new Notification(updated.leads?.full_name ?? updated.phone, {
+              body: updated.last_message_preview ?? "Nowa wiadomość SMS",
+              icon: "/favicon.ico",
+            });
+          }
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, selectedConvId]);
+
+  // Load messages for selected conversation + realtime
+  useEffect(() => {
+    if (!selectedConvId) { setMessages([]); return; }
+    setMsgLoading(true);
+    fetch(`/api/sms/conversations/${selectedConvId}/messages`)
+      .then(r => r.json())
+      .then(d => { setMessages(Array.isArray(d) ? d : []); setMsgLoading(false); });
+
+    // Mark conversation as read locally
+    setConversations(prev => prev.map(c => c.id === selectedConvId ? { ...c, unread_count: 0 } : c));
+  }, [selectedConvId]);
+
+  // Realtime for messages in open conversation
+  useEffect(() => {
+    if (!selectedConvId) return;
+
+    const channel = supabase
+      .channel(`sms_msgs:${selectedConvId}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "sms_messages",
+        filter: `conversation_id=eq.${selectedConvId}`,
+      }, (payload) => {
+        const msg = payload.new as SmsThreadMsg;
+        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, selectedConvId]);
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !selectedConvId || replySending) return;
+    setReplySending(true); setReplyError("");
+
+    const optimisticId = `opt-${Date.now()}`;
+    const optimistic: SmsThreadMsg = { id: optimisticId, direction: "outbound", body: replyText.trim(), status: "sent", created_at: new Date().toISOString(), sent_at: new Date().toISOString() };
+    setMessages(prev => [...prev, optimistic]);
+    const textToSend = replyText.trim();
+    setReplyText("");
+
+    const res = await fetch(`/api/sms/conversations/${selectedConvId}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: textToSend }),
+    });
+
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setReplyError((d as { error?: string }).error ?? "Błąd wysyłania");
+      setMessages(prev => prev.filter(m => m.id !== optimisticId));
+    } else {
+      setTimeout(() => setMessages(prev => prev.filter(m => !m.id.startsWith("opt-"))), 1200);
+    }
+    setReplySending(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleReply(e as unknown as React.FormEvent); }
+  };
+
+  if (!configured) return (
+    <div className="max-w-2xl">
+      <Panel className="p-8 text-center flex flex-col items-center gap-3">
+        <p className="text-sm text-[var(--muted)]">Najpierw skonfiguruj bramkę SMS w zakładce <strong>Konfiguracja</strong>.</p>
+      </Panel>
+    </div>
+  );
+
+  const panelBorder = "1px solid var(--border)";
+  const totalUnread = conversations.reduce((s, c) => s + (c.unread_count ?? 0), 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Campaign filter */}
+      <div className="flex items-center gap-3">
+        <label className="text-xs text-[var(--muted)] shrink-0">Kampania:</label>
+        <select
+          value={filterCampaignId}
+          onChange={e => { setFilterCampaignId(e.target.value); setSelectedConvId(null); }}
+          className="text-sm rounded-lg px-3 py-2"
+          style={{ background: "var(--ba-4)", border: panelBorder, color: "var(--text)", outline: "none" }}
+        >
+          <option value="all">Wszystkie kampanie</option>
+          {campaigns.map(c => (
+            <option key={c.id} value={c.id}>{c.name} ({c.total_sent} wys.)</option>
+          ))}
+        </select>
+        {totalUnread > 0 && (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--accent)", color: "#fff" }}>
+            {totalUnread} nieprzeczytanych
+          </span>
+        )}
+        <button onClick={loadConversations} className="ml-auto text-xs px-3 py-1.5 rounded-lg" style={{ background: "var(--ba-4)", border: panelBorder, color: "var(--muted)" }}>↻</button>
+      </div>
+
+      {/* Main split panel */}
+      <div className="flex gap-4" style={{ height: "560px" }}>
+
+        {/* Left: conversation list */}
+        <Panel className="flex flex-col w-72 shrink-0 overflow-hidden">
+          <div className="px-4 py-3 text-xs font-medium shrink-0" style={{ borderBottom: panelBorder, color: "var(--muted)" }}>
+            Konwersacje ({conversations.length})
+          </div>
+          {convLoading ? (
+            <div className="p-4 text-sm text-[var(--muted)]">Ładowanie…</div>
+          ) : conversations.length === 0 ? (
+            <div className="p-6 text-center text-sm text-[var(--muted)]">
+              Brak konwersacji.<br />
+              <span className="text-xs">Odpowiedzi pojawią się tu po skonfigurowaniu webhooka.</span>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              {conversations.map(conv => (
+                <button
+                  key={conv.id}
+                  onClick={() => setSelectedConvId(conv.id)}
+                  className="w-full text-left px-4 py-3 transition-colors flex flex-col gap-0.5"
+                  style={{
+                    borderBottom: panelBorder,
+                    background: selectedConvId === conv.id ? "var(--ba-4)" : "transparent",
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium truncate">
+                      {conv.leads?.full_name ?? conv.phone}
+                    </span>
+                    {conv.unread_count > 0 && (
+                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "var(--accent)", color: "#fff" }}>{conv.unread_count}</span>
+                    )}
+                  </div>
+                  {conv.leads?.full_name && (
+                    <span className="text-xs font-mono" style={{ color: "var(--muted)" }}>{conv.phone}</span>
+                  )}
+                  <span className="text-xs truncate" style={{ color: "var(--muted)" }}>
+                    {conv.last_message_preview ?? "—"}
+                  </span>
+                  <div className="flex items-center justify-between mt-0.5">
+                    {conv.sms_campaigns?.name && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                        {conv.sms_campaigns.name}
+                      </span>
+                    )}
+                    <span className="text-[10px] ml-auto" style={{ color: "var(--muted)" }}>
+                      {new Date(conv.last_message_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        {/* Right: chat window */}
+        <Panel className="flex flex-col flex-1 overflow-hidden">
+          {!selectedConv ? (
+            <div className="flex-1 flex items-center justify-center text-sm text-[var(--muted)]">
+              Wybierz konwersację z listy
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="flex items-center gap-3 px-5 py-3 shrink-0" style={{ borderBottom: panelBorder }}>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{selectedConv.leads?.full_name ?? selectedConv.phone}</div>
+                  <div className="text-xs flex items-center gap-2" style={{ color: "var(--muted)" }}>
+                    {selectedConv.leads?.full_name && <span className="font-mono">{selectedConv.phone}</span>}
+                    {selectedConv.sms_campaigns?.name && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+                        {selectedConv.sms_campaigns.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {selectedConv.lead_id && (
+                  <div onClick={e => e.stopPropagation()}>
+                    <LeadNotesPanel leadId={selectedConv.lead_id} leadName={selectedConv.leads?.full_name ?? selectedConv.phone} />
+                  </div>
+                )}
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5">
+                {msgLoading ? (
+                  <div className="text-center text-sm text-[var(--muted)] pt-8">Ładowanie…</div>
+                ) : messages.length === 0 ? (
+                  <div className="text-center text-xs text-[var(--muted)] pt-8">Brak wiadomości w tej konwersacji.</div>
+                ) : messages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.direction === "outbound" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className="max-w-[72%] px-4 py-2.5 rounded-2xl text-[13px] leading-[1.5]"
+                      style={msg.direction === "outbound"
+                        ? { background: "var(--accent)", color: "#fff", borderBottomRightRadius: "4px", opacity: msg.id.startsWith("opt-") ? 0.6 : 1 }
+                        : { background: "var(--panel-solid)", border: panelBorder, color: "var(--text)", borderBottomLeftRadius: "4px" }}
+                    >
+                      <p className="break-words">{msg.body}</p>
+                      <div className="text-[10.5px] mt-1 text-right" style={{ opacity: 0.55 }}>
+                        {new Date(msg.sent_at ?? msg.created_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={bottomRef} />
+              </div>
+
+              {/* Error */}
+              {replyError && (
+                <div className="px-5 py-2 text-xs shrink-0" style={{ background: "rgba(220,38,38,0.06)", color: "var(--danger)", borderTop: "1px solid rgba(220,38,38,0.15)" }}>
+                  {replyError}
+                  <button className="ml-2 underline opacity-70" onClick={() => setReplyError("")}>Zamknij</button>
+                </div>
+              )}
+
+              {/* Reply form */}
+              <form onSubmit={handleReply} className="flex items-end gap-2.5 px-5 py-3.5 shrink-0" style={{ borderTop: panelBorder, background: "var(--surface)" }}>
+                <textarea
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Napisz wiadomość… (Enter = wyślij)"
+                  rows={2}
+                  className="flex-1 rounded-lg px-3 py-2 text-[13px] outline-none resize-none"
+                  style={{ background: "var(--ba-4)", border: panelBorder, color: "var(--text)" }}
+                  disabled={replySending}
+                />
+                <button
+                  type="submit"
+                  disabled={replySending || !replyText.trim()}
+                  className="btn-primary px-4 py-2 rounded-lg text-[13px] font-medium shrink-0 disabled:opacity-40"
+                >
+                  {replySending ? "…" : "Wyślij"}
+                </button>
+              </form>
+            </>
+          )}
+        </Panel>
+      </div>
+
+      {/* Webhook info */}
+      <Panel className="p-4">
+        <div className="text-xs font-medium mb-1">Konfiguracja odbierania odpowiedzi</div>
+        <p className="text-xs text-[var(--muted)]">
+          Ustaw webhook w panelu SMSMobileAPI → <span className="font-mono">Webhook URL</span>:
+        </p>
+        <div className="mt-2 px-3 py-2 rounded-lg font-mono text-xs select-all" style={{ background: "var(--ba-4)", border: panelBorder, color: "var(--text)", wordBreak: "break-all" }}>
+          {typeof window !== "undefined" ? `${window.location.origin}/api/webhooks/sms` : "/api/webhooks/sms"}
+        </div>
+        <p className="text-xs mt-2 text-[var(--muted)]">Parametry: <code>watoken</code> (API Key), <code>number</code> (telefon nadawcy), <code>message</code> (treść).</p>
+      </Panel>
+    </div>
+  );
+}
+
 // ─── History Tab ──────────────────────────────────────────────────────────────
 
 interface SmsMessage { id: string; to: string; body: string; status: string; sent_at: string | null; created_at: string; lead_id: string | null; leads?: { full_name: string } | null; }
@@ -609,12 +992,13 @@ function HistoryTab() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type TabId = "config" | "send" | "campaign" | "history";
+type TabId = "config" | "send" | "campaign" | "korespondencja" | "history";
 const TABS: { id: TabId; label: string }[] = [
-  { id: "config",   label: "Konfiguracja" },
-  { id: "send",     label: "Wyślij SMS" },
-  { id: "campaign", label: "Kampania SMS" },
-  { id: "history",  label: "Historia" },
+  { id: "config",          label: "Konfiguracja" },
+  { id: "send",            label: "Wyślij SMS" },
+  { id: "campaign",        label: "Kampania SMS" },
+  { id: "korespondencja",  label: "Korespondencja" },
+  { id: "history",         label: "Historia" },
 ];
 
 export default function SmsIntegrationPage() {
@@ -653,10 +1037,11 @@ export default function SmsIntegrationPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-8 py-6" style={{ borderTop: "1px solid var(--border)" }}>
-        {tab === "config"   && <ConfigTab onChanged={refreshConfig} />}
-        {tab === "send"     && <SendTab configured={configured} />}
-        {tab === "campaign" && <CampaignTab configured={configured} />}
-        {tab === "history"  && <HistoryTab />}
+        {tab === "config"         && <ConfigTab onChanged={refreshConfig} />}
+        {tab === "send"           && <SendTab configured={configured} />}
+        {tab === "campaign"       && <CampaignTab configured={configured} />}
+        {tab === "korespondencja" && <KorespondencjaTab configured={configured} />}
+        {tab === "history"        && <HistoryTab />}
       </div>
     </div>
   );
