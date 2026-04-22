@@ -30,8 +30,9 @@ export async function POST(req: NextRequest) {
   // Send via SMSMobileAPI
   const params = new URLSearchParams({
     apikey,
-    waphone: to.trim(),
+    recipients: to.trim(),
     message: message.trim(),
+    sendsms: "1",
   });
 
   let externalId: string | null = null;
