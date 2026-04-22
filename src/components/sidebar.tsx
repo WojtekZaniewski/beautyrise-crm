@@ -98,6 +98,12 @@ const Icons = {
       />
     </svg>
   ),
+  journal: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <rect x="2.5" y="1.5" width="10" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M5 5h5M5 7.5h5M5 10h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity=".6" />
+    </svg>
+  ),
   teamChat: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <circle cx="5" cy="5" r="2.2" stroke="currentColor" strokeWidth="1.3" />
@@ -121,6 +127,7 @@ const primary = [
   { href: "/campaigns", label: "Kampanie", icon: Icons.campaigns },
   { href: "/messages", label: "Wiadomości", icon: Icons.messages, isMessages: true },
   { href: "/team-chat", label: "Czat zespołu", icon: Icons.teamChat },
+  { href: "/journal", label: "Dziennik", icon: Icons.journal },
 ];
 
 const integrationsNav = [

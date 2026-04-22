@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
 import Link from "next/link";
+import { JournalWidget } from "@/components/dashboard/journal-widget";
 
 function fmt(n: number | null | undefined, decimals = 0) {
   if (n == null || isNaN(n)) return "—";
@@ -179,9 +180,13 @@ export default async function Dashboard() {
         ))}
       </div>
 
+      {/* Main 2-col grid: left = pipeline + campaigns, right = journal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="lg:col-span-2 flex flex-col gap-5">
+
       {/* Pipeline */}
       <section
-        className="rounded-lg p-5 mb-5"
+        className="rounded-lg p-5"
         style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
       >
         <div className="flex items-center justify-between mb-4">
@@ -331,6 +336,15 @@ export default async function Dashboard() {
           </>
         )}
       </section>
+
+      </div>{/* end left col */}
+
+      {/* Right column — Journal */}
+      <div className="lg:col-span-1">
+        <JournalWidget />
+      </div>
+
+      </div>{/* end grid */}
     </div>
   );
 }
