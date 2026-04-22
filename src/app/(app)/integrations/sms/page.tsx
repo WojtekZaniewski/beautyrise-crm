@@ -454,8 +454,21 @@ function CampaignTab({ configured }: { configured: boolean }) {
             </label>
             {csvRecipients.length > 0 && (
               <div className="rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                <div className="px-4 py-2 text-xs font-medium" style={{ background: "var(--ba-4)", borderBottom: "1px solid var(--border)", color: "var(--muted)" }}>
-                  Wczytano {csvRecipients.length} odbiorców — podgląd (pierwsze 5):
+                <div className="flex items-center justify-between px-4 py-2" style={{ background: "var(--ba-4)", borderBottom: "1px solid var(--border)" }}>
+                  <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>
+                    Wczytano {csvRecipients.length} odbiorców — podgląd (pierwsze 5):
+                  </span>
+                  <button
+                    onClick={() => { setCsvRecipients([]); setCsvFileName(""); }}
+                    className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded transition-colors hover:bg-red-50"
+                    style={{ color: "#dc2626" }}
+                    title="Usuń listę"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
+                    </svg>
+                    Usuń listę
+                  </button>
                 </div>
                 {csvRecipients.slice(0, 5).map((r, i) => (
                   <div key={i} className="flex items-center gap-4 px-4 py-2 text-sm" style={{ borderBottom: i < Math.min(csvRecipients.length, 5) - 1 ? "1px solid var(--border)" : undefined }}>
