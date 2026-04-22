@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -473,8 +474,16 @@ function CampaignTab({ configured }: { configured: boolean }) {
                 {csvRecipients.slice(0, 5).map((r, i) => (
                   <div key={i} className="flex items-center gap-4 px-4 py-2 text-sm" style={{ borderBottom: i < Math.min(csvRecipients.length, 5) - 1 ? "1px solid var(--border)" : undefined }}>
                     <span className="font-mono text-xs shrink-0">{r.phone}</span>
-                    <span className="truncate">{r.name || <span style={{ color: "var(--muted)" }}>—</span>}</span>
+                    <span className="truncate flex-1">{r.name || <span style={{ color: "var(--muted)" }}>—</span>}</span>
                     <span className="text-xs truncate" style={{ color: "var(--muted)" }}>{r.email || "—"}</span>
+                    <div onClick={e => e.stopPropagation()} className="shrink-0">
+                      <LeadNotesPanel
+                        leadId={r.lead_id}
+                        leadName={r.name || r.phone}
+                        fallbackEmail={r.email || undefined}
+                        fallbackName={r.name || r.phone}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
