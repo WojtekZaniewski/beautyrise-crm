@@ -542,7 +542,8 @@ function HistoryTab() {
   const load = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/sms/messages");
-    setMessages(Array.isArray(await res.json()) ? await res.clone().json() : []);
+    const data = await res.json();
+    setMessages(Array.isArray(data) ? data : []);
     setLoading(false);
   }, []);
 
