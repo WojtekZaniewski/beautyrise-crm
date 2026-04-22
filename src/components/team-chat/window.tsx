@@ -113,14 +113,20 @@ export function TeamChatWindow({
         body: JSON.stringify({ text: trimmed }),
       });
 
+      const data = await res.json().catch(() => ({} as { error?: string; message?: TeamMessage }));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: "Błąd wysyłania" }));
         setError((data as { error?: string }).error ?? "Błąd wysyłania");
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       } else {
-        setTimeout(() => {
-          setMessages((prev) => prev.filter((m) => !m.id.startsWith("opt-")));
-        }, 1200);
+        const saved = (data as { message?: TeamMessage }).message;
+        if (saved) {
+          setMessages((prev) => {
+            const withoutOptimistic = prev.filter((m) => m.id !== optimisticId);
+            if (withoutOptimistic.some((m) => m.id === saved.id)) return withoutOptimistic;
+            return [...withoutOptimistic, saved];
+          });
+        }
       }
       setSending(false);
     },
