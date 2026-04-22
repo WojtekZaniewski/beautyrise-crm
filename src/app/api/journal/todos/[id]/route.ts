@@ -5,7 +5,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = (await request.json()) as { completed?: boolean; text?: string };
+    const body = (await request.json()) as { completed?: boolean; waiting?: boolean; text?: string };
 
     const userClient = await createClient();
     const { data: { user } } = await userClient.auth.getUser();
@@ -15,11 +15,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const supabase = createServiceClient();
 
     const updates: Record<string, unknown> = {};
+
+    if (body.text !== undefined) updates.text = body.text.trim();
+
     if (body.completed !== undefined) {
       updates.completed = body.completed;
       updates.completed_at = body.completed ? new Date().toISOString() : null;
+      if (body.completed) updates.waiting = false;
     }
-    if (body.text !== undefined) updates.text = body.text.trim();
+
+    if (body.waiting !== undefined) {
+      updates.waiting = body.waiting;
+      if (body.waiting) {
+        updates.completed = false;
+        updates.completed_at = null;
+      }
+    }
 
     const { data, error } = await supabase
       .from("todo_items")
@@ -27,7 +38,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .eq("id", id)
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
-      .select("id, text, completed, completed_at")
+      .select("id, text, completed, waiting, completed_at")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

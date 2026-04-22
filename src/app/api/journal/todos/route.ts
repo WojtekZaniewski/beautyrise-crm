@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
     const { data } = await supabase
       .from("todo_items")
-      .select("id, text, completed, completed_at, created_at")
+      .select("id, text, completed, waiting, completed_at, created_at")
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
       .eq("date", date)
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from("todo_items")
       .insert({ workspace_id: workspaceId, user_id: user.id, date, text: text.trim() })
-      .select("id, text, completed, completed_at, created_at")
+      .select("id, text, completed, waiting, completed_at, created_at")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

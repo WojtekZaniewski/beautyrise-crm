@@ -14,26 +14,25 @@ export default async function JournalPage() {
   const [{ data: notes }, { data: todos }] = await Promise.all([
     supabase
       .from("journal_notes")
-      .select("id, date, content, confirmed, confirmed_at, created_at")
+      .select("id, date, content, created_at")
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
       .gte("date", since)
       .order("created_at", { ascending: true }),
     supabase
       .from("todo_items")
-      .select("id, date, text, completed, completed_at")
+      .select("id, date, text, completed, waiting, completed_at")
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
       .gte("date", since)
       .order("created_at", { ascending: true }),
   ]);
 
-  type NoteRow = { id: string; date: string; content: string; confirmed: boolean; confirmed_at: string | null; created_at: string };
-  type TodoRow = { id: string; date: string; text: string; completed: boolean; completed_at: string | null };
+  type NoteRow = { id: string; date: string; content: string; created_at: string };
+  type TodoRow = { id: string; date: string; text: string; completed: boolean; waiting: boolean; completed_at: string | null };
   type DayEntry = { date: string; notes: NoteRow[]; todos: TodoRow[] };
 
   const map = new Map<string, DayEntry>();
-
   for (const n of (notes ?? []) as NoteRow[]) {
     if (!map.has(n.date)) map.set(n.date, { date: n.date, notes: [], todos: [] });
     map.get(n.date)!.notes.push(n);
@@ -50,7 +49,7 @@ export default async function JournalPage() {
       <div className="heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
         <h1 className="text-2xl font-semibold mb-1">Dziennik</h1>
         <p className="text-sm" style={{ color: "var(--muted)" }}>
-          Historia notatek i zadań z ostatnich 90 dni.
+          Archiwum notatek i zadań z ostatnich 90 dni.
         </p>
       </div>
       <JournalClient initialDays={days} />
