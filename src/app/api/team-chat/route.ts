@@ -22,20 +22,6 @@ export async function POST(request: Request) {
     const supabase = createServiceClient();
     const workspaceId = await getCurrentWorkspaceId();
 
-    const { data: member } = await supabase
-      .from("workspace_members")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!member) {
-      return NextResponse.json(
-        { error: "Brak dostępu do tego workspace'u" },
-        { status: 403 },
-      );
-    }
-
     const displayName =
       (user.user_metadata as { full_name?: string; name?: string } | null)?.full_name ??
       (user.user_metadata as { full_name?: string; name?: string } | null)?.name ??
