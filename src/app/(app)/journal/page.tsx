@@ -14,11 +14,11 @@ export default async function JournalPage() {
   const [{ data: notes }, { data: todos }] = await Promise.all([
     supabase
       .from("journal_notes")
-      .select("date, content, confirmed, confirmed_at")
+      .select("id, date, content, confirmed, confirmed_at, created_at")
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
       .gte("date", since)
-      .order("date", { ascending: false }),
+      .order("created_at", { ascending: true }),
     supabase
       .from("todo_items")
       .select("id, date, text, completed, completed_at")
@@ -28,17 +28,19 @@ export default async function JournalPage() {
       .order("created_at", { ascending: true }),
   ]);
 
-  // Group by date
-  const map = new Map<string, { date: string; content: string; confirmed: boolean; confirmed_at: string | null; todos: typeof todos }>();
-  for (const n of notes ?? []) {
-    if (!map.has(n.date)) map.set(n.date, { date: n.date, content: "", confirmed: false, confirmed_at: null, todos: [] });
-    map.get(n.date)!.content = n.content;
-    map.get(n.date)!.confirmed = (n as { confirmed?: boolean }).confirmed ?? false;
-    map.get(n.date)!.confirmed_at = (n as { confirmed_at?: string | null }).confirmed_at ?? null;
+  type NoteRow = { id: string; date: string; content: string; confirmed: boolean; confirmed_at: string | null; created_at: string };
+  type TodoRow = { id: string; date: string; text: string; completed: boolean; completed_at: string | null };
+  type DayEntry = { date: string; notes: NoteRow[]; todos: TodoRow[] };
+
+  const map = new Map<string, DayEntry>();
+
+  for (const n of (notes ?? []) as NoteRow[]) {
+    if (!map.has(n.date)) map.set(n.date, { date: n.date, notes: [], todos: [] });
+    map.get(n.date)!.notes.push(n);
   }
-  for (const t of todos ?? []) {
-    if (!map.has(t.date)) map.set(t.date, { date: t.date, content: "", confirmed: false, confirmed_at: null, todos: [] });
-    map.get(t.date)!.todos!.push(t);
+  for (const t of (todos ?? []) as TodoRow[]) {
+    if (!map.has(t.date)) map.set(t.date, { date: t.date, notes: [], todos: [] });
+    map.get(t.date)!.todos.push(t);
   }
 
   const days = Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));

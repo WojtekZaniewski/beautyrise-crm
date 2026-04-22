@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
+type Note = { id: string; content: string; confirmed: boolean; confirmed_at: string | null; created_at: string };
 type Todo = { id: string; text: string; completed: boolean; completed_at: string | null };
-type SaveState = "idle" | "saving" | "saved" | "error";
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -12,78 +12,70 @@ function todayLabel() {
   return new Date().toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" });
 }
 
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+}
+
 export function JournalWidget() {
-  const [note, setNote] = useState("");
-  const [noteConfirmed, setNoteConfirmed] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [notes, setNotes] = useState<Note[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loaded, setLoaded] = useState(false);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/journal/note?date=${TODAY}`).then((r) => r.json()) as Promise<{ content: string; confirmed: boolean }>,
+      fetch(`/api/journal/notes?date=${TODAY}`).then((r) => r.json()) as Promise<{ notes: Note[] }>,
       fetch(`/api/journal/todos?date=${TODAY}`).then((r) => r.json()) as Promise<{ todos: Todo[] }>,
-    ]).then(([noteData, todoData]) => {
-      setNote(noteData.content ?? "");
-      setNoteConfirmed(noteData.confirmed ?? false);
+    ]).then(([notesData, todoData]) => {
+      setNotes(notesData.notes ?? []);
       setTodos(todoData.todos ?? []);
       setLoaded(true);
     }).catch(() => setLoaded(true));
-
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (savedTimer.current) clearTimeout(savedTimer.current);
-    };
   }, []);
 
-  const persistNote = useCallback((content: string, confirmed?: boolean) => {
-    setSaveState("saving");
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      try {
-        const body: Record<string, unknown> = { date: TODAY, content };
-        if (confirmed !== undefined) body.confirmed = confirmed;
-        const res = await fetch("/api/journal/note", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        setSaveState(res.ok ? "saved" : "error");
-        if (savedTimer.current) clearTimeout(savedTimer.current);
-        savedTimer.current = setTimeout(() => setSaveState("idle"), 2500);
-      } catch {
-        setSaveState("error");
-      }
-    }, 700);
-  }, []);
-
-  function onNoteChange(val: string) {
-    setNote(val);
-    persistNote(val);
+  async function sendNote(e: React.FormEvent) {
+    e.preventDefault();
+    const content = draft.trim();
+    if (!content || sending) return;
+    setSending(true);
+    const res = await fetch("/api/journal/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: TODAY, content }),
+    });
+    const data = await res.json() as { note?: Note };
+    if (data.note) {
+      setNotes((prev) => [...prev, data.note!]);
+      setDraft("");
+      textareaRef.current?.focus();
+    }
+    setSending(false);
   }
 
-  async function toggleConfirm() {
-    const next = !noteConfirmed;
-    setNoteConfirmed(next);
-    setSaveState("saving");
-    try {
-      const res = await fetch("/api/journal/note", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: TODAY, content: note, confirmed: next }),
-      });
-      setSaveState(res.ok ? "saved" : "error");
-      if (savedTimer.current) clearTimeout(savedTimer.current);
-      savedTimer.current = setTimeout(() => setSaveState("idle"), 2500);
-    } catch {
-      setSaveState("error");
-      setNoteConfirmed(!next);
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      sendNote(e as unknown as React.FormEvent);
     }
+  }
+
+  async function toggleConfirm(id: string, confirmed: boolean) {
+    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, confirmed, confirmed_at: confirmed ? new Date().toISOString() : null } : n));
+    await fetch(`/api/journal/notes/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmed }),
+    }).catch(() => {});
+  }
+
+  async function deleteNote(id: string) {
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    await fetch(`/api/journal/notes/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
   async function addTodo(e: React.FormEvent) {
@@ -114,10 +106,7 @@ export function JournalWidget() {
     await fetch(`/api/journal/todos/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
-  function startEdit(t: Todo) {
-    setEditingId(t.id);
-    setEditText(t.text);
-  }
+  function startEdit(t: Todo) { setEditingId(t.id); setEditText(t.text); }
 
   async function saveEdit(id: string) {
     const text = editText.trim();
@@ -131,12 +120,7 @@ export function JournalWidget() {
     }).catch(() => {});
   }
 
-  // Sort: incomplete first, completed last
-  const sorted = [...todos].sort((a, b) => {
-    if (a.completed === b.completed) return 0;
-    return a.completed ? 1 : -1;
-  });
-
+  const sortedTodos = [...todos].sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
   const done = todos.filter((t) => t.completed).length;
   const total = todos.length;
   const allDone = total > 0 && done === total;
@@ -154,66 +138,111 @@ export function JournalWidget() {
             {todayLabel()}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {saveState === "saving" && <span className="text-[11px]" style={{ color: "var(--muted)" }}>zapisywanie…</span>}
-          {saveState === "saved" && <span className="text-[11px]" style={{ color: "#22c55e" }}>zapisano ✓</span>}
-          {saveState === "error" && <span className="text-[11px]" style={{ color: "var(--danger)" }}>błąd zapisu</span>}
-          {total > 0 && (
-            <span
-              className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
-              style={{ background: allDone ? "rgba(34,197,94,0.12)" : "var(--ba-4)", color: allDone ? "#22c55e" : "var(--muted)" }}
-            >
-              {done}/{total}
-            </span>
-          )}
-        </div>
+        {total > 0 && (
+          <span
+            className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+            style={{ background: allDone ? "rgba(34,197,94,0.12)" : "var(--ba-4)", color: allDone ? "#22c55e" : "var(--muted)" }}
+          >
+            {done}/{total}
+          </span>
+        )}
       </div>
 
-      {/* Notes */}
+      {/* Notes section */}
       <div className="px-5 pt-4 pb-3">
         <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-2" style={{ color: "var(--muted)" }}>
-          Notatka
+          Notatki
         </div>
-        <textarea
-          value={note}
-          onChange={(e) => onNoteChange(e.target.value)}
-          placeholder={loaded ? "Zapisz myśli, plan dnia, obserwacje…" : ""}
-          disabled={!loaded}
-          rows={4}
-          className="w-full rounded-lg px-3 py-2.5 text-[13px] leading-relaxed outline-none resize-none"
-          style={{
-            background: "var(--ba-4)",
-            border: `1px solid ${noteConfirmed ? "var(--accent)" : "var(--border)"}`,
-            color: "var(--text)",
-            opacity: loaded ? 1 : 0.4,
-          }}
-        />
-        {/* Confirm note row */}
-        <button
-          onClick={toggleConfirm}
-          disabled={!loaded}
-          className="mt-2 flex items-center gap-2 group w-full"
-        >
-          <div
-            className="w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all"
-            style={{
-              border: `1.5px solid ${noteConfirmed ? "var(--accent)" : "var(--border)"}`,
-              background: noteConfirmed ? "var(--accent)" : "transparent",
-            }}
-          >
-            {noteConfirmed && (
-              <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
+
+        {/* Sent notes feed */}
+        {notes.length > 0 && (
+          <div className="flex flex-col gap-2 mb-3">
+            {notes.map((n) => (
+              <div
+                key={n.id}
+                className="rounded-lg px-3 py-2.5 group relative"
+                style={{
+                  background: n.confirmed ? "rgba(34,197,94,0.06)" : "var(--ba-4)",
+                  border: `1px solid ${n.confirmed ? "rgba(34,197,94,0.25)" : "var(--border)"}`,
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  {/* Confirm checkbox */}
+                  <button
+                    onClick={() => toggleConfirm(n.id, !n.confirmed)}
+                    className="mt-0.5 w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all"
+                    style={{
+                      border: `1.5px solid ${n.confirmed ? "#22c55e" : "var(--border)"}`,
+                      background: n.confirmed ? "#22c55e" : "transparent",
+                    }}
+                  >
+                    {n.confirmed && (
+                      <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                        <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-[12.5px] leading-relaxed whitespace-pre-wrap break-words"
+                      style={{ color: n.confirmed ? "var(--muted)" : "var(--text)" }}
+                    >
+                      {n.content}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10.5px]" style={{ color: "var(--muted)" }}>
+                        {formatTime(n.created_at)}
+                      </span>
+                      {n.confirmed && (
+                        <span className="text-[10.5px]" style={{ color: "#22c55e" }}>
+                          · zatwierdzona
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => deleteNote(n.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1 shrink-0 mt-0.5"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <span
-            className="text-[12.5px] font-medium"
-            style={{ color: noteConfirmed ? "var(--accent)" : "var(--muted)" }}
-          >
-            {noteConfirmed ? "Notatka zatwierdzona" : "Zatwierdź notatkę"}
-          </span>
-        </button>
+        )}
+
+        {/* Draft textarea */}
+        <form onSubmit={sendNote}>
+          <textarea
+            ref={textareaRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={loaded ? "Napisz notatkę… (Ctrl+Enter = wyślij)" : ""}
+            disabled={!loaded || sending}
+            rows={3}
+            className="w-full rounded-lg px-3 py-2.5 text-[13px] leading-relaxed outline-none resize-none"
+            style={{
+              background: "var(--ba-4)",
+              border: "1px solid var(--border)",
+              color: "var(--text)",
+            }}
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              type="submit"
+              disabled={!draft.trim() || sending}
+              className="px-3 py-1.5 rounded-lg text-[12px] font-medium disabled:opacity-40"
+              style={{ background: "var(--accent)", color: "white" }}
+            >
+              {sending ? "Wysyłanie…" : "Wyślij do dziennika"}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Divider */}
@@ -226,10 +255,10 @@ export function JournalWidget() {
         </div>
 
         <div className="flex flex-col gap-1.5 mb-3">
-          {sorted.length === 0 && loaded && (
+          {sortedTodos.length === 0 && loaded && (
             <div className="text-[12.5px] py-1" style={{ color: "var(--muted)" }}>Brak zadań na dziś.</div>
           )}
-          {sorted.map((t) => (
+          {sortedTodos.map((t) => (
             <div key={t.id} className="flex items-center gap-2.5 group min-h-[28px]">
               <button
                 onClick={() => toggleTodo(t.id, !t.completed)}
@@ -252,20 +281,14 @@ export function JournalWidget() {
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
                   onBlur={() => saveEdit(t.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") saveEdit(t.id);
-                    if (e.key === "Escape") setEditingId(null);
-                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }}
                   className="flex-1 rounded px-2 py-0.5 text-[12.5px] outline-none"
                   style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }}
                 />
               ) : (
                 <span
                   className="flex-1 text-[13px] leading-snug cursor-text"
-                  style={{
-                    color: t.completed ? "var(--muted)" : "var(--text)",
-                    textDecoration: t.completed ? "line-through" : "none",
-                  }}
+                  style={{ color: t.completed ? "var(--muted)" : "var(--text)", textDecoration: t.completed ? "line-through" : "none" }}
                   onDoubleClick={() => !t.completed && startEdit(t)}
                 >
                   {t.text}
