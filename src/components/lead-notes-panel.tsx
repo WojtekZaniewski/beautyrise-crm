@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 type Note = { id: string; payload: { text: string }; created_at: string };
-type LeadDetails = { id: string; full_name: string; phone: string | null; email: string | null; source: string; created_at: string };
+type LeadDetails = { id: string; full_name: string; phone: string | null; email: string | null; source: string; created_at: string; groups: string[] };
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("pl-PL", {
@@ -282,8 +282,32 @@ export function LeadNotesPanel({
                   </div>
 
                   {details && (
-                    <div style={{ fontSize: "11px", color: "var(--muted)", padding: "10px 12px", borderRadius: "8px", background: "var(--ba-4)", border: "1px solid var(--border)" }}>
-                      Źródło: <strong>{details.source}</strong> · Dodany: {formatDate(details.created_at)}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {details.groups.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "8px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Obecny w integracjach</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                            {details.groups.map(g => {
+                              const colors: Record<string, [string, string]> = {
+                                "SMS":       ["#dcfce7", "#15803d"],
+                                "Email":     ["#dbeafe", "#1d4ed8"],
+                                "Meta Ads":  ["#ede9fe", "#6d28d9"],
+                                "Messenger": ["#fef3c7", "#b45309"],
+                                "Instagram": ["#fce7f3", "#be185d"],
+                              };
+                              const [bg, color] = colors[g] ?? ["var(--ba-4)", "var(--muted)"];
+                              return (
+                                <span key={g} style={{ fontSize: "12px", fontWeight: 600, padding: "3px 10px", borderRadius: "999px", background: bg, color }}>
+                                  {g}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ fontSize: "11px", color: "var(--muted)", padding: "10px 12px", borderRadius: "8px", background: "var(--ba-4)", border: "1px solid var(--border)" }}>
+                        Dodany: {formatDate(details.created_at)}
+                      </div>
                     </div>
                   )}
 

@@ -18,7 +18,41 @@ export async function GET(
     .maybeSingle();
 
   if (!data) return NextResponse.json({ error: "Nie znaleziono" }, { status: 404 });
-  return NextResponse.json(data);
+
+  // Detect which integrations this lead has activity in
+  const [{ data: eventRows }, { data: smsRows }, { data: convRows }] = await Promise.all([
+    supabase
+      .from("lead_events")
+      .select("type")
+      .eq("lead_id", id)
+      .in("type", ["sms_sent", "sms_received", "email_sent", "meta_form_submitted", "message_received", "message_sent"]),
+    supabase
+      .from("sms_messages")
+      .select("id")
+      .eq("lead_id", id)
+      .limit(1),
+    supabase
+      .from("conversations")
+      .select("id, channel")
+      .eq("lead_id", id)
+      .limit(5),
+  ]);
+
+  const types = new Set((eventRows ?? []).map((e: { type: string }) => e.type));
+  const groups: string[] = [];
+
+  if (types.has("sms_sent") || types.has("sms_received") || (smsRows ?? []).length > 0)
+    groups.push("SMS");
+  if (types.has("email_sent"))
+    groups.push("Email");
+  if (types.has("meta_form_submitted") || data.source === "meta_ads")
+    groups.push("Meta Ads");
+  if (types.has("message_received") || types.has("message_sent") || (convRows ?? []).some((c: { channel: string }) => c.channel === "messenger"))
+    groups.push("Messenger");
+  if ((convRows ?? []).some((c: { channel: string }) => c.channel === "instagram"))
+    groups.push("Instagram");
+
+  return NextResponse.json({ ...data, groups });
 }
 
 export async function PATCH(
