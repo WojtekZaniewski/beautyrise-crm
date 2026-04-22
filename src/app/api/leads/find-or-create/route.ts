@@ -5,35 +5,54 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
-  const { email, name } = await req.json();
+  const { email, name, conversation_id } = await req.json();
 
-  if (!email?.trim()) return NextResponse.json({ error: "Brak adresu email" }, { status: 400 });
+  if (!email?.trim() && !name?.trim()) {
+    return NextResponse.json({ error: "Brak adresu email lub nazwy" }, { status: 400 });
+  }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  let existing = null;
 
-  // Try to find existing lead by email
-  const { data: existing } = await supabase
-    .from("leads")
-    .select("id, full_name, email")
-    .eq("workspace_id", workspaceId)
-    .ilike("email", normalizedEmail)
-    .maybeSingle();
+  if (email?.trim()) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data } = await supabase
+      .from("leads")
+      .select("id, full_name, email")
+      .eq("workspace_id", workspaceId)
+      .ilike("email", normalizedEmail)
+      .maybeSingle();
+    existing = data;
 
-  if (existing) return NextResponse.json(existing);
+    if (!existing) {
+      const fullName = name?.trim() || normalizedEmail;
+      const { data: created, error } = await supabase
+        .from("leads")
+        .insert({ workspace_id: workspaceId, full_name: fullName, email: normalizedEmail, source: "manual" })
+        .select("id, full_name, email")
+        .single();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      existing = created;
+    }
+  } else {
+    // No email — create a new lead from name only (Messenger/Instagram contacts)
+    const fullName = name!.trim();
+    const { data: created, error } = await supabase
+      .from("leads")
+      .insert({ workspace_id: workspaceId, full_name: fullName, source: "manual" })
+      .select("id, full_name, email")
+      .single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    existing = created;
+  }
 
-  // Create minimal lead
-  const fullName = name?.trim() || normalizedEmail;
-  const { data: created, error } = await supabase
-    .from("leads")
-    .insert({
-      workspace_id: workspaceId,
-      full_name: fullName,
-      email: normalizedEmail,
-      source: "manual",
-    })
-    .select("id, full_name, email")
-    .single();
+  // Link the lead to the conversation so future views resolve instantly
+  if (conversation_id && existing) {
+    await supabase
+      .from("conversations")
+      .update({ lead_id: existing.id })
+      .eq("id", conversation_id)
+      .eq("workspace_id", workspaceId);
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(created);
+  return NextResponse.json(existing);
 }

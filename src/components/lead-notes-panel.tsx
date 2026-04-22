@@ -20,12 +20,14 @@ export function LeadNotesPanel({
   initialCount,
   fallbackEmail,
   fallbackName,
+  conversationId,
 }: {
   leadId?: string | null;
   leadName?: string;
   initialCount?: number;
   fallbackEmail?: string;
   fallbackName?: string;
+  conversationId?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [resolvedLeadId, setResolvedLeadId] = useState<string | null>(initialLeadId ?? null);
@@ -52,12 +54,12 @@ export function LeadNotesPanel({
     e.stopPropagation();
     e.preventDefault();
     if (resolvedLeadId) { setOpen(true); return; }
-    if (!fallbackEmail) return;
+    if (!fallbackEmail && !fallbackName) return;
     setResolving(true);
     const res = await fetch("/api/leads/find-or-create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: fallbackEmail, name: fallbackName }),
+      body: JSON.stringify({ email: fallbackEmail, name: fallbackName, conversation_id: conversationId }),
     });
     if (res.ok) {
       const lead = await res.json();

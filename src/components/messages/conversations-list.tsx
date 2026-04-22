@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
 type Lead = { id: string; full_name: string } | null;
 
@@ -65,9 +68,8 @@ export function ConversationsList({
   return (
     <div style={panelStyle} className="overflow-hidden">
       {conversations.map((conv, i) => (
-        <Link
+        <div
           key={conv.id}
-          href={`/messages/${conv.id}`}
           className="flex items-center gap-3.5 px-5 py-3.5 transition-colors table-row-hover"
           style={{
             borderBottom:
@@ -75,29 +77,31 @@ export function ConversationsList({
           }}
         >
           {/* Avatar */}
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-            style={{ background: "var(--ba-8)" }}
-          >
-            {conv.sender_profile_pic ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={conv.sender_profile_pic}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span
-                className="text-[13px] font-semibold"
-                style={{ color: "var(--muted)" }}
-              >
-                {(conv.sender_name ?? "?")[0]?.toUpperCase()}
-              </span>
-            )}
-          </div>
+          <Link href={`/messages/${conv.id}`} className="shrink-0">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden"
+              style={{ background: "var(--ba-8)" }}
+            >
+              {conv.sender_profile_pic ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={conv.sender_profile_pic}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span
+                  className="text-[13px] font-semibold"
+                  style={{ color: "var(--muted)" }}
+                >
+                  {(conv.sender_name ?? "?")[0]?.toUpperCase()}
+                </span>
+              )}
+            </div>
+          </Link>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
+          {/* Content — clickable area */}
+          <Link href={`/messages/${conv.id}`} className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
               <span className="font-medium text-[13px] truncate">
                 {conv.sender_name ?? "Nieznany"}
@@ -127,23 +131,31 @@ export function ConversationsList({
             >
               {conv.last_message_preview ?? "—"}
             </div>
-          </div>
+          </Link>
 
           {/* Right side */}
-          <div className="flex flex-col items-end gap-1 shrink-0">
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
             <div className="text-[11.5px]" style={{ color: "var(--muted)" }}>
               {formatTime(conv.last_message_at)}
             </div>
-            {conv.unread_count > 0 && (
-              <span
-                className="min-w-[18px] h-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center px-1"
-                style={{ background: "var(--accent)", color: "white" }}
-              >
-                {conv.unread_count}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {conv.unread_count > 0 && (
+                <span
+                  className="min-w-[18px] h-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center px-1"
+                  style={{ background: "var(--accent)", color: "white" }}
+                >
+                  {conv.unread_count}
+                </span>
+              )}
+              <LeadNotesPanel
+                leadId={conv.leads?.id}
+                leadName={conv.leads?.full_name ?? conv.sender_name ?? undefined}
+                fallbackName={conv.sender_name ?? undefined}
+                conversationId={conv.id}
+              />
+            </div>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   );

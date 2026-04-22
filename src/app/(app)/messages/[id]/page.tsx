@@ -3,6 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChatWindow, type Message } from "@/components/messages/chat-window";
+import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
 const CHANNEL_LABEL: Record<string, string> = {
   messenger: "Messenger",
@@ -129,6 +130,12 @@ export default async function ConversationPage({
             Lead: {lead.full_name}
           </Link>
         )}
+        <LeadNotesPanel
+          leadId={lead?.id}
+          leadName={lead?.full_name ?? conv.sender_name ?? undefined}
+          fallbackName={conv.sender_name ?? undefined}
+          conversationId={id}
+        />
       </div>
 
       {/* Chat — client component handles realtime + reply */}

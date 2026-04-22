@@ -22,7 +22,8 @@
       "Bash(grep -oE '\"[^\"]{5,150}bg-\\(background-base|surface|accent-black\\)[^\"]{0,100}\"' \"D:/Dokumenty/GitHub/beautyrise-crm-main2/firecrawl/www.firecrawl.dev/_next/static/chunks/96e63aaea665fe7b.js\")",
       "Bash(grep -oE \"bg-accent-black.{0,200}\" \"D:/Dokumenty/GitHub/beautyrise-crm-main2/firecrawl/www.firecrawl.dev/_next/static/chunks/96e63aaea665fe7b.js\")",
       "Bash(grep -oE \"heat-100.{0,300}\" \"D:/Dokumenty/GitHub/beautyrise-crm-main2/firecrawl/www.firecrawl.dev/_next/static/chunks/96e63aaea665fe7b.js\")",
-      "Bash(supabase --version)"
+      "Bash(supabase --version)",
+      "Bash(xargs grep *)"
     ]
   }
 }
