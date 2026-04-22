@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 
+function normalizePhone(raw: string): string {
+  return raw.replace(/\s+/g, "");
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
 
-  const { to, message, lead_id, campaign_id } = await req.json();
-  if (!to?.trim() || !message?.trim()) {
+  const { to: rawTo, message, lead_id, campaign_id } = await req.json();
+  if (!rawTo?.trim() || !message?.trim()) {
     return NextResponse.json({ error: "Brak numeru lub treści" }, { status: 400 });
   }
+  const to = normalizePhone(rawTo.trim());
 
   const { data: integration } = await supabase
     .from("integrations")
