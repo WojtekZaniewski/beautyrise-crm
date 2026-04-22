@@ -19,40 +19,87 @@ export async function GET(
 
   if (!data) return NextResponse.json({ error: "Nie znaleziono" }, { status: 404 });
 
-  // Detect which integrations this lead has activity in
-  const [{ data: eventRows }, { data: smsRows }, { data: convRows }] = await Promise.all([
+  const phone = data.phone as string | null;
+  const email = data.email as string | null;
+
+  // Parallel: detect integration membership by phone/email (not just lead_id)
+  const [emailRecipients, smsCampaignRows, smsDirectRows, convRows, metaRows] = await Promise.all([
+    email
+      ? supabase
+          .from("email_outreach_recipients")
+          .select("email_outreach_campaigns(id, name)")
+          .eq("email", email)
+          .limit(10)
+      : { data: [] as unknown[] },
+
+    phone
+      ? supabase
+          .from("sms_campaign_recipients")
+          .select("sms_campaigns(id, name)")
+          .eq("phone", phone)
+          .limit(10)
+      : { data: [] as unknown[] },
+
+    phone
+      ? supabase
+          .from("sms_messages")
+          .select("id")
+          .eq("to", phone)
+          .limit(1)
+      : { data: [] as unknown[] },
+
+    supabase
+      .from("conversations")
+      .select("channel")
+      .eq("lead_id", id)
+      .limit(10),
+
     supabase
       .from("lead_events")
       .select("type")
       .eq("lead_id", id)
-      .in("type", ["sms_sent", "sms_received", "email_sent", "meta_form_submitted", "message_received", "message_sent"]),
-    supabase
-      .from("sms_messages")
-      .select("id")
-      .eq("lead_id", id)
+      .eq("type", "meta_form_submitted")
       .limit(1),
-    supabase
-      .from("conversations")
-      .select("id, channel")
-      .eq("lead_id", id)
-      .limit(5),
   ]);
 
-  const types = new Set((eventRows ?? []).map((e: { type: string }) => e.type));
-  const groups: string[] = [];
+  type Group = { name: string; campaigns: string[] };
+  const groups: Group[] = [];
 
-  if (types.has("sms_sent") || types.has("sms_received") || (smsRows ?? []).length > 0)
-    groups.push("SMS");
-  if (types.has("email_sent"))
-    groups.push("Email");
-  if (types.has("meta_form_submitted") || data.source === "meta_ads")
-    groups.push("Meta Ads");
-  if (types.has("message_received") || types.has("message_sent") || (convRows ?? []).some((c: { channel: string }) => c.channel === "messenger"))
-    groups.push("Messenger");
-  if ((convRows ?? []).some((c: { channel: string }) => c.channel === "instagram"))
-    groups.push("Instagram");
+  const hasSms =
+    (smsDirectRows.data ?? []).length > 0 ||
+    (smsCampaignRows.data ?? []).length > 0;
 
-  return NextResponse.json({ ...data, groups });
+  if (hasSms) {
+    const campaigns = (smsCampaignRows.data ?? [])
+      .map((r) => ((r as { sms_campaigns: { name: string } | null }).sms_campaigns)?.name)
+      .filter((n): n is string => !!n);
+    groups.push({ name: "SMS", campaigns: [...new Set(campaigns)] });
+  }
+
+  if ((emailRecipients.data ?? []).length > 0) {
+    const campaigns = (emailRecipients.data ?? [])
+      .map((r) => ((r as { email_outreach_campaigns: { name: string } | null }).email_outreach_campaigns)?.name)
+      .filter((n): n is string => !!n);
+    groups.push({ name: "Email", campaigns: [...new Set(campaigns)] });
+  }
+
+  if (data.source === "meta_ads" || (metaRows.data ?? []).length > 0) {
+    groups.push({ name: "Meta Ads", campaigns: [] });
+  }
+
+  const channels = new Set((convRows.data ?? []).map((c: { channel: string }) => c.channel));
+  if (channels.has("messenger")) groups.push({ name: "Messenger", campaigns: [] });
+  if (channels.has("instagram")) groups.push({ name: "Instagram", campaigns: [] });
+
+  const SOURCE_LABELS: Record<string, string> = {
+    manual:   "Dodany manualnie",
+    import:   "Dodany przez import",
+    meta_ads: "Dodany z Meta Ads",
+    webhook:  "Dodany przez webhook",
+  };
+  const sourceLabel = SOURCE_LABELS[data.source as string] ?? "Dodany manualnie";
+
+  return NextResponse.json({ ...data, groups, sourceLabel });
 }
 
 export async function PATCH(
@@ -93,5 +140,29 @@ export async function PATCH(
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+
+  // Detect potential duplicates by new phone/email
+  type DupeLead = { id: string; full_name: string; phone: string | null; email: string | null };
+
+  const [byPhone, byEmail] = await Promise.all([
+    update.phone
+      ? supabase.from("leads").select("id, full_name, phone, email")
+          .eq("workspace_id", workspaceId).eq("phone", update.phone).neq("id", id).limit(3)
+          .then((r) => (r.data ?? []) as DupeLead[])
+      : Promise.resolve([] as DupeLead[]),
+    update.email
+      ? supabase.from("leads").select("id, full_name, phone, email")
+          .eq("workspace_id", workspaceId).ilike("email", update.email).neq("id", id).limit(3)
+          .then((r) => (r.data ?? []) as DupeLead[])
+      : Promise.resolve([] as DupeLead[]),
+  ]);
+
+  const dupeResults = [byPhone, byEmail];
+  const duplicates = [
+    ...new Map(
+      dupeResults.flat().map((l) => [l.id, l]),
+    ).values(),
+  ];
+
+  return NextResponse.json({ ok: true, duplicates });
 }
