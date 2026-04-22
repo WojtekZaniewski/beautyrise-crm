@@ -92,6 +92,14 @@ const Icons = {
       />
     </svg>
   ),
+  teamChat: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <circle cx="5" cy="5" r="2.2" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="10.5" cy="5.5" r="1.8" stroke="currentColor" strokeWidth="1.3" opacity=".6" />
+      <path d="M1 12c0-2 1.8-3.2 4-3.2s4 1.2 4 3.2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M9.5 12c0-1.5 1.3-2.4 3-2.4s1.5.6 1.5 1.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity=".6" />
+    </svg>
+  ),
   signout: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path d="M6 2H2.5A1.5 1.5 0 0 0 1 3.5v8A1.5 1.5 0 0 0 2.5 13H6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
@@ -106,6 +114,7 @@ const primary = [
   { href: "/leads/kanban", label: "Kanban", icon: Icons.kanban },
   { href: "/campaigns", label: "Kampanie", icon: Icons.campaigns },
   { href: "/messages", label: "Wiadomości", icon: Icons.messages, isMessages: true },
+  { href: "/team-chat", label: "Czat zespołu", icon: Icons.teamChat },
 ];
 
 const integrationsNav = [

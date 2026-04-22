@@ -290,6 +290,18 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const teamMessages = pgTable("team_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull(),
+  userEmail: text("user_email"),
+  userName: text("user_name"),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
@@ -300,6 +312,7 @@ export const workspacesRelations = relations(workspaces, ({ many }) => ({
   campaigns: many(campaigns),
   tags: many(tags),
   conversations: many(conversations),
+  teamMessages: many(teamMessages),
 }));
 
 export const pipelinesRelations = relations(pipelines, ({ one, many }) => ({
