@@ -14,7 +14,7 @@ export default async function JournalPage() {
   const [{ data: notes }, { data: todos }] = await Promise.all([
     supabase
       .from("journal_notes")
-      .select("date, content")
+      .select("date, content, confirmed, confirmed_at")
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
       .gte("date", since)
@@ -29,13 +29,15 @@ export default async function JournalPage() {
   ]);
 
   // Group by date
-  const map = new Map<string, { date: string; content: string; todos: typeof todos }>();
+  const map = new Map<string, { date: string; content: string; confirmed: boolean; confirmed_at: string | null; todos: typeof todos }>();
   for (const n of notes ?? []) {
-    if (!map.has(n.date)) map.set(n.date, { date: n.date, content: "", todos: [] });
+    if (!map.has(n.date)) map.set(n.date, { date: n.date, content: "", confirmed: false, confirmed_at: null, todos: [] });
     map.get(n.date)!.content = n.content;
+    map.get(n.date)!.confirmed = (n as { confirmed?: boolean }).confirmed ?? false;
+    map.get(n.date)!.confirmed_at = (n as { confirmed_at?: string | null }).confirmed_at ?? null;
   }
   for (const t of todos ?? []) {
-    if (!map.has(t.date)) map.set(t.date, { date: t.date, content: "", todos: [] });
+    if (!map.has(t.date)) map.set(t.date, { date: t.date, content: "", confirmed: false, confirmed_at: null, todos: [] });
     map.get(t.date)!.todos!.push(t);
   }
 

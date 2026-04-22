@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
 type Todo = { id: string; text: string; completed: boolean; completed_at: string | null };
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -13,37 +14,76 @@ function todayLabel() {
 
 export function JournalWidget() {
   const [note, setNote] = useState("");
+  const [noteConfirmed, setNoteConfirmed] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load today's data
   useEffect(() => {
     Promise.all([
-      fetch(`/api/journal/note?date=${TODAY}`).then((r) => r.json()) as Promise<{ content: string }>,
+      fetch(`/api/journal/note?date=${TODAY}`).then((r) => r.json()) as Promise<{ content: string; confirmed: boolean }>,
       fetch(`/api/journal/todos?date=${TODAY}`).then((r) => r.json()) as Promise<{ todos: Todo[] }>,
     ]).then(([noteData, todoData]) => {
       setNote(noteData.content ?? "");
+      setNoteConfirmed(noteData.confirmed ?? false);
       setTodos(todoData.todos ?? []);
       setLoaded(true);
     }).catch(() => setLoaded(true));
+
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    };
   }, []);
 
-  const saveNote = useCallback((val: string) => {
+  const persistNote = useCallback((content: string, confirmed?: boolean) => {
+    setSaveState("saving");
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      fetch("/api/journal/note", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: TODAY, content: val }),
-      }).catch(() => {});
-    }, 800);
+    saveTimer.current = setTimeout(async () => {
+      try {
+        const body: Record<string, unknown> = { date: TODAY, content };
+        if (confirmed !== undefined) body.confirmed = confirmed;
+        const res = await fetch("/api/journal/note", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        setSaveState(res.ok ? "saved" : "error");
+        if (savedTimer.current) clearTimeout(savedTimer.current);
+        savedTimer.current = setTimeout(() => setSaveState("idle"), 2500);
+      } catch {
+        setSaveState("error");
+      }
+    }, 700);
   }, []);
 
   function onNoteChange(val: string) {
     setNote(val);
-    saveNote(val);
+    persistNote(val);
+  }
+
+  async function toggleConfirm() {
+    const next = !noteConfirmed;
+    setNoteConfirmed(next);
+    setSaveState("saving");
+    try {
+      const res = await fetch("/api/journal/note", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: TODAY, content: note, confirmed: next }),
+      });
+      setSaveState(res.ok ? "saved" : "error");
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setSaveState("idle"), 2500);
+    } catch {
+      setSaveState("error");
+      setNoteConfirmed(!next);
+    }
   }
 
   async function addTodo(e: React.FormEvent) {
@@ -61,7 +101,7 @@ export function JournalWidget() {
   }
 
   async function toggleTodo(id: string, completed: boolean) {
-    setTodos((prev) => prev.map((t) => t.id === id ? { ...t, completed } : t));
+    setTodos((prev) => prev.map((t) => t.id === id ? { ...t, completed, completed_at: completed ? new Date().toISOString() : null } : t));
     await fetch(`/api/journal/todos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -74,53 +114,106 @@ export function JournalWidget() {
     await fetch(`/api/journal/todos/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
+  function startEdit(t: Todo) {
+    setEditingId(t.id);
+    setEditText(t.text);
+  }
+
+  async function saveEdit(id: string) {
+    const text = editText.trim();
+    if (!text) { setEditingId(null); return; }
+    setTodos((prev) => prev.map((t) => t.id === id ? { ...t, text } : t));
+    setEditingId(null);
+    await fetch(`/api/journal/todos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }).catch(() => {});
+  }
+
+  // Sort: incomplete first, completed last
+  const sorted = [...todos].sort((a, b) => {
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
+
   const done = todos.filter((t) => t.completed).length;
   const total = todos.length;
+  const allDone = total > 0 && done === total;
 
   return (
     <div
-      className="rounded-lg flex flex-col gap-0 overflow-hidden"
+      className="rounded-lg flex flex-col overflow-hidden"
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       {/* Header */}
-      <div
-        className="px-5 py-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
         <div>
           <div className="text-[13.5px] font-semibold tracking-tight">Dzisiaj</div>
           <div className="text-[11.5px] capitalize mt-0.5" style={{ color: "var(--muted)" }}>
             {todayLabel()}
           </div>
         </div>
-        {total > 0 && (
-          <span
-            className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
-            style={{ background: done === total ? "rgba(34,197,94,0.12)" : "var(--ba-4)", color: done === total ? "#22c55e" : "var(--muted)" }}
-          >
-            {done}/{total}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {saveState === "saving" && <span className="text-[11px]" style={{ color: "var(--muted)" }}>zapisywanie…</span>}
+          {saveState === "saved" && <span className="text-[11px]" style={{ color: "#22c55e" }}>zapisano ✓</span>}
+          {saveState === "error" && <span className="text-[11px]" style={{ color: "var(--danger)" }}>błąd zapisu</span>}
+          {total > 0 && (
+            <span
+              className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+              style={{ background: allDone ? "rgba(34,197,94,0.12)" : "var(--ba-4)", color: allDone ? "#22c55e" : "var(--muted)" }}
+            >
+              {done}/{total}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Notes */}
       <div className="px-5 pt-4 pb-3">
         <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-2" style={{ color: "var(--muted)" }}>
-          Notatki
+          Notatka
         </div>
         <textarea
           value={note}
           onChange={(e) => onNoteChange(e.target.value)}
-          placeholder={loaded ? "Zapisz myśli, obserwacje, plan dnia…" : "Ładowanie…"}
+          placeholder={loaded ? "Zapisz myśli, plan dnia, obserwacje…" : ""}
           disabled={!loaded}
           rows={4}
           className="w-full rounded-lg px-3 py-2.5 text-[13px] leading-relaxed outline-none resize-none"
           style={{
             background: "var(--ba-4)",
-            border: "1px solid var(--border)",
+            border: `1px solid ${noteConfirmed ? "var(--accent)" : "var(--border)"}`,
             color: "var(--text)",
+            opacity: loaded ? 1 : 0.4,
           }}
         />
+        {/* Confirm note row */}
+        <button
+          onClick={toggleConfirm}
+          disabled={!loaded}
+          className="mt-2 flex items-center gap-2 group w-full"
+        >
+          <div
+            className="w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all"
+            style={{
+              border: `1.5px solid ${noteConfirmed ? "var(--accent)" : "var(--border)"}`,
+              background: noteConfirmed ? "var(--accent)" : "transparent",
+            }}
+          >
+            {noteConfirmed && (
+              <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                <path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+          <span
+            className="text-[12.5px] font-medium"
+            style={{ color: noteConfirmed ? "var(--accent)" : "var(--muted)" }}
+          >
+            {noteConfirmed ? "Notatka zatwierdzona" : "Zatwierdź notatkę"}
+          </span>
+        </button>
       </div>
 
       {/* Divider */}
@@ -133,13 +226,11 @@ export function JournalWidget() {
         </div>
 
         <div className="flex flex-col gap-1.5 mb-3">
-          {todos.length === 0 && loaded && (
-            <div className="text-[12.5px] py-1" style={{ color: "var(--muted)" }}>
-              Brak zadań na dziś.
-            </div>
+          {sorted.length === 0 && loaded && (
+            <div className="text-[12.5px] py-1" style={{ color: "var(--muted)" }}>Brak zadań na dziś.</div>
           )}
-          {todos.map((t) => (
-            <div key={t.id} className="flex items-center gap-2.5 group">
+          {sorted.map((t) => (
+            <div key={t.id} className="flex items-center gap-2.5 group min-h-[28px]">
               <button
                 onClick={() => toggleTodo(t.id, !t.completed)}
                 className="w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all"
@@ -154,18 +245,36 @@ export function JournalWidget() {
                   </svg>
                 )}
               </button>
-              <span
-                className="flex-1 text-[13px] leading-snug"
-                style={{
-                  color: t.completed ? "var(--muted)" : "var(--text)",
-                  textDecoration: t.completed ? "line-through" : "none",
-                }}
-              >
-                {t.text}
-              </span>
+
+              {editingId === t.id ? (
+                <input
+                  autoFocus
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onBlur={() => saveEdit(t.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveEdit(t.id);
+                    if (e.key === "Escape") setEditingId(null);
+                  }}
+                  className="flex-1 rounded px-2 py-0.5 text-[12.5px] outline-none"
+                  style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }}
+                />
+              ) : (
+                <span
+                  className="flex-1 text-[13px] leading-snug cursor-text"
+                  style={{
+                    color: t.completed ? "var(--muted)" : "var(--text)",
+                    textDecoration: t.completed ? "line-through" : "none",
+                  }}
+                  onDoubleClick={() => !t.completed && startEdit(t)}
+                >
+                  {t.text}
+                </span>
+              )}
+
               <button
                 onClick={() => deleteTodo(t.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1"
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1 shrink-0"
                 style={{ color: "var(--muted)" }}
               >
                 ✕
@@ -178,13 +287,9 @@ export function JournalWidget() {
           <input
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
-            placeholder="+ Dodaj zadanie…"
+            placeholder="Dodaj zadanie…"
             className="flex-1 rounded-lg px-3 py-1.5 text-[12.5px] outline-none"
-            style={{
-              background: "var(--ba-4)",
-              border: "1px solid var(--border)",
-              color: "var(--text)",
-            }}
+            style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)" }}
           />
           <button
             type="submit"
@@ -192,21 +297,14 @@ export function JournalWidget() {
             className="px-3 py-1.5 rounded-lg text-[12px] font-medium disabled:opacity-40 shrink-0"
             style={{ background: "var(--accent)", color: "white" }}
           >
-            Dodaj
+            + Dodaj
           </button>
         </form>
       </div>
 
-      {/* Footer link */}
-      <div
-        className="px-5 py-3 mt-1"
-        style={{ borderTop: "1px solid var(--border)" }}
-      >
-        <Link
-          href="/journal"
-          className="text-[12px] font-medium transition-colors"
-          style={{ color: "var(--accent-2)" }}
-        >
+      {/* Footer */}
+      <div className="px-5 py-3 mt-1" style={{ borderTop: "1px solid var(--border)" }}>
+        <Link href="/journal" className="text-[12px] font-medium" style={{ color: "var(--accent-2)" }}>
           Dziennik — historia zadań i notatek →
         </Link>
       </div>
