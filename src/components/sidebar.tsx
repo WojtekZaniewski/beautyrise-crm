@@ -75,6 +75,12 @@ const Icons = {
       <circle cx="4.8" cy="4.8" r="1.1" fill="currentColor" opacity=".7" />
     </svg>
   ),
+  workspace: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M7.5 1v1.5M7.5 12.5V14M14 7.5h-1.5M2.5 7.5H1M11.7 3.3l-1.1 1.1M4.4 10.6l-1.1 1.1M11.7 11.7l-1.1-1.1M4.4 4.4 3.3 3.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity=".8" />
+    </svg>
+  ),
   messages: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path
@@ -124,6 +130,7 @@ const integrationsNav = [
 ];
 
 const settingsNav = [
+  { href: "/settings/workspace", label: "Workspace", icon: Icons.workspace },
   { href: "/settings/workspaces", label: "Klienci", icon: Icons.clients },
   { href: "/settings/pipelines", label: "Pipeline'y", icon: Icons.pipelines },
   { href: "/settings/tags", label: "Tagi", icon: Icons.tags },
