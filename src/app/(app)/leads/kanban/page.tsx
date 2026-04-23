@@ -19,7 +19,7 @@ export default async function KanbanPage() {
   const { data: leads } = stageIds.length > 0
     ? await supabase
         .from("leads")
-        .select("id, full_name, phone, email, source, stage_id, created_at")
+        .select("id, full_name, phone, email, source, stage_id, created_at, potential_score")
         .eq("workspace_id", WORKSPACE_ID)
         .eq("archived", false)
         .in("stage_id", stageIds)

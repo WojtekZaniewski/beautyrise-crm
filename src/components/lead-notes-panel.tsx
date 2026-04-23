@@ -8,7 +8,14 @@ type LeadDuplicate = { id: string; full_name: string; phone: string | null; emai
 type LeadDetails = {
   id: string; full_name: string; phone: string | null; email: string | null;
   source: string; sourceLabel: string; created_at: string; groups: LeadGroup[];
+  potential_score?: number | null;
 };
+
+function scoreColor(s: number): string {
+  if (s <= 3) return "#ef4444";
+  if (s <= 6) return "#f59e0b";
+  return "#16a34a";
+}
 
 const GROUP_COLORS: Record<string, [string, string]> = {
   "SMS":       ["#dcfce7", "#15803d"],
@@ -29,6 +36,7 @@ export function LeadNotesPanel({
   leadId: initialLeadId,
   leadName: initialLeadName,
   initialCount,
+  initialScore,
   fallbackEmail,
   fallbackName,
   conversationId,
@@ -36,6 +44,7 @@ export function LeadNotesPanel({
   leadId?: string | null;
   leadName?: string;
   initialCount?: number;
+  initialScore?: number | null;
   fallbackEmail?: string;
   fallbackName?: string;
   conversationId?: string;
@@ -60,6 +69,8 @@ export function LeadNotesPanel({
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
   const [duplicates, setDuplicates] = useState<LeadDuplicate[]>([]);
+  const [score, setScore] = useState<number | null>(initialScore ?? null);
+  const [savingScore, setSavingScore] = useState(false);
 
   const loadNotes = useCallback(async (lid: string) => {
     const res = await fetch(`/api/leads/${lid}/notes`);
@@ -74,6 +85,7 @@ export function LeadNotesPanel({
       setEditName(d.full_name ?? "");
       setEditPhone(d.phone ?? "");
       setEditEmail(d.email ?? "");
+      if (d.potential_score !== undefined) setScore(d.potential_score ?? null);
     }
   }, []);
 
@@ -149,6 +161,19 @@ export function LeadNotesPanel({
     setSavingDetails(false);
   }
 
+  async function handleScoreClick(val: number) {
+    if (!resolvedLeadId || savingScore) return;
+    const newScore = score === val ? null : val;
+    setScore(newScore);
+    setSavingScore(true);
+    await fetch(`/api/leads/${resolvedLeadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ potential_score: newScore }),
+    });
+    setSavingScore(false);
+  }
+
   const count = open ? notes.length : (initialCount ?? 0);
 
   const inp: React.CSSProperties = {
@@ -188,6 +213,11 @@ export function LeadNotesPanel({
             <line x1="16" y1="17" x2="8" y2="17" />
             <polyline points="10 9 9 9 8 9" />
           </svg>
+        )}
+        {score !== null && score !== undefined && (
+          <span style={{ background: scoreColor(score), color: "#fff", borderRadius: "999px", padding: "0 5px", fontSize: "10px", fontWeight: 700, lineHeight: "16px", minWidth: "16px", textAlign: "center" }}>
+            {score}
+          </span>
         )}
         {count > 0 && (
           <span style={{ background: "var(--accent)", color: "#fff", borderRadius: "999px", padding: "0 5px", fontSize: "10px", fontWeight: 600, lineHeight: "16px" }}>
@@ -275,6 +305,48 @@ export function LeadNotesPanel({
             {/* ── DETAILS TAB ── */}
             {activeTab === "details" && (
               <div style={{ flex: 1, overflowY: "auto" }}>
+                {/* Score setter */}
+                <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+                  <div style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span>Potencjał zamknięcia</span>
+                    {score !== null && (
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: scoreColor(score), textTransform: "none", letterSpacing: 0 }}>
+                        {score}/10
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                    {Array.from({ length: 11 }, (_, i) => {
+                      const isActive = score === i;
+                      const col = scoreColor(i);
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleScoreClick(i)}
+                          disabled={savingScore}
+                          style={{
+                            width: "30px", height: "30px", borderRadius: "6px", fontSize: "12px", fontWeight: 600,
+                            cursor: savingScore ? "not-allowed" : "pointer",
+                            border: isActive ? `2px solid ${col}` : "1px solid var(--border-strong)",
+                            background: isActive ? col : "var(--ba-4)",
+                            color: isActive ? "#fff" : "var(--muted)",
+                            transition: "all 0.1s",
+                            opacity: savingScore ? 0.6 : 1,
+                          }}
+                        >
+                          {i}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {score !== null && (
+                    <button type="button" onClick={() => handleScoreClick(score!)} style={{ marginTop: "8px", fontSize: "11px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}>
+                      Wyczyść ocenę
+                    </button>
+                  )}
+                </div>
+
                 <form onSubmit={saveDetails} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
                   <div>

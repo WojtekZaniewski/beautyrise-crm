@@ -29,7 +29,7 @@ export default async function LeadsPage({
   let query = supabase
     .from("leads")
     .select(`
-      id, full_name, phone, email, source, created_at, archived,
+      id, full_name, phone, email, source, created_at, archived, potential_score,
       pipeline_stages ( name, color ),
       lead_tags ( tags ( id, name, color ) )
     `)
@@ -279,7 +279,7 @@ export default async function LeadsPage({
                       })}
                     </td>
                     <td className="px-4 py-3">
-                      <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} />
+                      <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} initialScore={(lead as { potential_score?: number | null }).potential_score} />
                     </td>
                   </tr>
                 );

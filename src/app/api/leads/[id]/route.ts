@@ -12,7 +12,7 @@ export async function GET(
 
   const { data } = await supabase
     .from("leads")
-    .select("id, full_name, phone, email, source, created_at")
+    .select("id, full_name, phone, email, source, created_at, potential_score")
     .eq("id", id)
     .eq("workspace_id", workspaceId)
     .maybeSingle();
@@ -111,14 +111,19 @@ export async function PATCH(
   const workspaceId = await getCurrentWorkspaceId();
 
   const body = await req.json();
-  const allowed = ["full_name", "phone", "email"] as const;
-  const update: Record<string, string | null> = {};
+  const stringFields = ["full_name", "phone", "email"] as const;
+  const update: Record<string, string | number | null> = {};
 
-  for (const key of allowed) {
+  for (const key of stringFields) {
     if (key in body) {
       const val = typeof body[key] === "string" ? body[key].trim() || null : null;
       update[key] = val;
     }
+  }
+
+  if ("potential_score" in body) {
+    const s = body.potential_score;
+    update.potential_score = (typeof s === "number" && s >= 0 && s <= 10) ? Math.floor(s) : null;
   }
 
   if (Object.keys(update).length === 0) {
@@ -152,7 +157,7 @@ export async function PATCH(
       : Promise.resolve([] as DupeLead[]),
     update.email
       ? supabase.from("leads").select("id, full_name, phone, email")
-          .eq("workspace_id", workspaceId).ilike("email", update.email).neq("id", id).limit(3)
+          .eq("workspace_id", workspaceId).ilike("email", update.email as string).neq("id", id).limit(3)
           .then((r) => (r.data ?? []) as DupeLead[])
       : Promise.resolve([] as DupeLead[]),
   ]);

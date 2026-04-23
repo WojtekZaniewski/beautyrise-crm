@@ -25,6 +25,7 @@ type Lead = {
   source: string;
   stage_id: string | null;
   created_at: string;
+  potential_score?: number | null;
 };
 
 const sourceLabel: Record<string, string> = {
@@ -66,7 +67,7 @@ function LeadCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean }) {
         <div className="text-xs text-[var(--muted)]">
           {sourceLabel[lead.source] ?? lead.source}
         </div>
-        <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} />
+        <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} initialScore={lead.potential_score} />
       </div>
     </div>
   );
