@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const workspaceId = await getCurrentWorkspaceId();
     const supabase = createServiceClient();
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("todo_items")
       .select("id, text, completed, waiting, completed_at, created_at")
       .eq("workspace_id", workspaceId)
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
       .eq("date", date)
       .order("created_at", { ascending: true });
 
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ todos: data ?? [] });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
