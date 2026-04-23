@@ -1,21 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+type TodoState = "todo" | "waiting" | "done";
 type NoteEntry = { id: string; content: string; created_at: string };
 type TodoEntry = { id: string; text: string; completed: boolean; waiting: boolean; completed_at: string | null };
 type DayEntry = { date: string; notes: NoteEntry[]; todos: TodoEntry[] };
 
 const TODAY = new Date().toISOString().split("T")[0];
 
+function getTodoState(t: TodoEntry): TodoState {
+  if (t.completed) return "done";
+  if (t.waiting) return "waiting";
+  return "todo";
+}
+
+function nextState(s: TodoState): TodoState {
+  if (s === "todo") return "waiting";
+  if (s === "waiting") return "done";
+  return "todo";
+}
+
+function TodoCheck({ state }: { state: TodoState }) {
+  if (state === "done") {
+    return (
+      <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "var(--accent)", border: "1.5px solid var(--accent)" }}>
+        <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </div>
+    );
+  }
+  if (state === "waiting") {
+    return (
+      <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(234,179,8,0.12)", border: "1.5px solid #eab308" }}>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+          <circle cx="4" cy="4" r="3" stroke="#eab308" strokeWidth="1.2" />
+          <path d="M4 2.5V4l1 1" stroke="#eab308" strokeWidth="1.1" strokeLinecap="round" />
+        </svg>
+      </div>
+    );
+  }
+  return <div className="w-4 h-4 rounded shrink-0" style={{ border: "1.5px solid var(--border)" }} />;
+}
+
 function formatDateHeading(date: string) {
   if (date === TODAY) return "Dzisiaj";
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
   if (date === yesterday) return "Wczoraj";
-  return new Date(date + "T12:00:00").toLocaleDateString("pl-PL", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
+  return new Date(date + "T12:00:00").toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 function formatDateSub(date: string) {
@@ -26,29 +59,32 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
 }
 
-// Mini horizontal stacked bar: done (green) / waiting (yellow) / todo (gray)
 function DayBreakdownBar({ todos }: { todos: TodoEntry[] }) {
   const total = todos.length;
   if (total === 0) return null;
   const done = todos.filter((t) => t.completed).length;
   const waiting = todos.filter((t) => t.waiting).length;
-  const todo = total - done - waiting;
   return (
-    <div className="flex h-1.5 rounded-full overflow-hidden gap-px mt-2" style={{ background: "var(--ba-4)" }}>
+    <div className="flex h-1.5 rounded-full overflow-hidden mt-2" style={{ background: "var(--ba-4)" }}>
       {done > 0 && <div style={{ flex: done, background: "#22c55e" }} />}
       {waiting > 0 && <div style={{ flex: waiting, background: "#eab308" }} />}
-      {todo > 0 && <div style={{ flex: todo, background: "var(--ba-4)" }} />}
+      {(total - done - waiting) > 0 && <div style={{ flex: total - done - waiting, background: "var(--ba-4)" }} />}
     </div>
   );
 }
 
 export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
-  const [days] = useState<DayEntry[]>(initialDays);
+  const router = useRouter();
+  const [days, setDays] = useState<DayEntry[]>(initialDays);
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const s = new Set<string>();
     initialDays.slice(0, 3).forEach((d) => s.add(d.date));
     return s;
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [addingDate, setAddingDate] = useState<string | null>(null);
+  const [newText, setNewText] = useState("");
 
   function toggle(date: string) {
     setExpanded((prev) => {
@@ -56,6 +92,72 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
       next.has(date) ? next.delete(date) : next.add(date);
       return next;
     });
+  }
+
+  function patchTodoInState(id: string, patch: Partial<TodoEntry>) {
+    setDays((prev) =>
+      prev.map((d) => ({ ...d, todos: d.todos.map((t) => (t.id === id ? { ...t, ...patch } : t)) }))
+    );
+  }
+
+  async function cycleTodo(t: TodoEntry) {
+    const next = nextState(getTodoState(t));
+    const patch =
+      next === "done" ? { completed: true, waiting: false, completed_at: new Date().toISOString() }
+      : next === "waiting" ? { completed: false, waiting: true, completed_at: null }
+      : { completed: false, waiting: false, completed_at: null };
+    patchTodoInState(t.id, patch);
+    await fetch(`/api/journal/todos/${t.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: patch.completed, waiting: patch.waiting }),
+    }).catch(() => {});
+    router.refresh();
+  }
+
+  function startEdit(t: TodoEntry) {
+    setEditingId(t.id);
+    setEditText(t.text);
+  }
+
+  async function saveEdit(id: string) {
+    const text = editText.trim();
+    if (!text) { setEditingId(null); return; }
+    patchTodoInState(id, { text });
+    setEditingId(null);
+    await fetch(`/api/journal/todos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }).catch(() => {});
+  }
+
+  async function deleteTodo(dateStr: string, id: string) {
+    setDays((prev) =>
+      prev.map((d) => d.date !== dateStr ? d : { ...d, todos: d.todos.filter((t) => t.id !== id) })
+    );
+    await fetch(`/api/journal/todos/${id}`, { method: "DELETE" }).catch(() => {});
+    router.refresh();
+  }
+
+  async function addTodo(dateStr: string, e: React.FormEvent) {
+    e.preventDefault();
+    const text = newText.trim();
+    if (!text) return;
+    setNewText("");
+    setAddingDate(null);
+    const res = await fetch("/api/journal/todos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: dateStr, text }),
+    });
+    const data = await res.json() as { todo?: TodoEntry };
+    if (data.todo) {
+      setDays((prev) =>
+        prev.map((d) => d.date !== dateStr ? d : { ...d, todos: [...d.todos, data.todo!] })
+      );
+    }
+    router.refresh();
   }
 
   if (days.length === 0) {
@@ -88,27 +190,23 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
             className="rounded-xl overflow-hidden"
             style={{ background: "var(--panel-solid)", border: `1px solid ${isToday ? "var(--accent)" : "var(--border)"}` }}
           >
-            {/* Header — always visible summary */}
+            {/* Collapsed header / summary */}
             <button className="w-full text-left" onClick={() => toggle(day.date)}>
               <div className="px-5 pt-4 pb-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2.5">
                     {isToday && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--accent)" }} />}
-                    <div>
-                      <span className="text-[13.5px] font-semibold capitalize">{formatDateHeading(day.date)}</span>
-                      {!isToday && (
-                        <span className="text-[11.5px] ml-2" style={{ color: "var(--muted)" }}>{formatDateSub(day.date)}</span>
-                      )}
-                    </div>
+                    <span className="text-[13.5px] font-semibold capitalize">{formatDateHeading(day.date)}</span>
+                    {!isToday && (
+                      <span className="text-[11.5px]" style={{ color: "var(--muted)" }}>{formatDateSub(day.date)}</span>
+                    )}
                   </div>
-                  <span className="text-[12px]" style={{ color: "var(--muted)", display: "inline-block", transition: "transform 0.15s", transform: isOpen ? "rotate(180deg)" : "none" }}>▾</span>
+                  <span className="text-[12px]" style={{ color: "var(--muted)", display: "inline-block", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>▾</span>
                 </div>
-
-                {/* Summary row */}
                 <div className="flex items-center gap-3 flex-wrap">
                   {total > 0 && (
                     <span className="text-[12px]" style={{ color: allDone ? "#22c55e" : "var(--muted)" }}>
-                      {allDone ? "✓" : `${done}/${total}`} zadań
+                      {allDone ? "✓ wszystko zrobione" : `${done}/${total} zadań`}
                       {waiting > 0 && <span style={{ color: "#eab308" }}> · ⏳ {waiting} oczekuje</span>}
                     </span>
                   )}
@@ -118,32 +216,26 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
                     </span>
                   )}
                   {pct !== null && !allDone && (
-                    <span className="text-[12px] font-medium" style={{ color: pct >= 80 ? "#22c55e" : "var(--muted)" }}>
-                      {pct}%
-                    </span>
+                    <span className="text-[12px] font-medium" style={{ color: pct >= 80 ? "#22c55e" : "var(--muted)" }}>{pct}%</span>
                   )}
                 </div>
-
-                {/* Breakdown bar */}
                 <DayBreakdownBar todos={todos} />
               </div>
             </button>
 
-            {/* Expanded detail */}
+            {/* Expanded */}
             {isOpen && (
               <div style={{ borderTop: "1px solid var(--border)" }}>
 
-                {/* Notes as "przemyślenia" */}
+                {/* Notes (read-only, shown as thoughts) */}
                 {notes.length > 0 && (
-                  <div className="px-5 py-4" style={{ borderBottom: total > 0 ? "1px solid var(--border)" : undefined }}>
-                    <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-3" style={{ color: "var(--muted)" }}>
-                      Przemyślenia
-                    </div>
+                  <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+                    <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-3" style={{ color: "var(--muted)" }}>Przemyślenia</div>
                     <div className="flex flex-col gap-2.5">
                       {notes.map((n) => (
                         <div key={n.id} className="flex gap-3">
-                          <div className="w-px shrink-0 rounded-full mt-0.5" style={{ background: "var(--border)", minHeight: "100%" }} />
-                          <div className="flex-1 min-w-0">
+                          <div className="w-px shrink-0 rounded-full" style={{ background: "var(--border)", minHeight: "100%" }} />
+                          <div>
                             <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--text)" }}>{n.content}</p>
                             <div className="text-[11px] mt-1" style={{ color: "var(--muted)" }}>{formatTime(n.created_at)}</div>
                           </div>
@@ -153,63 +245,99 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
                   </div>
                 )}
 
-                {/* Todos */}
-                {total > 0 && (
-                  <div className="px-5 py-4">
-                    <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-3" style={{ color: "var(--muted)" }}>
-                      Zadania
-                    </div>
-                    <div className="flex flex-col gap-2">
+                {/* Todos — fully interactive */}
+                <div className="px-5 py-4">
+                  {(total > 0 || addingDate === day.date) && (
+                    <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-3" style={{ color: "var(--muted)" }}>Zadania</div>
+                  )}
+
+                  {total > 0 && (
+                    <div className="flex flex-col gap-1.5 mb-3">
                       {[...todos]
                         .sort((a, b) => {
-                          const o = { todo: 0, waiting: 1, done: 2 } as Record<string, number>;
-                          const sa = a.completed ? "done" : a.waiting ? "waiting" : "todo";
-                          const sb = b.completed ? "done" : b.waiting ? "waiting" : "todo";
-                          return o[sa] - o[sb];
+                          const o = { todo: 0, waiting: 1, done: 2 } as Record<TodoState, number>;
+                          return o[getTodoState(a)] - o[getTodoState(b)];
                         })
                         .map((t) => {
-                          const state = t.completed ? "done" : t.waiting ? "waiting" : "todo";
+                          const state = getTodoState(t);
                           return (
-                            <div key={t.id} className="flex items-center gap-3">
-                              {/* State icon (read-only in history) */}
-                              <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{
-                                border: `1.5px solid ${state === "done" ? "var(--accent)" : state === "waiting" ? "#eab308" : "var(--border)"}`,
-                                background: state === "done" ? "var(--accent)" : state === "waiting" ? "rgba(234,179,8,0.12)" : "transparent",
-                              }}>
-                                {state === "done" && (
-                                  <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                )}
-                                {state === "waiting" && (
-                                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                                    <circle cx="4" cy="4" r="3" stroke="#eab308" strokeWidth="1.2" />
-                                    <path d="M4 2.5V4l1 1" stroke="#eab308" strokeWidth="1.1" strokeLinecap="round" />
-                                  </svg>
-                                )}
-                              </div>
-                              <span className="flex-1 text-[13px]" style={{
-                                color: state === "done" ? "var(--muted)" : state === "waiting" ? "#eab308" : "var(--text)",
-                                textDecoration: state === "done" ? "line-through" : "none",
-                              }}>
-                                {t.text}
-                              </span>
+                            <div key={t.id} className="flex items-center gap-2.5 group min-h-[28px]">
+                              <button onClick={() => cycleTodo(t)} className="shrink-0">
+                                <TodoCheck state={state} />
+                              </button>
+
+                              {editingId === t.id ? (
+                                <input
+                                  autoFocus
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  onBlur={() => saveEdit(t.id)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }}
+                                  className="flex-1 rounded px-2 py-0.5 text-[12.5px] outline-none"
+                                  style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }}
+                                />
+                              ) : (
+                                <span
+                                  className="flex-1 text-[13px] leading-snug cursor-text"
+                                  style={{
+                                    color: state === "done" ? "var(--muted)" : state === "waiting" ? "#eab308" : "var(--text)",
+                                    textDecoration: state === "done" ? "line-through" : "none",
+                                  }}
+                                  onDoubleClick={() => state !== "done" && startEdit(t)}
+                                >
+                                  {t.text}
+                                </span>
+                              )}
+
                               {state === "done" && t.completed_at && (
                                 <span className="text-[11px] shrink-0" style={{ color: "var(--muted)" }}>{formatTime(t.completed_at)}</span>
                               )}
                               {state === "waiting" && (
                                 <span className="text-[11px] shrink-0" style={{ color: "#eab308" }}>oczekuje</span>
                               )}
+
+                              <button
+                                onClick={() => deleteTodo(day.date, t.id)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1 shrink-0"
+                                style={{ color: "var(--muted)" }}
+                              >
+                                ✕
+                              </button>
                             </div>
                           );
                         })}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {isToday && (
-                  <div className="px-5 py-3" style={{ borderTop: "1px solid var(--border)", background: "var(--ba-2)" }}>
-                    <Link href="/" className="text-[12px] font-medium" style={{ color: "var(--accent-2)" }}>Edytuj na dashboardzie →</Link>
-                  </div>
-                )}
+                  {/* Add todo inline */}
+                  {addingDate === day.date ? (
+                    <form onSubmit={(e) => addTodo(day.date, e)} className="flex gap-2 mt-1">
+                      <input
+                        autoFocus
+                        value={newText}
+                        onChange={(e) => setNewText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Escape") { setAddingDate(null); setNewText(""); } }}
+                        placeholder="Nowe zadanie…"
+                        className="flex-1 rounded-lg px-3 py-1.5 text-[12.5px] outline-none"
+                        style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)" }}
+                      />
+                      <button type="submit" disabled={!newText.trim()} className="px-3 py-1.5 rounded-lg text-[12px] font-medium disabled:opacity-40 shrink-0" style={{ background: "var(--accent)", color: "white" }}>
+                        Dodaj
+                      </button>
+                      <button type="button" onClick={() => { setAddingDate(null); setNewText(""); }} className="px-2 py-1.5 text-[12px]" style={{ color: "var(--muted)" }}>
+                        Anuluj
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => { setAddingDate(day.date); setExpanded((p) => new Set([...p, day.date])); }}
+                      className="text-[12px] mt-1"
+                      style={{ color: "var(--muted)" }}
+                    >
+                      + Dodaj zadanie
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
