@@ -159,15 +159,23 @@ export async function syncLeadsFromMeta(
   adAccountId: string,
   accessToken: string,
   pages?: Array<{ id: string; access_token: string }>,
+  selectedPageId?: string | null,
 ): Promise<number> {
   type LeadgenForm = { id: string; name: string };
 
   const metaLeads: MetaLead[] = [];
 
   if (pages && pages.length > 0) {
+    // Filter to selected page only (workspace isolation — only BeautyRise's page)
+    const pagesToSync = selectedPageId
+      ? pages.filter((p) => p.id === selectedPageId)
+      : pages;
+
+    if (pagesToSync.length === 0) return 0;
+
     // Fetch all pages' forms in parallel, then all forms' leads in parallel
     const perPageResults = await Promise.all(
-      pages.map(async (page) => {
+      pagesToSync.map(async (page) => {
         try {
           const pageClient = new MetaClient(page.access_token);
           const forms = await pageClient.paginate<LeadgenForm>(
@@ -263,17 +271,17 @@ export async function syncLeadsFromMeta(
     if (mid) existingMetaIds.add(mid);
   }
 
-  // Build rows for leads not yet in DB — ONLY from campaigns in this workspace's ad account
+  // Build rows for leads not yet in DB
+  // Leads without campaign_id (direct form submissions) are valid — save with null source_campaign_id
   const rows = metaLeads
     .filter((l) => !existingMetaIds.has(l.id))
-    .filter((l) => l.campaign_id && externalToInternal.has(l.campaign_id))
     .map((l) => {
       const fullName =
         extractField(l.field_data, "full_name", "name", "imię", "nazwisko") ??
         "Lead z Meta Ads";
       const phone = extractField(l.field_data, "phone", "telefon", "mobile");
       const email = extractField(l.field_data, "email", "mail", "e-mail");
-      const internalCampaignId = externalToInternal.get(l.campaign_id!) ?? null;
+      const internalCampaignId = l.campaign_id ? (externalToInternal.get(l.campaign_id) ?? null) : null;
 
       return {
         workspace_id: workspaceId,

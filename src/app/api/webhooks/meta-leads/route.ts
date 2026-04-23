@@ -91,6 +91,7 @@ export async function POST(request: Request) {
 
   const changes: Array<{
     leadgen_id: string;
+    page_id: string;
     campaign_id?: string;
     ad_id?: string;
     form_id: string;
@@ -146,11 +147,44 @@ async function processLeadgenEvents(
   supabase: SupabaseClient,
   changes: Array<{
     leadgen_id: string;
+    page_id: string;
     campaign_id?: string;
     ad_id?: string;
     form_id: string;
   }>,
 ) {
+  // Fetch all connected integrations once — needed for page_id → workspace lookup
+  const { data: allIntegrations } = await supabase
+    .from("integrations")
+    .select("workspace_id, credentials")
+    .eq("type", "meta_ads")
+    .eq("status", "connected");
+
+  // Build lookup maps from integrations
+  type PageEntry = { workspaceId: string; accessToken: string; pageCampaignId?: string };
+  const pageToWorkspace = new Map<string, PageEntry>();
+  const tokenByWorkspace = new Map<string, string>();
+
+  for (const int of allIntegrations ?? []) {
+    const creds = int.credentials as {
+      access_token?: string;
+      pages?: Array<{ id: string; access_token: string }>;
+      selected_page_id?: string | null;
+    };
+    if (creds.access_token) tokenByWorkspace.set(int.workspace_id, creds.access_token);
+    for (const page of creds.pages ?? []) {
+      // Only map the selected page (if set), otherwise map all pages
+      const selectedOk = !creds.selected_page_id || page.id === creds.selected_page_id;
+      if (selectedOk && page.access_token) {
+        pageToWorkspace.set(page.id, {
+          workspaceId: int.workspace_id,
+          accessToken: page.access_token,
+        });
+      }
+    }
+  }
+
+  // Build campaign lookup for changes that have campaign_id
   const campaignIds = [
     ...new Set(changes.map((c) => c.campaign_id).filter(Boolean) as string[]),
   ];
@@ -169,33 +203,29 @@ async function processLeadgenEvents(
     ]),
   );
 
-  const workspaceIds = [
-    ...new Set((campaignRows ?? []).map((c) => c.workspace_id)),
-  ];
-  const { data: integrationsRows } =
-    workspaceIds.length > 0
-      ? await supabase
-          .from("integrations")
-          .select("workspace_id, credentials")
-          .in("workspace_id", workspaceIds)
-          .eq("type", "meta_ads")
-      : { data: [] };
-
-  const tokenByWorkspace = new Map<string, string>();
-  for (const int of integrationsRows ?? []) {
-    const token = (int.credentials as { access_token?: string })?.access_token;
-    if (token) tokenByWorkspace.set(int.workspace_id, token);
-  }
-
   const processedResults = await Promise.all(
     changes.map(async (change) => {
       try {
-        if (!change.campaign_id) return null;
-        const campaign = campaignByExternal.get(change.campaign_id);
-        if (!campaign) return null;
+        // Resolve workspace + token: prefer campaign_id path, fall back to page_id
+        let workspaceId: string;
+        let accessToken: string;
+        let internalCampaignId: string | null = null;
 
-        const accessToken = tokenByWorkspace.get(campaign.workspace_id);
-        if (!accessToken) return null;
+        if (change.campaign_id && campaignByExternal.has(change.campaign_id)) {
+          const campaign = campaignByExternal.get(change.campaign_id)!;
+          workspaceId = campaign.workspace_id;
+          internalCampaignId = campaign.id;
+          const tok = tokenByWorkspace.get(workspaceId);
+          if (!tok) return null;
+          accessToken = tok;
+        } else if (change.page_id && pageToWorkspace.has(change.page_id)) {
+          const entry = pageToWorkspace.get(change.page_id)!;
+          workspaceId = entry.workspaceId;
+          accessToken = entry.accessToken;
+        } else {
+          // Cannot match to any workspace — skip
+          return null;
+        }
 
         const leadData = await fetchLeadFromMeta(change.leadgen_id, accessToken);
 
@@ -212,13 +242,13 @@ async function processLeadgenEvents(
 
         return {
           lead: {
-            workspace_id: campaign.workspace_id,
+            workspace_id: workspaceId,
             full_name: fullName,
             phone: fields.phone_number ?? fields.phone ?? null,
             email: fields.email ?? null,
             source: "meta_ads" as const,
-            source_campaign_id: campaign.id,
-            custom_fields: fields,
+            source_campaign_id: internalCampaignId,
+            custom_fields: { meta_lead_id: change.leadgen_id, form_id: change.form_id, ...fields },
           },
           eventPayload: {
             leadgen_id: change.leadgen_id,
@@ -238,15 +268,34 @@ async function processLeadgenEvents(
   );
   if (valid.length === 0) return;
 
+  // Deduplicate: skip leads already in DB (by meta_lead_id in custom_fields)
+  const { data: existing } = await supabase
+    .from("leads")
+    .select("custom_fields")
+    .in("workspace_id", [...new Set(valid.map((v) => v.lead.workspace_id))]);
+
+  const existingIds = new Set<string>();
+  for (const l of existing ?? []) {
+    const mid = (l.custom_fields as { meta_lead_id?: string } | null)?.meta_lead_id;
+    if (mid) existingIds.add(mid);
+  }
+
+  const toInsert = valid.filter((v) => {
+    const mid = (v.lead.custom_fields as { meta_lead_id?: string })?.meta_lead_id;
+    return !mid || !existingIds.has(mid);
+  });
+
+  if (toInsert.length === 0) return;
+
   const { data: inserted } = await supabase
     .from("leads")
-    .insert(valid.map((v) => v.lead))
+    .insert(toInsert.map((v) => v.lead))
     .select("id");
 
   const eventRows = (inserted ?? []).map((row, i) => ({
     lead_id: row.id,
     type: "meta_form_submitted" as const,
-    payload: valid[i].eventPayload,
+    payload: toInsert[i].eventPayload,
   }));
 
   if (eventRows.length > 0) {

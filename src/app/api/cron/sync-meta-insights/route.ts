@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       const creds = integ.credentials as {
         access_token?: string;
         selected_ad_account_id?: string;
+        selected_page_id?: string | null;
         pages?: Array<{ id: string; access_token: string }>;
       };
 
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
             creds.selected_ad_account_id,
             creds.access_token,
             creds.pages,
+            creds.selected_page_id,
           ),
         ]);
 
