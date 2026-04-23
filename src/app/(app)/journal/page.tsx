@@ -21,7 +21,7 @@ export default async function JournalPage() {
       .order("created_at", { ascending: true }),
     supabase
       .from("todo_items")
-      .select("id, date, text, completed, completed_at")
+      .select("id, date, text, completed, waiting, completed_at")
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
       .gte("date", since)
@@ -29,7 +29,7 @@ export default async function JournalPage() {
   ]);
 
   type NoteRow = { id: string; date: string; content: string; created_at: string };
-  type TodoRow = { id: string; date: string; text: string; completed: boolean; waiting?: boolean; completed_at: string | null };
+  type TodoRow = { id: string; date: string; text: string; completed: boolean; waiting: boolean; completed_at: string | null };
   type DayEntry = { date: string; notes: NoteRow[]; todos: TodoRow[] };
 
   const map = new Map<string, DayEntry>();
@@ -39,7 +39,7 @@ export default async function JournalPage() {
   }
   for (const t of (todos ?? []) as TodoRow[]) {
     if (!map.has(t.date)) map.set(t.date, { date: t.date, notes: [], todos: [] });
-    map.get(t.date)!.todos.push({ ...t, waiting: t.waiting ?? false });
+    map.get(t.date)!.todos.push(t);
   }
 
   const days = Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));

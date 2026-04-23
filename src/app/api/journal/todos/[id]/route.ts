@@ -38,25 +38,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       .eq("id", id)
       .eq("workspace_id", workspaceId)
       .eq("user_id", user.id)
-      .select("id, text, completed, completed_at")
+      .select("id, text, completed, waiting, completed_at")
       .single();
 
-    if (error) {
-      // Retry without waiting fields if column doesn't exist yet
-      const safeUpdates = { ...updates };
-      delete safeUpdates.waiting;
-      const { data: d2, error: e2 } = await supabase
-        .from("todo_items")
-        .update(safeUpdates)
-        .eq("id", id)
-        .eq("workspace_id", workspaceId)
-        .eq("user_id", user.id)
-        .select("id, text, completed, completed_at")
-        .single();
-      if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
-      return NextResponse.json({ todo: { ...d2, waiting: false } });
-    }
-    return NextResponse.json({ todo: { ...data, waiting: updates.waiting ?? false } });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ todo: data });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
