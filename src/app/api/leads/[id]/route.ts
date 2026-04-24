@@ -112,7 +112,7 @@ export async function PATCH(
 
   const body = await req.json();
   const stringFields = ["full_name", "phone", "email"] as const;
-  const update: Record<string, string | number | null> = {};
+  const update: Record<string, string | number | boolean | null> = {};
 
   for (const key of stringFields) {
     if (key in body) {
@@ -124,6 +124,11 @@ export async function PATCH(
   if ("potential_score" in body) {
     const s = body.potential_score;
     update.potential_score = (typeof s === "number" && s >= 0 && s <= 10) ? Math.floor(s) : null;
+  }
+
+  if ("archived" in body && typeof body.archived === "boolean") {
+    update.archived = body.archived;
+    update.deleted_at = body.archived ? new Date().toISOString() : null;
   }
 
   if (Object.keys(update).length === 0) {
@@ -170,4 +175,27 @@ export async function PATCH(
   ];
 
   return NextResponse.json({ ok: true, duplicates });
+}
+
+export async function DELETE(
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const supabase = createServiceClient();
+  const workspaceId = await getCurrentWorkspaceId();
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("id", id)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
+
+  if (!lead) return NextResponse.json({ error: "Nie znaleziono" }, { status: 404 });
+
+  const { error } = await supabase.from("leads").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
 }

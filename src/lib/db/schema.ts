@@ -118,6 +118,7 @@ export const leads = pgTable("leads", {
   notes: text("notes"),
   customFields: jsonb("custom_fields").default({}),
   archived: boolean("archived").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -5,6 +5,7 @@ import { sourceLabel } from "@/lib/constants";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
+import { DeleteLeadButton } from "@/components/delete-lead-button";
 
 type SearchParams = Promise<{
   q?: string;
@@ -143,6 +144,13 @@ export default async function LeadsPage({
             </Link>
           );
         })}
+        <Link
+          href="/leads/deleted"
+          className="px-3 py-1.5 rounded-md text-[12.5px] font-medium transition-all ml-auto"
+          style={{ color: "var(--muted)", border: "1px solid var(--border)" }}
+        >
+          🗑 Usunięte
+        </Link>
       </div>
 
       <LeadsFilters stages={stages} tags={tagsData ?? []} />
@@ -279,7 +287,10 @@ export default async function LeadsPage({
                       })}
                     </td>
                     <td className="px-4 py-3">
-                      <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} initialScore={(lead as { potential_score?: number | null }).potential_score} />
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} initialScore={(lead as { potential_score?: number | null }).potential_score} />
+                        <DeleteLeadButton leadId={lead.id} />
+                      </div>
                     </td>
                   </tr>
                 );
