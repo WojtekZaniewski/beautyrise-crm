@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 type Note = { id: string; payload: { text: string }; created_at: string };
 type LeadGroup = { name: string; campaigns: string[] };
@@ -226,7 +227,7 @@ export function LeadNotesPanel({
         )}
       </button>
 
-      {open && (
+      {open && createPortal(
         <>
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50 }} onClick={() => setOpen(false)} />
 
@@ -435,7 +436,8 @@ export function LeadNotesPanel({
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </>
   );
