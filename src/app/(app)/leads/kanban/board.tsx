@@ -419,11 +419,13 @@ function KanbanFinancialPanel({
   closedStageId,
   convertedAcquisitionCost,
   totalRevenue,
+  metaStats,
 }: {
   leads: Lead[];
   closedStageId: string | null;
   convertedAcquisitionCost: number;
   totalRevenue: number;
+  metaStats: MetaStats | null;
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
@@ -461,33 +463,77 @@ function KanbanFinancialPanel({
     { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#22c55e" : "#ef4444" },
   ];
 
+  const metaStatItems = metaStats
+    ? [
+        { label: "Śr. CPL", value: pln(metaStats.avgCPL) },
+        { label: "Śr. CPC", value: pln(metaStats.avgCPC) },
+        { label: "CTR", value: `${metaStats.ctr.toFixed(2)}%` },
+        { label: "Kliknięcia", value: metaStats.totalClicks.toLocaleString("pl-PL") },
+        { label: "Leady (kampanie)", value: metaStats.totalLeads.toString() },
+        { label: "Wyświetlenia", value: metaStats.totalImpressions.toLocaleString("pl-PL") },
+      ]
+    : [];
+
   return (
     <div
-      className="shrink-0 rounded-xl p-4 flex flex-col gap-3"
+      className="shrink-0 rounded-xl p-5 flex flex-col gap-4"
       style={{
-        width: 300,
+        width: 420,
         background: "var(--panel-solid)",
         border: "1px solid var(--border)",
         boxShadow: "var(--shadow-sm)",
       }}
     >
-      <span className="text-[12.5px] font-semibold tracking-tight">Wyniki finansowe</span>
+      <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe</span>
 
-      <div className="flex flex-col gap-1.5">
+      {/* Meta Ads stats grid */}
+      {metaStatItems.length > 0 && (
+        <div
+          className="rounded-lg p-3"
+          style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.14)" }}
+        >
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <div
+              className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold"
+              style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
+            >
+              f
+            </div>
+            <span className="text-[10.5px] font-semibold" style={{ color: "#3b82f6" }}>
+              Meta Ads
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {metaStatItems.map((s) => (
+              <div key={s.label} className="flex flex-col">
+                <span className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{s.label}</span>
+                <span className="text-[12px] font-semibold tabular-nums">{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Financial summary */}
+      <div
+        className="rounded-lg px-3 py-2.5"
+        style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}
+      >
         {summary.map((s) => (
-          <div key={s.label} className="flex items-center justify-between text-[12px]">
+          <div key={s.label} className="flex items-center justify-between py-1 text-[12px]">
             <span style={{ color: "var(--muted)" }}>{s.label}</span>
             <span className="font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
           </div>
         ))}
       </div>
 
+      {/* Filter toggles */}
       <div className="flex gap-1">
         {FILTER_OPTIONS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className="flex-1 py-1 rounded-md text-[11px] font-medium transition-all"
+            className="flex-1 py-1.5 rounded-md text-[11px] font-medium transition-all"
             style={{
               background: filter === f.key ? "var(--accent-subtle)" : "var(--ba-4)",
               color: filter === f.key ? "var(--accent-2)" : "var(--muted)",
@@ -499,7 +545,7 @@ function KanbanFinancialPanel({
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={chartData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="kGradSpend" x1="0" y1="0" x2="0" y2="1">
@@ -513,7 +559,7 @@ function KanbanFinancialPanel({
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
           <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={6} />
-          <YAxis tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={48} />
+          <YAxis tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={52} />
           <Tooltip
             formatter={(v: unknown) => pln(v as number)}
             contentStyle={{ fontSize: 11, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 8px" }}
@@ -796,6 +842,7 @@ export function KanbanBoard({
           closedStageId={closedStageId}
           convertedAcquisitionCost={convertedAcquisitionCost}
           totalRevenue={totalRevenue}
+          metaStats={metaStats}
         />
       )}
       </div>

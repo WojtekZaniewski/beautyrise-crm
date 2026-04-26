@@ -3,7 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
 import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
-import { RevenueChart, type DayPoint } from "@/components/dashboard/revenue-chart";
+import { RevenueChart, type DayPoint, type MetaAdsSummary } from "@/components/dashboard/revenue-chart";
 
 function fmt(n: number | null | undefined, decimals = 0) {
   if (n == null || isNaN(n)) return "—";
@@ -265,6 +265,15 @@ export default async function Dashboard() {
         data={chartData}
         totalSpend={chartTotalSpend}
         totalRevenue={chartTotalRevenue}
+        metaStats={metaConnected && totals.spend > 0 ? ({
+          avgCPL: totalCpl,
+          avgCPC: totals.clicks > 0 ? totals.spend / totals.clicks : null,
+          ctr: totalCtr,
+          totalClicks: totals.clicks,
+          totalLeads: totals.leads,
+          totalImpressions: totals.impressions,
+          totalSpend: totals.spend,
+        } satisfies MetaAdsSummary) : null}
       />
 
       {/* Campaigns */}

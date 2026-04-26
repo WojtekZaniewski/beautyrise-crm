@@ -13,6 +13,16 @@ import {
 
 export type DayPoint = { date: string; spend: number; revenue: number };
 
+export type MetaAdsSummary = {
+  avgCPL: number | null;
+  avgCPC: number | null;
+  ctr: number | null;
+  totalClicks: number;
+  totalLeads: number;
+  totalImpressions: number;
+  totalSpend: number;
+};
+
 type FilterMode = "both" | "spend" | "revenue";
 
 const FILTER_OPTIONS: { key: FilterMode; label: string }[] = [
@@ -33,10 +43,12 @@ export function RevenueChart({
   data,
   totalSpend,
   totalRevenue,
+  metaStats,
 }: {
   data: DayPoint[];
   totalSpend: number;
   totalRevenue: number;
+  metaStats?: MetaAdsSummary | null;
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
@@ -54,6 +66,17 @@ export function RevenueChart({
       color: profit >= 0 ? "#22c55e" : "#ef4444",
     },
   ];
+
+  const metaStatItems = metaStats
+    ? [
+        { label: "Śr. CPL", value: metaStats.avgCPL != null ? pln(metaStats.avgCPL) : "—" },
+        { label: "Śr. CPC", value: metaStats.avgCPC != null ? pln(metaStats.avgCPC) : "—" },
+        { label: "CTR", value: metaStats.ctr != null ? `${(metaStats.ctr * 100).toFixed(2)}%` : "—" },
+        { label: "Kliknięcia", value: metaStats.totalClicks.toLocaleString("pl-PL") },
+        { label: "Leady (kampanie)", value: metaStats.totalLeads.toLocaleString("pl-PL") },
+        { label: "Wyświetlenia", value: metaStats.totalImpressions.toLocaleString("pl-PL") },
+      ]
+    : [];
 
   return (
     <section
@@ -85,6 +108,34 @@ export function RevenueChart({
           ))}
         </div>
       </div>
+
+      {/* Meta Ads stats grid */}
+      {metaStatItems.length > 0 && (
+        <div
+          className="rounded-lg p-3 mb-4"
+          style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.14)" }}
+        >
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <div
+              className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold"
+              style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
+            >
+              f
+            </div>
+            <span className="text-[10.5px] font-semibold" style={{ color: "#3b82f6" }}>
+              Meta Ads (30 dni)
+            </span>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {metaStatItems.map((s) => (
+              <div key={s.label} className="flex flex-col">
+                <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>{s.label}</span>
+                <span className="text-[13px] font-semibold tabular-nums">{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-5">
         {summary.map((item) => (
