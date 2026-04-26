@@ -511,36 +511,36 @@ export function KanbanBoard({
     );
   }
 
-  async function handleDrop(targetStageId: string) {
-    if (!draggingId) return;
-    const prevLead = leads.find((l) => l.id === draggingId);
-    if (!prevLead || prevLead.stage_id === targetStageId) {
-      setDraggingId(null);
-      setOverStageId(null);
+  async function handleDrop(targetStageId: string, leadId: string) {
+    const prevLead = leads.find((l) => l.id === leadId);
+    if (!prevLead || prevLead.stage_id === targetStageId) return;
+
+    // Optimistic update
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, stage_id: targetStageId } : l)),
+    );
+
+    const res = await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stage_id: targetStageId }),
+    });
+
+    if (!res.ok) {
+      // Revert on failure
+      setLeads((prev) =>
+        prev.map((l) => (l.id === leadId ? { ...l, stage_id: prevLead.stage_id } : l)),
+      );
       return;
     }
 
-    const targetStage = stages.find((s) => s.id === targetStageId);
-
-    setLeads((prev) =>
-      prev.map((l) =>
-        l.id === draggingId ? { ...l, stage_id: targetStageId } : l,
-      ),
-    );
-    setDraggingId(null);
-    setOverStageId(null);
-
-    await supabase
-      .from("leads")
-      .update({ stage_id: targetStageId, updated_at: new Date().toISOString() })
-      .eq("id", draggingId);
-
-    await supabase.from("lead_events").insert({
-      lead_id: draggingId,
+    // Log stage change (best-effort, non-critical)
+    supabase.from("lead_events").insert({
+      lead_id: leadId,
       type: "stage_change",
       payload: {
         from: stages.find((s) => s.id === prevLead.stage_id)?.name,
-        to: targetStage?.name,
+        to: stages.find((s) => s.id === targetStageId)?.name,
       },
     });
   }
@@ -612,7 +612,10 @@ export function KanbanBoard({
               onDrop={(e) => {
                 e.preventDefault();
                 dragCounters.current[stage.id] = 0;
-                handleDrop(stage.id);
+                const leadId = e.dataTransfer.getData("text/plain");
+                setDraggingId(null);
+                setOverStageId(null);
+                if (leadId) handleDrop(stage.id, leadId);
               }}
             >
               {/* Column header */}

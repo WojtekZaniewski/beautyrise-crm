@@ -11,7 +11,7 @@ export async function PATCH(
 
   const { error } = await supabase
     .from("leads")
-    .update({ value_pln: value_pln ?? null })
+    .update({ value_pln: value_pln ?? null, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

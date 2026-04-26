@@ -131,6 +131,10 @@ export async function PATCH(
     update.deleted_at = body.archived ? new Date().toISOString() : null;
   }
 
+  if ("stage_id" in body && (typeof body.stage_id === "string" || body.stage_id === null)) {
+    update.stage_id = body.stage_id;
+  }
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "Brak pól do aktualizacji" }, { status: 400 });
   }
