@@ -1,19 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  closestCorners,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
@@ -42,7 +29,6 @@ const sourceConfig: Record<string, { label: string; color: string; bg: string }>
   sms: { label: "SMS", color: "#22c55e", bg: "rgba(34,197,94,0.10)" },
   email: { label: "E-mail", color: "#8b5cf6", bg: "rgba(139,92,246,0.10)" },
 };
-
 
 function pln(value: number): string {
   return new Intl.NumberFormat("pl-PL", {
@@ -124,37 +110,41 @@ function MetaStatsBar({
 
 function LeadCard({
   lead,
-  isDragging,
   isClosedStage,
+  isDragging,
+  onDragStart,
+  onDragEnd,
 }: {
   lead: Lead;
-  isDragging?: boolean;
   isClosedStage: boolean;
+  isDragging: boolean;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: lead.id });
-
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
 
   return (
     <div
-      ref={setNodeRef}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", lead.id);
+        onDragStart(lead.id);
+      }}
+      onDragEnd={onDragEnd}
+      className="bg-[var(--surface)] rounded-lg p-3 cursor-grab active:cursor-grabbing select-none shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all"
       style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.4 : 1,
         border: isClosedStage
           ? "1px solid rgba(34,197,94,0.35)"
           : "1px solid var(--border)",
+        opacity: isDragging ? 0.4 : 1,
       }}
-      {...attributes}
-      {...listeners}
-      className="bg-[var(--surface)] rounded-lg p-3 cursor-grab active:cursor-grabbing select-none shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-shadow"
     >
       <div className="flex items-start gap-1 mb-1">
         <Link
           href={`/leads/${lead.id}`}
+          draggable={false}
           onClick={(e) => e.stopPropagation()}
           className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug"
         >
@@ -205,141 +195,17 @@ function LeadCard({
             </span>
           )}
         </div>
-        <LeadNotesPanel
-          leadId={lead.id}
-          leadName={lead.full_name}
-          initialScore={lead.potential_score}
-        />
-      </div>
-    </div>
-  );
-}
-
-function DroppableColumn({
-  stage,
-  stageLeads,
-  activeId,
-  isClosed,
-  columnMetaLeads,
-  columnMetaSpend,
-}: {
-  stage: Stage;
-  stageLeads: Lead[];
-  activeId: string | null;
-  isClosed: boolean;
-  columnMetaLeads: Lead[];
-  columnMetaSpend: number;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
-
-  return (
-    <div
-      className="shrink-0 w-64 bg-[var(--bg-2)] border border-[var(--border)] rounded-xl flex flex-col"
-      style={{
-        borderTopColor: isClosed ? "#22c55e" : stage.color,
-        borderTopWidth: 3,
-      }}
-    >
-      {/* Column header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--border)]">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium">{stage.name}</span>
-          {isClosed && (
-            <span
-              className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
-              style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
-            >
-              Konwersja
-            </span>
-          )}
-        </div>
-        <span
-          className="text-xs bg-[var(--surface)] px-2 py-0.5 rounded-full border border-[var(--border)]"
-          style={{ color: "var(--muted)" }}
-        >
-          {stageLeads.length}
-        </span>
-      </div>
-
-      {/* Droppable card area */}
-      <SortableContext items={stageLeads.map((l) => l.id)}>
         <div
-          ref={setNodeRef}
-          className="flex flex-col gap-2 p-3 min-h-[120px] flex-1 transition-colors"
-          style={
-            isOver
-              ? { background: "rgba(255,76,0,0.04)" }
-              : undefined
-          }
+          draggable={false}
+          onDragStart={(e) => e.stopPropagation()}
         >
-          {stageLeads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              isDragging={lead.id === activeId}
-              isClosedStage={isClosed}
-            />
-          ))}
-          {stageLeads.length === 0 && (
-            <div
-              className="text-xs text-center py-6"
-              style={{ color: "var(--muted)" }}
-            >
-              Upuść lead tutaj
-            </div>
-          )}
+          <LeadNotesPanel
+            leadId={lead.id}
+            leadName={lead.full_name}
+            initialScore={lead.potential_score}
+          />
         </div>
-      </SortableContext>
-
-      {/* Closed stage cost summary */}
-      {isClosed && stageLeads.length > 0 && (
-        <div
-          className="mx-3 mb-3 px-3 py-2.5 rounded-lg text-xs"
-          style={{
-            background: "rgba(34,197,94,0.05)",
-            border: "1px solid rgba(34,197,94,0.15)",
-          }}
-        >
-          <div className="flex justify-between mb-1">
-            <span style={{ color: "var(--muted)" }}>Zamknięte leady</span>
-            <span className="font-semibold" style={{ color: "#22c55e" }}>
-              {stageLeads.length}
-            </span>
-          </div>
-          {columnMetaLeads.length > 0 && (
-            <>
-              <div className="flex justify-between mb-1">
-                <span style={{ color: "var(--muted)" }}>z Meta Ads</span>
-                <span className="font-semibold">{columnMetaLeads.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span style={{ color: "var(--muted)" }}>Koszt pozysk.</span>
-                <span
-                  className="font-semibold tabular-nums"
-                  style={{ color: "#3b82f6" }}
-                >
-                  {pln(columnMetaSpend)}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DragCard({ lead }: { lead: Lead }) {
-  return (
-    <div
-      className="bg-[var(--surface)] border border-[var(--accent)] rounded-lg p-3 shadow-xl w-56 rotate-2"
-    >
-      <div className="font-medium text-sm">{lead.full_name}</div>
-      {lead.phone && (
-        <div className="text-xs" style={{ color: "var(--muted)" }}>
-          {lead.phone}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -356,17 +222,13 @@ export function KanbanBoard({
   metaStats: MetaStats | null;
 }) {
   const [leads, setLeads] = useState(initialLeads);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overStageId, setOverStageId] = useState<string | null>(null);
+  const dragCounters = useRef<Record<string, number>>({});
   const supabase = createClient();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
-
-  // Last stage by order = "zamknięty" / closed for conversion tracking
   const closedStageId = stages.length > 0 ? stages[stages.length - 1].id : null;
 
-  // Meta Ads leads in closed stage → conversion cost stats
   const closedMetaLeads = closedStageId
     ? leads.filter((l) => l.stage_id === closedStageId && l.source === "meta_ads")
     : [];
@@ -379,49 +241,39 @@ export function KanbanBoard({
   const showMetaStats =
     metaStats !== null && (source === "meta_ads" || source === "all");
 
-  const activeLead = leads.find((l) => l.id === activeId);
-
   function getLeadsForStage(stageId: string) {
     return leads.filter((l) => l.stage_id === stageId);
   }
 
-  function onDragStart({ active }: DragStartEvent) {
-    setActiveId(active.id as string);
-  }
-
-  async function onDragEnd({ active, over }: DragEndEvent) {
-    setActiveId(null);
-    if (!over || active.id === over.id) return;
-
-    const leadId = active.id as string;
-    const overId = over.id as string;
-
-    const isStage = stages.some((s) => s.id === overId);
-    const targetStageId = isStage
-      ? overId
-      : (leads.find((l) => l.id === overId)?.stage_id ?? null);
-
-    if (!targetStageId) return;
-
-    const prevLead = leads.find((l) => l.id === leadId);
-    if (prevLead?.stage_id === targetStageId) return;
+  async function handleDrop(targetStageId: string) {
+    if (!draggingId) return;
+    const prevLead = leads.find((l) => l.id === draggingId);
+    if (!prevLead || prevLead.stage_id === targetStageId) {
+      setDraggingId(null);
+      setOverStageId(null);
+      return;
+    }
 
     const targetStage = stages.find((s) => s.id === targetStageId);
 
     setLeads((prev) =>
-      prev.map((l) => (l.id === leadId ? { ...l, stage_id: targetStageId } : l)),
+      prev.map((l) =>
+        l.id === draggingId ? { ...l, stage_id: targetStageId } : l,
+      ),
     );
+    setDraggingId(null);
+    setOverStageId(null);
 
     await supabase
       .from("leads")
       .update({ stage_id: targetStageId, updated_at: new Date().toISOString() })
-      .eq("id", leadId);
+      .eq("id", draggingId);
 
     await supabase.from("lead_events").insert({
-      lead_id: leadId,
+      lead_id: draggingId,
       type: "stage_change",
       payload: {
-        from: stages.find((s) => s.id === prevLead?.stage_id)?.name,
+        from: stages.find((s) => s.id === prevLead.stage_id)?.name,
         to: targetStage?.name,
       },
     });
@@ -429,7 +281,6 @@ export function KanbanBoard({
 
   return (
     <>
-      {/* Meta Ads stats bar */}
       {showMetaStats && (
         <MetaStatsBar
           metaStats={metaStats!}
@@ -438,43 +289,141 @@ export function KanbanBoard({
         />
       )}
 
-      {/* Kanban columns */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-      >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {stages.map((stage) => {
-            const stageLeads = getLeadsForStage(stage.id);
-            const isClosed = stage.id === closedStageId;
-            const columnMetaLeads = isClosed
-              ? stageLeads.filter((l) => l.source === "meta_ads")
-              : [];
-            const columnMetaSpend = columnMetaLeads.reduce(
-              (sum, l) => sum + (l.acquisition_cost ?? 0),
-              0,
-            );
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {stages.map((stage) => {
+          const stageLeads = getLeadsForStage(stage.id);
+          const isClosed = stage.id === closedStageId;
+          const isOver = overStageId === stage.id;
 
-            return (
-              <DroppableColumn
-                key={stage.id}
-                stage={stage}
-                stageLeads={stageLeads}
-                activeId={activeId}
-                isClosed={isClosed}
-                columnMetaLeads={columnMetaLeads}
-                columnMetaSpend={columnMetaSpend}
-              />
-            );
-          })}
-        </div>
+          const columnMetaLeads = isClosed
+            ? stageLeads.filter((l) => l.source === "meta_ads")
+            : [];
+          const columnMetaSpend = columnMetaLeads.reduce(
+            (sum, l) => sum + (l.acquisition_cost ?? 0),
+            0,
+          );
 
-        <DragOverlay>
-          {activeLead ? <DragCard lead={activeLead} /> : null}
-        </DragOverlay>
-      </DndContext>
+          return (
+            <div
+              key={stage.id}
+              className="shrink-0 w-64 rounded-xl flex flex-col transition-colors"
+              style={{
+                background: isOver ? "var(--bg-3, var(--bg-2))" : "var(--bg-2)",
+                border: isOver
+                  ? `2px solid ${isClosed ? "#22c55e" : stage.color}`
+                  : `1px solid var(--border)`,
+                borderTopColor: isClosed ? "#22c55e" : stage.color,
+                borderTopWidth: 3,
+              }}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                dragCounters.current[stage.id] =
+                  (dragCounters.current[stage.id] ?? 0) + 1;
+                setOverStageId(stage.id);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDragLeave={() => {
+                dragCounters.current[stage.id] =
+                  (dragCounters.current[stage.id] ?? 1) - 1;
+                if (dragCounters.current[stage.id] <= 0) {
+                  dragCounters.current[stage.id] = 0;
+                  setOverStageId((prev) => (prev === stage.id ? null : prev));
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                dragCounters.current[stage.id] = 0;
+                handleDrop(stage.id);
+              }}
+            >
+              {/* Column header */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--border)]">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium">{stage.name}</span>
+                  {isClosed && (
+                    <span
+                      className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                      style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
+                    >
+                      Konwersja
+                    </span>
+                  )}
+                </div>
+                <span
+                  className="text-xs bg-[var(--surface)] px-2 py-0.5 rounded-full border border-[var(--border)]"
+                  style={{ color: "var(--muted)" }}
+                >
+                  {stageLeads.length}
+                </span>
+              </div>
+
+              {/* Lead cards */}
+              <div className="flex flex-col gap-2 p-3 min-h-[140px] flex-1">
+                {stageLeads.map((lead) => (
+                  <LeadCard
+                    key={lead.id}
+                    lead={lead}
+                    isClosedStage={isClosed}
+                    isDragging={lead.id === draggingId}
+                    onDragStart={setDraggingId}
+                    onDragEnd={() => {
+                      setDraggingId(null);
+                      setOverStageId(null);
+                      dragCounters.current = {};
+                    }}
+                  />
+                ))}
+                {stageLeads.length === 0 && (
+                  <div
+                    className="text-xs text-center py-8"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    Upuść lead tutaj
+                  </div>
+                )}
+              </div>
+
+              {/* Closed stage cost summary */}
+              {isClosed && stageLeads.length > 0 && (
+                <div
+                  className="mx-3 mb-3 px-3 py-2.5 rounded-lg text-xs"
+                  style={{
+                    background: "rgba(34,197,94,0.05)",
+                    border: "1px solid rgba(34,197,94,0.15)",
+                  }}
+                >
+                  <div className="flex justify-between mb-1">
+                    <span style={{ color: "var(--muted)" }}>Zamknięte leady</span>
+                    <span className="font-semibold" style={{ color: "#22c55e" }}>
+                      {stageLeads.length}
+                    </span>
+                  </div>
+                  {columnMetaLeads.length > 0 && (
+                    <>
+                      <div className="flex justify-between mb-1">
+                        <span style={{ color: "var(--muted)" }}>z Meta Ads</span>
+                        <span className="font-semibold">{columnMetaLeads.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span style={{ color: "var(--muted)" }}>Koszt pozysk.</span>
+                        <span
+                          className="font-semibold tabular-nums"
+                          style={{ color: "#3b82f6" }}
+                        >
+                          {pln(columnMetaSpend)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }
