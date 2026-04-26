@@ -6,15 +6,15 @@ import Link from "next/link";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import type { MetaStats } from "./page";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Cell,
-  ReferenceLine,
+  CartesianGrid,
 } from "recharts";
+import { useMemo } from "react";
 
 type Stage = { id: string; name: string; color: string };
 type Lead = {
@@ -92,98 +92,45 @@ function MetaStatsBar({
     red: { bg: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" },
   };
 
-  const hasChart = totalRevenue > 0 || convertedAcquisitionCost > 0;
-  const barData = [
-    { name: "Koszt", value: convertedAcquisitionCost, color: "#3b82f6" },
-    { name: "Przychód", value: totalRevenue, color: "#22c55e" },
-    { name: "Zysk", value: profit, color: profit >= 0 ? "#22c55e" : "#ef4444" },
-  ];
-
   return (
     <div
-      className="flex gap-4 mb-5 p-4 rounded-xl"
+      className="flex flex-wrap gap-3 mb-5 p-4 rounded-xl items-center"
       style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.18)" }}
     >
-      {/* Left: label + stats chips */}
-      <div className="flex flex-wrap gap-3 items-center flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mr-1 self-start pt-1">
-          <div
-            className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
-            style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
-          >
-            f
-          </div>
-          <span className="text-[11px] font-semibold" style={{ color: "#3b82f6" }}>
-            Meta Ads
-          </span>
-        </div>
-        {items.map((item) => {
-          const hs = item.highlight ? highlightStyle[item.highlight] : null;
-          return (
-            <div
-              key={item.label}
-              className="flex flex-col px-3 py-2 rounded-lg min-w-[80px]"
-              style={{
-                background: hs ? hs.bg : "var(--surface)",
-                border: hs ? hs.border : "1px solid var(--border)",
-              }}
-            >
-              <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>
-                {item.label}
-              </span>
-              <span
-                className="text-[13px] font-semibold tabular-nums"
-                style={{ color: hs ? hs.color : "var(--text)" }}
-              >
-                {item.value}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Right: bar chart — Koszt vs Przychód vs Zysk */}
-      {hasChart && (
+      <div className="flex items-center gap-1.5 mr-1 self-start pt-1">
         <div
-          className="shrink-0 flex flex-col pl-4"
-          style={{ width: 220, borderLeft: "1px solid rgba(59,130,246,0.2)" }}
+          className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
+          style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
         >
-          <span
-            className="text-[10px] font-semibold uppercase tracking-wide mb-1"
-            style={{ color: "var(--muted)" }}
-          >
-            Koszt vs Przychód
-          </span>
-          <ResponsiveContainer width="100%" height={90}>
-            <BarChart data={barData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barCategoryGap="30%">
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 9, fill: "var(--muted)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis hide domain={["auto", "auto"]} />
-              <ReferenceLine y={0} stroke="rgba(0,0,0,0.1)" />
-              <Tooltip
-                formatter={(v: unknown) => [pln(v as number)]}
-                labelStyle={{ fontSize: 11 }}
-                contentStyle={{
-                  fontSize: 11,
-                  background: "var(--panel-solid)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 8,
-                  padding: "4px 8px",
-                }}
-              />
-              <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                {barData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          f
         </div>
-      )}
+        <span className="text-[11px] font-semibold" style={{ color: "#3b82f6" }}>
+          Meta Ads
+        </span>
+      </div>
+      {items.map((item) => {
+        const hs = item.highlight ? highlightStyle[item.highlight] : null;
+        return (
+          <div
+            key={item.label}
+            className="flex flex-col px-3 py-2 rounded-lg min-w-[80px]"
+            style={{
+              background: hs ? hs.bg : "var(--surface)",
+              border: hs ? hs.border : "1px solid var(--border)",
+            }}
+          >
+            <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>
+              {item.label}
+            </span>
+            <span
+              className="text-[13px] font-semibold tabular-nums"
+              style={{ color: hs ? hs.color : "var(--text)" }}
+            >
+              {item.value}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -459,6 +406,130 @@ function LeadCard({
   );
 }
 
+type FilterMode = "both" | "spend" | "revenue";
+
+const FILTER_OPTIONS: { key: FilterMode; label: string }[] = [
+  { key: "spend", label: "Wydatki" },
+  { key: "revenue", label: "Przychód" },
+  { key: "both", label: "Oba" },
+];
+
+function KanbanFinancialPanel({
+  leads,
+  closedStageId,
+  convertedAcquisitionCost,
+  totalRevenue,
+}: {
+  leads: Lead[];
+  closedStageId: string | null;
+  convertedAcquisitionCost: number;
+  totalRevenue: number;
+}) {
+  const [filter, setFilter] = useState<FilterMode>("both");
+
+  const profit = totalRevenue - convertedAcquisitionCost;
+
+  const chartData = useMemo(() => {
+    const result: { date: string; spend: number; revenue: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const dateStr = d.toISOString().split("T")[0];
+      const label = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+
+      const dayLeads = leads.filter((l) => l.created_at.startsWith(dateStr));
+      const dayRevLeads = closedStageId
+        ? leads.filter(
+            (l) =>
+              l.stage_id === closedStageId &&
+              l.value_pln != null &&
+              l.created_at.startsWith(dateStr),
+          )
+        : [];
+
+      result.push({
+        date: label,
+        spend: dayLeads.reduce((s, l) => s + (l.acquisition_cost ?? 0), 0),
+        revenue: dayRevLeads.reduce((s, l) => s + parseFloat(l.value_pln!), 0),
+      });
+    }
+    return result;
+  }, [leads, closedStageId]);
+
+  const summary = [
+    { label: "Wydatki", value: pln(convertedAcquisitionCost), color: "#3b82f6" },
+    { label: "Przychód", value: pln(totalRevenue), color: "#22c55e" },
+    { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#22c55e" : "#ef4444" },
+  ];
+
+  return (
+    <div
+      className="shrink-0 rounded-xl p-4 flex flex-col gap-3"
+      style={{
+        width: 300,
+        background: "var(--panel-solid)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <span className="text-[12.5px] font-semibold tracking-tight">Wyniki finansowe</span>
+
+      <div className="flex flex-col gap-1.5">
+        {summary.map((s) => (
+          <div key={s.label} className="flex items-center justify-between text-[12px]">
+            <span style={{ color: "var(--muted)" }}>{s.label}</span>
+            <span className="font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-1">
+        {FILTER_OPTIONS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className="flex-1 py-1 rounded-md text-[11px] font-medium transition-all"
+            style={{
+              background: filter === f.key ? "var(--accent-subtle)" : "var(--ba-4)",
+              color: filter === f.key ? "var(--accent-2)" : "var(--muted)",
+              border: filter === f.key ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={chartData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id="kGradSpend" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="kGradRevenue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+          <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={6} />
+          <YAxis tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={48} />
+          <Tooltip
+            formatter={(v: unknown) => pln(v as number)}
+            contentStyle={{ fontSize: 11, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 8px" }}
+          />
+          {(filter === "spend" || filter === "both") && (
+            <Area type="monotone" dataKey="spend" name="Wydatki" stroke="#3b82f6" fill="url(#kGradSpend)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+          )}
+          {(filter === "revenue" || filter === "both") && (
+            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#kGradRevenue)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+          )}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export function KanbanBoard({
   stages,
   initialLeads,
@@ -556,7 +627,8 @@ export function KanbanBoard({
         />
       )}
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-5 items-start">
+      <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-w-0">
         {stages.map((stage) => {
           const stageLeads = getLeadsForStage(stage.id);
           const isClosed = stage.id === closedStageId;
@@ -716,6 +788,16 @@ export function KanbanBoard({
             </div>
           );
         })}
+      </div>
+
+      {showMetaStats && (
+        <KanbanFinancialPanel
+          leads={leads}
+          closedStageId={closedStageId}
+          convertedAcquisitionCost={convertedAcquisitionCost}
+          totalRevenue={totalRevenue}
+        />
+      )}
       </div>
     </>
   );

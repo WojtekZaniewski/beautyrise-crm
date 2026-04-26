@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -11,6 +12,14 @@ import {
 } from "recharts";
 
 export type DayPoint = { date: string; spend: number; revenue: number };
+
+type FilterMode = "both" | "spend" | "revenue";
+
+const FILTER_OPTIONS: { key: FilterMode; label: string }[] = [
+  { key: "spend", label: "Wydatki" },
+  { key: "revenue", label: "Przychód" },
+  { key: "both", label: "Oba" },
+];
 
 function pln(v: number) {
   return v.toLocaleString("pl-PL", {
@@ -29,6 +38,8 @@ export function RevenueChart({
   totalSpend: number;
   totalRevenue: number;
 }) {
+  const [filter, setFilter] = useState<FilterMode>("both");
+
   const profit = totalRevenue - totalSpend;
   const hasData = totalSpend > 0 || totalRevenue > 0;
 
@@ -53,9 +64,27 @@ export function RevenueChart({
         boxShadow: "var(--shadow-sm)",
       }}
     >
-      <h2 className="text-[13.5px] font-semibold tracking-tight mb-4">
-        Wyniki finansowe (30 dni)
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-[13.5px] font-semibold tracking-tight">
+          Wyniki finansowe (30 dni)
+        </h2>
+        <div className="flex gap-1">
+          {FILTER_OPTIONS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className="px-2.5 py-1 rounded-md text-[11px] font-medium transition-all"
+              style={{
+                background: filter === f.key ? "var(--accent-subtle)" : "var(--ba-4)",
+                color: filter === f.key ? "var(--accent-2)" : "var(--muted)",
+                border: filter === f.key ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-3 mb-5">
         {summary.map((item) => (
@@ -124,26 +153,30 @@ export function RevenueChart({
               padding: "6px 10px",
             }}
           />
-          <Area
-            type="monotone"
-            dataKey="spend"
-            name="Wydatki"
-            stroke="#3b82f6"
-            fill="url(#gradSpend)"
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={{ r: 3 }}
-          />
-          <Area
-            type="monotone"
-            dataKey="revenue"
-            name="Przychód"
-            stroke="#22c55e"
-            fill="url(#gradRevenue)"
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={{ r: 3 }}
-          />
+          {(filter === "spend" || filter === "both") && (
+            <Area
+              type="monotone"
+              dataKey="spend"
+              name="Wydatki"
+              stroke="#3b82f6"
+              fill="url(#gradSpend)"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3 }}
+            />
+          )}
+          {(filter === "revenue" || filter === "both") && (
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              name="Przychód"
+              stroke="#22c55e"
+              fill="url(#gradRevenue)"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3 }}
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </section>
