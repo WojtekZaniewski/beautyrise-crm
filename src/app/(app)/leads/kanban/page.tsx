@@ -1,11 +1,11 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getPipelines, getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
-import { PipelineSelect } from "@/components/pipeline-select";
+import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { SourceSelect } from "@/components/source-select";
+import { CampaignSelect } from "@/components/campaign-select";
 import { KanbanBoard } from "./board";
 
-type SearchParams = Promise<{ source?: string }>;
+type SearchParams = Promise<{ source?: string; campaign?: string }>;
 
 export type MetaStats = {
   totalSpend: number;
@@ -22,19 +22,22 @@ export default async function KanbanPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { source = "all" } = await searchParams;
+  const { source = "all", campaign = "all" } = await searchParams;
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
-  const [pipelines, currentPipelineId] = await Promise.all([
-    getPipelines(WORKSPACE_ID),
-    getCurrentPipelineId(WORKSPACE_ID),
-  ]);
-
+  const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
   const stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
   const stageIds = stages.map((s) => s.id);
 
-  // Leads query with source filter
+  // Fetch all campaigns for this workspace (needed for dropdown + metrics)
+  const { data: campaigns } = await supabase
+    .from("campaigns")
+    .select("id, name")
+    .eq("workspace_id", WORKSPACE_ID)
+    .order("name");
+
+  // Leads query
   let leadsRaw: Array<{
     id: string;
     full_name: string;
@@ -60,21 +63,24 @@ export default async function KanbanPage({
       q = q.eq("source", source);
     }
 
+    // Filter by specific campaign when Meta Ads + campaign selected
+    if (source === "meta_ads" && campaign !== "all") {
+      q = q.eq("source_campaign_id", campaign);
+    }
+
     const { data } = await q;
     leadsRaw = (data ?? []) as typeof leadsRaw;
   }
 
-  // Fetch Meta Ads campaign metrics for stats bar
+  // Fetch Meta Ads campaign metrics (for stats bar)
   let metaStats: MetaStats | null = null;
   const campaignMap: Record<string, { name: string; avgCPL: number }> = {};
 
-  const { data: campaigns } = await supabase
-    .from("campaigns")
-    .select("id, name")
-    .eq("workspace_id", WORKSPACE_ID);
-
   if (campaigns && campaigns.length > 0) {
-    const campaignIds = campaigns.map((c) => c.id);
+    const campaignIds =
+      source === "meta_ads" && campaign !== "all"
+        ? [campaign]
+        : campaigns.map((c) => c.id);
 
     const { data: metrics } = await supabase
       .from("campaign_metrics_daily")
@@ -145,11 +151,13 @@ export default async function KanbanPage({
     <div className="px-8 py-8 anim-page">
       <div className="flex items-center gap-3 heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
         <h1 className="text-2xl font-semibold">Kanban</h1>
-        <PipelineSelect pipelines={pipelines} currentPipelineId={currentPipelineId} />
         <SourceSelect current={source} />
+        {source === "meta_ads" && (
+          <CampaignSelect campaigns={campaigns ?? []} current={campaign} />
+        )}
       </div>
       <KanbanBoard
-        key={source}
+        key={`${source}-${campaign}`}
         stages={stages}
         initialLeads={leads}
         source={source}
