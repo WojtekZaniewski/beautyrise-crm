@@ -406,13 +406,38 @@ function LeadCard({
   );
 }
 
-type FilterMode = "both" | "spend" | "revenue";
+type FilterMode =
+  | "spend" | "revenue" | "both"
+  | "cpl" | "cpc" | "ctr"
+  | "clicks" | "leads" | "impressions";
 
-const FILTER_OPTIONS: { key: FilterMode; label: string }[] = [
-  { key: "spend", label: "Wydatki" },
+const MAIN_FILTERS: { key: FilterMode; label: string }[] = [
+  { key: "spend",   label: "Wydatki" },
   { key: "revenue", label: "Przychód" },
-  { key: "both", label: "Oba" },
+  { key: "both",    label: "Oba" },
 ];
+
+const FILTER_COLOR: Record<FilterMode, string> = {
+  spend: "#3b82f6", revenue: "#22c55e", both: "#3b82f6",
+  cpl: "#f97316", cpc: "#8b5cf6", ctr: "#ec4899",
+  clicks: "#f59e0b", leads: "#06b6d4", impressions: "#6b7280",
+};
+
+const PLN_MODES = new Set<FilterMode>(["spend", "revenue", "both", "cpl", "cpc"]);
+const PCT_MODES = new Set<FilterMode>(["ctr"]);
+
+type DailyMetric = { date: string; spend: number; clicks: number; impressions: number; leadsCount: number };
+
+function fmtVal(v: number, mode: FilterMode): string {
+  if (PLN_MODES.has(mode)) return pln(v);
+  if (PCT_MODES.has(mode)) return `${v.toFixed(2)}%`;
+  return v.toLocaleString("pl-PL");
+}
+function fmtTick(v: number, mode: FilterMode): string {
+  if (PLN_MODES.has(mode)) return `${v} zł`;
+  if (PCT_MODES.has(mode)) return `${v.toFixed(1)}%`;
+  return String(Math.round(v));
+}
 
 function KanbanFinancialPanel({
   leads,
@@ -420,74 +445,82 @@ function KanbanFinancialPanel({
   convertedAcquisitionCost,
   totalRevenue,
   metaStats,
+  dailyMetrics,
 }: {
   leads: Lead[];
   closedStageId: string | null;
   convertedAcquisitionCost: number;
   totalRevenue: number;
   metaStats: MetaStats | null;
+  dailyMetrics: DailyMetric[];
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
   const profit = totalRevenue - convertedAcquisitionCost;
+  const isFinancial = filter === "spend" || filter === "revenue" || filter === "both";
+  const color = FILTER_COLOR[filter];
 
   const chartData = useMemo(() => {
-    const result: { date: string; spend: number; revenue: number }[] = [];
+    const dmByDate = Object.fromEntries(dailyMetrics.map((m) => [m.date, m]));
+    const result: Record<string, number>[] = [];
     for (let i = 29; i >= 0; i--) {
       const d = new Date(Date.now() - i * 86400000);
       const dateStr = d.toISOString().split("T")[0];
       const label = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+      const dm = dmByDate[dateStr];
 
-      const dayLeads = leads.filter((l) => l.created_at.startsWith(dateStr));
       const dayRevLeads = closedStageId
-        ? leads.filter(
-            (l) =>
-              l.stage_id === closedStageId &&
-              l.value_pln != null &&
-              l.created_at.startsWith(dateStr),
-          )
+        ? leads.filter((l) => l.stage_id === closedStageId && l.value_pln != null && l.created_at.startsWith(dateStr))
         : [];
+      const revenue = dayRevLeads.reduce((s, l) => s + parseFloat(l.value_pln!), 0);
+
+      const daySpend       = dm?.spend       ?? 0;
+      const dayClicks      = dm?.clicks      ?? 0;
+      const dayImpressions = dm?.impressions ?? 0;
+      const dayLeads       = dm?.leadsCount  ?? 0;
 
       result.push({
-        date: label,
-        spend: dayLeads.reduce((s, l) => s + (l.acquisition_cost ?? 0), 0),
-        revenue: dayRevLeads.reduce((s, l) => s + parseFloat(l.value_pln!), 0),
+        date: label as unknown as number,
+        spend:       daySpend,
+        revenue,
+        clicks:      dayClicks,
+        impressions: dayImpressions,
+        leads:       dayLeads,
+        cpl:         dayLeads       > 0 ? daySpend / dayLeads       : 0,
+        cpc:         dayClicks      > 0 ? daySpend / dayClicks      : 0,
+        ctr:         dayImpressions > 0 ? (dayClicks / dayImpressions) * 100 : 0,
       });
     }
     return result;
-  }, [leads, closedStageId]);
+  }, [leads, closedStageId, dailyMetrics]);
 
   const summary = [
-    { label: "Wydatki", value: pln(convertedAcquisitionCost), color: "#3b82f6" },
-    { label: "Przychód", value: pln(totalRevenue), color: "#22c55e" },
+    { label: "Wydatki",  value: pln(convertedAcquisitionCost), color: "#3b82f6" },
+    { label: "Przychód", value: pln(totalRevenue),              color: "#22c55e" },
     { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#22c55e" : "#ef4444" },
   ];
 
-  const metaStatItems = metaStats
+  type StatItem = { key: FilterMode; label: string; value: string };
+  const metaItems: StatItem[] = metaStats
     ? [
-        { label: "Śr. CPL", value: pln(metaStats.avgCPL) },
-        { label: "Śr. CPC", value: pln(metaStats.avgCPC) },
-        { label: "CTR", value: `${metaStats.ctr.toFixed(2)}%` },
-        { label: "Kliknięcia", value: metaStats.totalClicks.toLocaleString("pl-PL") },
-        { label: "Leady (kampanie)", value: metaStats.totalLeads.toString() },
-        { label: "Wyświetlenia", value: metaStats.totalImpressions.toLocaleString("pl-PL") },
+        { key: "cpl",         label: "Śr. CPL",      value: pln(metaStats.avgCPL) },
+        { key: "cpc",         label: "Śr. CPC",      value: pln(metaStats.avgCPC) },
+        { key: "ctr",         label: "CTR",           value: `${metaStats.ctr.toFixed(2)}%` },
+        { key: "clicks",      label: "Kliknięcia",   value: metaStats.totalClicks.toLocaleString("pl-PL") },
+        { key: "leads",       label: "Leady",        value: metaStats.totalLeads.toString() },
+        { key: "impressions", label: "Wyświetlenia", value: metaStats.totalImpressions.toLocaleString("pl-PL") },
       ]
     : [];
 
   return (
     <div
       className="shrink-0 rounded-xl p-5 flex flex-col gap-4"
-      style={{
-        width: 420,
-        background: "var(--panel-solid)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-sm)",
-      }}
+      style={{ width: 420, background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe</span>
 
-      {/* Meta Ads stats grid */}
-      {metaStatItems.length > 0 && (
+      {/* Clickable Meta Ads stats */}
+      {metaItems.length > 0 && (
         <div
           className="rounded-lg p-3"
           style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.14)" }}
@@ -500,44 +533,57 @@ function KanbanFinancialPanel({
               f
             </div>
             <span className="text-[10.5px] font-semibold" style={{ color: "#3b82f6" }}>
-              Meta Ads
+              Meta Ads — kliknij wskaźnik
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {metaStatItems.map((s) => (
-              <div key={s.label} className="flex flex-col">
-                <span className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{s.label}</span>
-                <span className="text-[12px] font-semibold tabular-nums">{s.value}</span>
-              </div>
-            ))}
+          <div className="grid grid-cols-3 gap-1.5">
+            {metaItems.map((s) => {
+              const active = filter === s.key;
+              const c = FILTER_COLOR[s.key];
+              return (
+                <button
+                  key={s.key}
+                  onClick={() => setFilter(s.key)}
+                  className="flex flex-col text-left px-2.5 py-2 rounded-lg transition-all"
+                  style={{
+                    background: active ? `${c}12` : "var(--surface)",
+                    border:     active ? `1px solid ${c}40` : "1px solid var(--border)",
+                  }}
+                >
+                  <span className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{s.label}</span>
+                  <span className="text-[12px] font-semibold tabular-nums" style={{ color: active ? c : "var(--text)" }}>
+                    {s.value}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Financial summary */}
-      <div
-        className="rounded-lg px-3 py-2.5"
-        style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}
-      >
-        {summary.map((s) => (
-          <div key={s.label} className="flex items-center justify-between py-1 text-[12px]">
-            <span style={{ color: "var(--muted)" }}>{s.label}</span>
-            <span className="font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
-          </div>
-        ))}
-      </div>
+      {isFinancial && (
+        <div className="rounded-lg px-3 py-2.5" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+          {summary.map((s) => (
+            <div key={s.label} className="flex items-center justify-between py-1 text-[12px]">
+              <span style={{ color: "var(--muted)" }}>{s.label}</span>
+              <span className="font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Filter toggles */}
+      {/* Main filter toggles */}
       <div className="flex gap-1">
-        {FILTER_OPTIONS.map((f) => (
+        {MAIN_FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
             className="flex-1 py-1.5 rounded-md text-[11px] font-medium transition-all"
             style={{
               background: filter === f.key ? "var(--accent-subtle)" : "var(--ba-4)",
-              color: filter === f.key ? "var(--accent-2)" : "var(--muted)",
-              border: filter === f.key ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
+              color:      filter === f.key ? "var(--accent-2)"       : "var(--muted)",
+              border:     filter === f.key ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
             }}
           >
             {f.label}
@@ -545,30 +591,51 @@ function KanbanFinancialPanel({
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
+      <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={chartData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
           <defs>
-            <linearGradient id="kGradSpend" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="kGradA" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.18} />
               <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
             </linearGradient>
-            <linearGradient id="kGradRevenue" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="kGradB" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#22c55e" stopOpacity={0.18} />
               <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="kGradMeta" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.18} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
           <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={6} />
-          <YAxis tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={52} />
+          <YAxis
+            tick={{ fontSize: 9, fill: "var(--muted)" }}
+            axisLine={false} tickLine={false}
+            tickFormatter={(v: number) => fmtTick(v, filter)}
+            width={54}
+          />
           <Tooltip
-            formatter={(v: unknown) => pln(v as number)}
+            formatter={(v: unknown) => fmtVal(v as number, filter)}
             contentStyle={{ fontSize: 11, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 8px" }}
           />
           {(filter === "spend" || filter === "both") && (
-            <Area type="monotone" dataKey="spend" name="Wydatki" stroke="#3b82f6" fill="url(#kGradSpend)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#3b82f6" fill="url(#kGradA)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
           )}
           {(filter === "revenue" || filter === "both") && (
-            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#kGradRevenue)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#kGradB)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+          )}
+          {!isFinancial && (
+            <Area
+              type="monotone"
+              dataKey={filter}
+              name={metaItems.find((s) => s.key === filter)?.label ?? filter}
+              stroke={color}
+              fill="url(#kGradMeta)"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3 }}
+            />
           )}
         </AreaChart>
       </ResponsiveContainer>
@@ -581,11 +648,13 @@ export function KanbanBoard({
   initialLeads,
   source,
   metaStats,
+  dailyMetrics,
 }: {
   stages: Stage[];
   initialLeads: Lead[];
   source: string;
   metaStats: MetaStats | null;
+  dailyMetrics: DailyMetric[];
 }) {
   const [leads, setLeads] = useState(initialLeads);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -843,6 +912,7 @@ export function KanbanBoard({
           convertedAcquisitionCost={convertedAcquisitionCost}
           totalRevenue={totalRevenue}
           metaStats={metaStats}
+          dailyMetrics={dailyMetrics}
         />
       )}
       </div>

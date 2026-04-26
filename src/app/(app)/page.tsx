@@ -134,15 +134,35 @@ export default async function Dashboard() {
     spendByDay[m.date] = (spendByDay[m.date] ?? 0) + parseFloat(m.spend ?? "0");
   }
 
+  // Build daily meta stats maps
+  const clicksByDay: Record<string, number> = {};
+  const impressionsByDay: Record<string, number> = {};
+  const leadsByDay: Record<string, number> = {};
+  for (const m of metrics) {
+    clicksByDay[m.date]      = (clicksByDay[m.date]      ?? 0) + (m.clicks      ?? 0);
+    impressionsByDay[m.date] = (impressionsByDay[m.date] ?? 0) + (m.impressions ?? 0);
+    leadsByDay[m.date]       = (leadsByDay[m.date]       ?? 0) + (m.leads_count ?? 0);
+  }
+
   // Build 30-day combined dataset
   const chartData: DayPoint[] = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000);
     const dateStr = d.toISOString().split("T")[0];
+    const daySpend       = spendByDay[dateStr]       ?? 0;
+    const dayClicks      = clicksByDay[dateStr]      ?? 0;
+    const dayImpressions = impressionsByDay[dateStr] ?? 0;
+    const dayLeads       = leadsByDay[dateStr]       ?? 0;
     chartData.push({
-      date: d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
-      spend: spendByDay[dateStr] ?? 0,
-      revenue: revenueByDay[dateStr] ?? 0,
+      date:        d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
+      spend:       daySpend,
+      revenue:     revenueByDay[dateStr] ?? 0,
+      clicks:      dayClicks,
+      impressions: dayImpressions,
+      leads:       dayLeads,
+      cpl:         dayLeads       > 0 ? daySpend / dayLeads       : 0,
+      cpc:         dayClicks      > 0 ? daySpend / dayClicks      : 0,
+      ctr:         dayImpressions > 0 ? (dayClicks / dayImpressions) * 100 : 0,
     });
   }
 

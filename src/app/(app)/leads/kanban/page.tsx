@@ -83,10 +83,12 @@ export default async function KanbanPage({
         ? [campaign]
         : campaigns.map((c) => c.id);
 
+    const thirtyDaysAgoDate = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
     const { data: metrics } = await supabase
       .from("campaign_metrics_daily")
-      .select("campaign_id, spend, impressions, clicks, leads_count")
-      .in("campaign_id", campaignIds);
+      .select("campaign_id, date, spend, impressions, clicks, leads_count")
+      .in("campaign_id", campaignIds)
+      .gte("date", thirtyDaysAgoDate);
 
     if (metrics && metrics.length > 0) {
       let totalSpend = 0;
@@ -135,6 +137,29 @@ export default async function KanbanPage({
     }
   }
 
+  // Aggregate daily metrics by date (for the chart panel)
+  type DailyMetric = { date: string; spend: number; clicks: number; impressions: number; leadsCount: number };
+  const metricsByDate: Record<string, DailyMetric> = {};
+  if (campaigns && campaigns.length > 0) {
+    const allMetrics = await supabase
+      .from("campaign_metrics_daily")
+      .select("date, spend, clicks, impressions, leads_count")
+      .in("campaign_id", campaigns.map((c) => c.id))
+      .gte("date", new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]);
+
+    for (const m of (allMetrics.data ?? [])) {
+      const date = m.date as string;
+      if (!metricsByDate[date]) {
+        metricsByDate[date] = { date, spend: 0, clicks: 0, impressions: 0, leadsCount: 0 };
+      }
+      metricsByDate[date].spend       += parseFloat(String(m.spend ?? "0"));
+      metricsByDate[date].clicks      += m.clicks       ?? 0;
+      metricsByDate[date].impressions += m.impressions  ?? 0;
+      metricsByDate[date].leadsCount  += m.leads_count  ?? 0;
+    }
+  }
+  const dailyMetrics = Object.values(metricsByDate);
+
   // Enrich leads with per-campaign acquisition cost
   const leads = leadsRaw.map((lead) => ({
     ...lead,
@@ -163,6 +188,7 @@ export default async function KanbanPage({
         initialLeads={leads}
         source={source}
         metaStats={metaStats}
+        dailyMetrics={dailyMetrics}
       />
     </div>
   );
