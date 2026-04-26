@@ -48,12 +48,13 @@ export default async function KanbanPage({
     stage_id: string | null;
     created_at: string;
     potential_score: number | null;
+    value_pln: string | null;
   }> = [];
 
   if (stageIds.length > 0) {
     let q = supabase
       .from("leads")
-      .select("id, full_name, phone, email, source, source_campaign_id, stage_id, created_at, potential_score")
+      .select("id, full_name, phone, email, source, source_campaign_id, stage_id, created_at, potential_score, value_pln")
       .eq("workspace_id", WORKSPACE_ID)
       .eq("archived", false)
       .in("stage_id", stageIds)

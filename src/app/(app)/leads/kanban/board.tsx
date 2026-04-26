@@ -19,6 +19,7 @@ type Lead = {
   potential_score?: number | null;
   acquisition_cost?: number | null;
   campaign_name?: string | null;
+  value_pln?: string | null;
 };
 
 const sourceConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -42,34 +43,49 @@ function MetaStatsBar({
   metaStats,
   convertedCount,
   convertedAcquisitionCost,
+  totalRevenue,
 }: {
   metaStats: MetaStats;
   convertedCount: number;
   convertedAcquisitionCost: number;
+  totalRevenue: number;
 }) {
-  const items: { label: string; value: string; highlight?: boolean }[] = [
+  const profit = totalRevenue - convertedAcquisitionCost;
+  const roi =
+    convertedAcquisitionCost > 0 ? (profit / convertedAcquisitionCost) * 100 : null;
+
+  const items: { label: string; value: string; highlight?: "green" | "blue" | "red" }[] = [
     { label: "Wydano łącznie", value: pln(metaStats.totalSpend) },
     { label: "Leady (kampanie)", value: metaStats.totalLeads.toString() },
     { label: "Śr. CPL", value: pln(metaStats.avgCPL) },
     { label: "Śr. CPC", value: pln(metaStats.avgCPC) },
     { label: "CTR", value: `${metaStats.ctr.toFixed(2)}%` },
     { label: "Kliknięcia", value: metaStats.totalClicks.toLocaleString("pl-PL") },
-    { label: "Zamknięte leady", value: convertedCount.toString(), highlight: convertedCount > 0 },
+    { label: "Zamknięte", value: convertedCount.toString(), highlight: convertedCount > 0 ? "green" : undefined },
     ...(convertedAcquisitionCost > 0
-      ? [{ label: "Koszt zamkniętych", value: pln(convertedAcquisitionCost), highlight: true }]
+      ? [{ label: "Koszt zamkniętych", value: pln(convertedAcquisitionCost), highlight: "blue" as const }]
       : []),
-    ...(convertedCount > 0 && convertedAcquisitionCost > 0
-      ? [{ label: "Śr. koszt/konwers.", value: pln(convertedAcquisitionCost / convertedCount), highlight: true }]
+    ...(totalRevenue > 0
+      ? [{ label: "Przychód", value: pln(totalRevenue), highlight: "green" as const }]
+      : []),
+    ...(totalRevenue > 0 && convertedAcquisitionCost > 0
+      ? [{ label: "Zysk", value: pln(profit), highlight: profit >= 0 ? "green" as const : "red" as const }]
+      : []),
+    ...(roi !== null
+      ? [{ label: "ROI", value: `${roi.toFixed(1)}%`, highlight: roi >= 0 ? "green" as const : "red" as const }]
       : []),
   ];
+
+  const highlightStyle = {
+    green: { bg: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e" },
+    blue: { bg: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.2)", color: "#3b82f6" },
+    red: { bg: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" },
+  };
 
   return (
     <div
       className="flex flex-wrap gap-3 mb-5 p-4 rounded-xl items-center"
-      style={{
-        background: "rgba(59,130,246,0.04)",
-        border: "1px solid rgba(59,130,246,0.18)",
-      }}
+      style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.18)" }}
     >
       <div className="flex items-center gap-1.5 mr-1 self-start pt-1">
         <div
@@ -82,29 +98,115 @@ function MetaStatsBar({
           Meta Ads
         </span>
       </div>
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="flex flex-col px-3 py-2 rounded-lg min-w-[80px]"
-          style={{
-            background: item.highlight ? "rgba(34,197,94,0.06)" : "var(--surface)",
-            border: item.highlight
-              ? "1px solid rgba(34,197,94,0.2)"
-              : "1px solid var(--border)",
-          }}
-        >
-          <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>
-            {item.label}
-          </span>
-          <span
-            className="text-[13px] font-semibold tabular-nums"
-            style={{ color: item.highlight ? "#22c55e" : "var(--text)" }}
+      {items.map((item) => {
+        const hs = item.highlight ? highlightStyle[item.highlight] : null;
+        return (
+          <div
+            key={item.label}
+            className="flex flex-col px-3 py-2 rounded-lg min-w-[80px]"
+            style={{
+              background: hs ? hs.bg : "var(--surface)",
+              border: hs ? hs.border : "1px solid var(--border)",
+            }}
           >
-            {item.value}
-          </span>
-        </div>
-      ))}
+            <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>
+              {item.label}
+            </span>
+            <span
+              className="text-[13px] font-semibold tabular-nums"
+              style={{ color: hs ? hs.color : "var(--text)" }}
+            >
+              {item.value}
+            </span>
+          </div>
+        );
+      })}
     </div>
+  );
+}
+
+function ClosingPriceEdit({
+  leadId,
+  value,
+  onUpdate,
+}: {
+  leadId: string;
+  value: string | null | undefined;
+  onUpdate: (value: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const numericValue = value != null ? parseFloat(value) : null;
+  const [val, setVal] = useState(numericValue?.toString() ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    const numeric = val === "" ? null : Number(val);
+    await fetch(`/api/leads/${leadId}/value`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value_pln: numeric }),
+    });
+    setSaving(false);
+    setEditing(false);
+    onUpdate(val === "" ? null : val);
+  }
+
+  if (editing) {
+    return (
+      <div
+        className="flex items-center gap-1.5 mt-2"
+        draggable={false}
+        onDragStart={(e) => e.stopPropagation()}
+      >
+        <input
+          type="number"
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          placeholder="0.00"
+          autoFocus
+          className="rounded px-2 py-1 text-xs w-24 outline-none"
+          style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") setEditing(false);
+          }}
+        />
+        <button
+          onClick={save}
+          disabled={saving}
+          className="text-[11px] font-medium px-2 py-0.5 rounded"
+          style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
+        >
+          {saving ? "…" : "OK"}
+        </button>
+        <button
+          onClick={() => setEditing(false)}
+          className="text-[11px]"
+          style={{ color: "var(--muted)" }}
+        >
+          ✕
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      draggable={false}
+      onDragStart={(e) => e.stopPropagation()}
+      className="flex items-center gap-1 mt-2 text-xs rounded px-2 py-1 w-full transition-colors"
+      style={{
+        background: numericValue != null ? "rgba(34,197,94,0.08)" : "var(--ba-4)",
+        border: numericValue != null ? "1px solid rgba(34,197,94,0.2)" : "1px solid var(--border)",
+        color: numericValue != null ? "#22c55e" : "var(--muted)",
+      }}
+    >
+      <span className="font-medium">
+        {numericValue != null ? `${pln(numericValue)}` : "+ Cena zamknięcia"}
+      </span>
+    </button>
   );
 }
 
@@ -114,12 +216,14 @@ function LeadCard({
   isDragging,
   onDragStart,
   onDragEnd,
+  onValueUpdate,
 }: {
   lead: Lead;
   isClosedStage: boolean;
   isDragging: boolean;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
+  onValueUpdate: (leadId: string, value: string | null) => void;
 }) {
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
@@ -195,10 +299,7 @@ function LeadCard({
             </span>
           )}
         </div>
-        <div
-          draggable={false}
-          onDragStart={(e) => e.stopPropagation()}
-        >
+        <div draggable={false} onDragStart={(e) => e.stopPropagation()}>
           <LeadNotesPanel
             leadId={lead.id}
             leadName={lead.full_name}
@@ -206,6 +307,14 @@ function LeadCard({
           />
         </div>
       </div>
+
+      {isClosedStage && (
+        <ClosingPriceEdit
+          leadId={lead.id}
+          value={lead.value_pln}
+          onUpdate={(v) => onValueUpdate(lead.id, v)}
+        />
+      )}
     </div>
   );
 }
@@ -229,12 +338,19 @@ export function KanbanBoard({
 
   const closedStageId = stages.length > 0 ? stages[stages.length - 1].id : null;
 
-  const closedMetaLeads = closedStageId
-    ? leads.filter((l) => l.stage_id === closedStageId && l.source === "meta_ads")
+  const closedLeads = closedStageId
+    ? leads.filter((l) => l.stage_id === closedStageId)
     : [];
+  const closedMetaLeads = closedLeads.filter((l) => l.source === "meta_ads");
+
   const convertedCount = closedMetaLeads.length;
   const convertedAcquisitionCost = closedMetaLeads.reduce(
     (sum, l) => sum + (l.acquisition_cost ?? 0),
+    0,
+  );
+  // Revenue = sum of closing prices for ALL closed leads (any source)
+  const totalRevenue = closedLeads.reduce(
+    (sum, l) => sum + (l.value_pln != null ? parseFloat(l.value_pln) : 0),
     0,
   );
 
@@ -243,6 +359,12 @@ export function KanbanBoard({
 
   function getLeadsForStage(stageId: string) {
     return leads.filter((l) => l.stage_id === stageId);
+  }
+
+  function handleValueUpdate(leadId: string, value: string | null) {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, value_pln: value } : l)),
+    );
   }
 
   async function handleDrop(targetStageId: string) {
@@ -286,6 +408,7 @@ export function KanbanBoard({
           metaStats={metaStats!}
           convertedCount={convertedCount}
           convertedAcquisitionCost={convertedAcquisitionCost}
+          totalRevenue={totalRevenue}
         />
       )}
 
@@ -302,6 +425,13 @@ export function KanbanBoard({
             (sum, l) => sum + (l.acquisition_cost ?? 0),
             0,
           );
+          const columnRevenue = isClosed
+            ? stageLeads.reduce(
+                (sum, l) =>
+                  sum + (l.value_pln != null ? parseFloat(l.value_pln) : 0),
+                0,
+              )
+            : 0;
 
           return (
             <div
@@ -311,7 +441,7 @@ export function KanbanBoard({
                 background: isOver ? "var(--bg-3, var(--bg-2))" : "var(--bg-2)",
                 border: isOver
                   ? `2px solid ${isClosed ? "#22c55e" : stage.color}`
-                  : `1px solid var(--border)`,
+                  : "1px solid var(--border)",
                 borderTopColor: isClosed ? "#22c55e" : stage.color,
                 borderTopWidth: 3,
               }}
@@ -330,7 +460,9 @@ export function KanbanBoard({
                   (dragCounters.current[stage.id] ?? 1) - 1;
                 if (dragCounters.current[stage.id] <= 0) {
                   dragCounters.current[stage.id] = 0;
-                  setOverStageId((prev) => (prev === stage.id ? null : prev));
+                  setOverStageId((prev) =>
+                    prev === stage.id ? null : prev,
+                  );
                 }
               }}
               onDrop={(e) => {
@@ -374,6 +506,7 @@ export function KanbanBoard({
                       setOverStageId(null);
                       dragCounters.current = {};
                     }}
+                    onValueUpdate={handleValueUpdate}
                   />
                 ))}
                 {stageLeads.length === 0 && (
@@ -386,7 +519,7 @@ export function KanbanBoard({
                 )}
               </div>
 
-              {/* Closed stage cost summary */}
+              {/* Closed stage summary */}
               {isClosed && stageLeads.length > 0 && (
                 <div
                   className="mx-3 mb-3 px-3 py-2.5 rounded-lg text-xs"
@@ -396,26 +529,38 @@ export function KanbanBoard({
                   }}
                 >
                   <div className="flex justify-between mb-1">
-                    <span style={{ color: "var(--muted)" }}>Zamknięte leady</span>
+                    <span style={{ color: "var(--muted)" }}>Zamknięte</span>
                     <span className="font-semibold" style={{ color: "#22c55e" }}>
                       {stageLeads.length}
                     </span>
                   </div>
+                  {columnRevenue > 0 && (
+                    <div className="flex justify-between mb-1">
+                      <span style={{ color: "var(--muted)" }}>Przychód</span>
+                      <span className="font-semibold tabular-nums" style={{ color: "#22c55e" }}>
+                        {pln(columnRevenue)}
+                      </span>
+                    </div>
+                  )}
                   {columnMetaLeads.length > 0 && (
                     <>
                       <div className="flex justify-between mb-1">
-                        <span style={{ color: "var(--muted)" }}>z Meta Ads</span>
-                        <span className="font-semibold">{columnMetaLeads.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span style={{ color: "var(--muted)" }}>Koszt pozysk.</span>
-                        <span
-                          className="font-semibold tabular-nums"
-                          style={{ color: "#3b82f6" }}
-                        >
+                        <span style={{ color: "var(--muted)" }}>Koszt pozysk. (Meta)</span>
+                        <span className="font-semibold tabular-nums" style={{ color: "#3b82f6" }}>
                           {pln(columnMetaSpend)}
                         </span>
                       </div>
+                      {columnRevenue > 0 && (
+                        <div className="flex justify-between">
+                          <span style={{ color: "var(--muted)" }}>Zysk</span>
+                          <span
+                            className="font-semibold tabular-nums"
+                            style={{ color: columnRevenue - columnMetaSpend >= 0 ? "#22c55e" : "#ef4444" }}
+                          >
+                            {pln(columnRevenue - columnMetaSpend)}
+                          </span>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
