@@ -75,6 +75,11 @@ const Icons = {
       <circle cx="4.8" cy="4.8" r="1.1" fill="currentColor" opacity=".7" />
     </svg>
   ),
+  trash: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path d="M3 4h9M6 4V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V4M5.5 4l.5 8M9.5 4l-.5 8M3 4l.8 8.5a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9L11 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" opacity=".8"/>
+    </svg>
+  ),
   workspace: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3" />
@@ -141,6 +146,7 @@ const settingsNav = [
   { href: "/settings/workspaces", label: "Klienci", icon: Icons.clients },
   { href: "/settings/pipelines", label: "Pipeline'y", icon: Icons.pipelines },
   { href: "/settings/tags", label: "Tagi", icon: Icons.tags },
+  { href: "/leads/deleted", label: "Usunięte leady", icon: Icons.trash },
 ];
 
 function NavLink({

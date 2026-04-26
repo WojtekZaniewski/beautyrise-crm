@@ -146,13 +146,6 @@ export default async function LeadsPage({
             </Link>
           );
         })}
-        <Link
-          href="/leads/deleted"
-          className="px-3 py-1.5 rounded-md text-[12.5px] font-medium transition-all ml-auto"
-          style={{ color: "var(--muted)", border: "1px solid var(--border)" }}
-        >
-          🗑 Usunięte
-        </Link>
       </div>
 
       <LeadsFilters stages={stages} tags={tagsData ?? []} />

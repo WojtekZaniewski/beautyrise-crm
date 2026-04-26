@@ -125,6 +125,80 @@ function MetaStatsBar({
   );
 }
 
+function KanbanDeleteButton({
+  leadId,
+  onDelete,
+}: {
+  leadId: string;
+  onDelete: (id: string) => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  async function handleDelete() {
+    setPending(true);
+    await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archived: true }),
+    });
+    setPending(false);
+    onDelete(leadId);
+  }
+
+  if (confirming) {
+    return (
+      <div
+        className="flex items-center gap-1"
+        draggable={false}
+        onDragStart={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={handleDelete}
+          disabled={pending}
+          className="text-[11px] font-semibold px-2 py-0.5 rounded"
+          style={{ background: "#ef4444", color: "#fff", opacity: pending ? 0.6 : 1 }}
+        >
+          {pending ? "…" : "Usuń"}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          className="text-[11px] px-2 py-0.5 rounded"
+          style={{ background: "var(--ba-4)", color: "var(--muted)", border: "1px solid var(--border-strong)" }}
+        >
+          Anuluj
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setConfirming(true)}
+      draggable={false}
+      onDragStart={(e) => e.stopPropagation()}
+      title="Przenieś do kosza"
+      className="flex items-center justify-center w-6 h-6 rounded transition-colors"
+      style={{ border: "1px solid var(--border-strong)", color: "var(--muted)", background: "transparent" }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.color = "#ef4444";
+        (e.currentTarget as HTMLElement).style.borderColor = "#ef4444";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.color = "var(--muted)";
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+      }}
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6M14 11v6" />
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      </svg>
+    </button>
+  );
+}
+
 function ClosingPriceEdit({
   leadId,
   value,
@@ -217,6 +291,7 @@ function LeadCard({
   onDragStart,
   onDragEnd,
   onValueUpdate,
+  onDelete,
 }: {
   lead: Lead;
   isClosedStage: boolean;
@@ -224,6 +299,7 @@ function LeadCard({
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onValueUpdate: (leadId: string, value: string | null) => void;
+  onDelete: (id: string) => void;
 }) {
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
@@ -299,12 +375,13 @@ function LeadCard({
             </span>
           )}
         </div>
-        <div draggable={false} onDragStart={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" draggable={false} onDragStart={(e) => e.stopPropagation()}>
           <LeadNotesPanel
             leadId={lead.id}
             leadName={lead.full_name}
             initialScore={lead.potential_score}
           />
+          <KanbanDeleteButton leadId={lead.id} onDelete={onDelete} />
         </div>
       </div>
 
@@ -359,6 +436,10 @@ export function KanbanBoard({
 
   function getLeadsForStage(stageId: string) {
     return leads.filter((l) => l.stage_id === stageId);
+  }
+
+  function handleDeleteLead(leadId: string) {
+    setLeads((prev) => prev.filter((l) => l.id !== leadId));
   }
 
   function handleValueUpdate(leadId: string, value: string | null) {
@@ -507,6 +588,7 @@ export function KanbanBoard({
                       dragCounters.current = {};
                     }}
                     onValueUpdate={handleValueUpdate}
+                    onDelete={handleDeleteLead}
                   />
                 ))}
                 {stageLeads.length === 0 && (
