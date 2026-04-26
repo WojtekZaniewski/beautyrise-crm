@@ -41,15 +41,6 @@ const sourceConfig: Record<string, { label: string; color: string; bg: string }>
   email: { label: "E-mail", color: "#8b5cf6", bg: "rgba(139,92,246,0.10)" },
 };
 
-const SOURCE_TABS = [
-  { label: "Wszystkie", value: "all" },
-  { label: "Meta Ads", value: "meta_ads" },
-  { label: "SMS", value: "sms" },
-  { label: "E-mail", value: "email" },
-  { label: "Ręczne", value: "manual" },
-  { label: "Import", value: "import" },
-  { label: "Webhook", value: "webhook" },
-];
 
 function pln(value: number): string {
   return new Intl.NumberFormat("pl-PL", {
@@ -322,34 +313,6 @@ export function KanbanBoard({
 
   return (
     <>
-      {/* Source filter tabs */}
-      <div className="flex flex-wrap gap-1.5 mb-5">
-        {SOURCE_TABS.map((tab) => {
-          const isActive = source === tab.value;
-          return (
-            <Link
-              key={tab.value}
-              href={`/leads/kanban?source=${tab.value}`}
-              className="px-3 py-1.5 rounded-md text-[12.5px] font-medium transition-all"
-              style={
-                isActive
-                  ? {
-                      background: "var(--accent-subtle)",
-                      color: "var(--accent-2)",
-                      border: "1px solid rgba(255,76,0,0.2)",
-                    }
-                  : {
-                      color: "var(--muted)",
-                      border: "1px solid var(--border)",
-                    }
-              }
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </div>
-
       {/* Meta Ads stats bar */}
       {showMetaStats && (
         <MetaStatsBar

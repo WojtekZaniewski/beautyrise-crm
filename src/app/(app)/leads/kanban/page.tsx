@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getPipelines, getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { PipelineSelect } from "@/components/pipeline-select";
+import { SourceSelect } from "@/components/source-select";
 import { KanbanBoard } from "./board";
 
 type SearchParams = Promise<{ source?: string }>;
@@ -145,8 +146,10 @@ export default async function KanbanPage({
       <div className="flex items-center gap-3 heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
         <h1 className="text-2xl font-semibold">Kanban</h1>
         <PipelineSelect pipelines={pipelines} currentPipelineId={currentPipelineId} />
+        <SourceSelect current={source} />
       </div>
       <KanbanBoard
+        key={source}
         stages={stages}
         initialLeads={leads}
         source={source}
