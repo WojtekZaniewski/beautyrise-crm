@@ -73,6 +73,8 @@ export default async function LeadsPage({
     { label: "Wszystkie", value: "all" },
     { label: "Ręczne", value: "manual" },
     { label: "Import", value: "import" },
+    { label: "SMS", value: "sms" },
+    { label: "E-mail", value: "email" },
   ];
 
   const activeSource = sourceParam ?? "meta_ads";

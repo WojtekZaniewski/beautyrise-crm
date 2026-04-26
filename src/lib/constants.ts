@@ -3,6 +3,8 @@ export const sourceLabel: Record<string, string> = {
   import: "Import",
   meta_ads: "Meta Ads",
   webhook: "Webhook",
+  sms: "SMS",
+  email: "E-mail",
 };
 
 export const eventLabel: Record<string, string> = {

@@ -91,6 +91,8 @@ export function LeadsFilters({ stages, tags }: { stages: Stage[]; tags: Tag[] })
         <option value="meta_ads">Meta Ads</option>
         <option value="import">Import</option>
         <option value="webhook">Webhook</option>
+        <option value="sms">SMS</option>
+        <option value="email">E-mail</option>
       </select>
 
       {tags.length > 0 && (

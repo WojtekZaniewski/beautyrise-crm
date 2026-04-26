@@ -18,6 +18,8 @@ export const leadSourceEnum = pgEnum("lead_source", [
   "import",
   "meta_ads",
   "webhook",
+  "sms",
+  "email",
 ]);
 
 export const leadEventTypeEnum = pgEnum("lead_event_type", [
