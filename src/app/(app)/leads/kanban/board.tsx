@@ -5,6 +5,8 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  closestCorners,
+  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -213,6 +215,120 @@ function LeadCard({
   );
 }
 
+function DroppableColumn({
+  stage,
+  stageLeads,
+  activeId,
+  isClosed,
+  columnMetaLeads,
+  columnMetaSpend,
+}: {
+  stage: Stage;
+  stageLeads: Lead[];
+  activeId: string | null;
+  isClosed: boolean;
+  columnMetaLeads: Lead[];
+  columnMetaSpend: number;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
+
+  return (
+    <div
+      className="shrink-0 w-64 bg-[var(--bg-2)] border border-[var(--border)] rounded-xl flex flex-col"
+      style={{
+        borderTopColor: isClosed ? "#22c55e" : stage.color,
+        borderTopWidth: 3,
+      }}
+    >
+      {/* Column header */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--border)]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium">{stage.name}</span>
+          {isClosed && (
+            <span
+              className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
+              style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
+            >
+              Konwersja
+            </span>
+          )}
+        </div>
+        <span
+          className="text-xs bg-[var(--surface)] px-2 py-0.5 rounded-full border border-[var(--border)]"
+          style={{ color: "var(--muted)" }}
+        >
+          {stageLeads.length}
+        </span>
+      </div>
+
+      {/* Droppable card area */}
+      <SortableContext items={stageLeads.map((l) => l.id)}>
+        <div
+          ref={setNodeRef}
+          className="flex flex-col gap-2 p-3 min-h-[120px] flex-1 transition-colors"
+          style={
+            isOver
+              ? { background: "rgba(255,76,0,0.04)" }
+              : undefined
+          }
+        >
+          {stageLeads.map((lead) => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              isDragging={lead.id === activeId}
+              isClosedStage={isClosed}
+            />
+          ))}
+          {stageLeads.length === 0 && (
+            <div
+              className="text-xs text-center py-6"
+              style={{ color: "var(--muted)" }}
+            >
+              Upuść lead tutaj
+            </div>
+          )}
+        </div>
+      </SortableContext>
+
+      {/* Closed stage cost summary */}
+      {isClosed && stageLeads.length > 0 && (
+        <div
+          className="mx-3 mb-3 px-3 py-2.5 rounded-lg text-xs"
+          style={{
+            background: "rgba(34,197,94,0.05)",
+            border: "1px solid rgba(34,197,94,0.15)",
+          }}
+        >
+          <div className="flex justify-between mb-1">
+            <span style={{ color: "var(--muted)" }}>Zamknięte leady</span>
+            <span className="font-semibold" style={{ color: "#22c55e" }}>
+              {stageLeads.length}
+            </span>
+          </div>
+          {columnMetaLeads.length > 0 && (
+            <>
+              <div className="flex justify-between mb-1">
+                <span style={{ color: "var(--muted)" }}>z Meta Ads</span>
+                <span className="font-semibold">{columnMetaLeads.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: "var(--muted)" }}>Koszt pozysk.</span>
+                <span
+                  className="font-semibold tabular-nums"
+                  style={{ color: "#3b82f6" }}
+                >
+                  {pln(columnMetaSpend)}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DragCard({ lead }: { lead: Lead }) {
   return (
     <div
@@ -323,13 +439,16 @@ export function KanbanBoard({
       )}
 
       {/* Kanban columns */}
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+      >
         <div className="flex gap-4 overflow-x-auto pb-4">
           {stages.map((stage) => {
             const stageLeads = getLeadsForStage(stage.id);
             const isClosed = stage.id === closedStageId;
-
-            // Per-column Meta Ads cost summary for closed stage
             const columnMetaLeads = isClosed
               ? stageLeads.filter((l) => l.source === "meta_ads")
               : [];
@@ -339,93 +458,15 @@ export function KanbanBoard({
             );
 
             return (
-              <div
+              <DroppableColumn
                 key={stage.id}
-                id={stage.id}
-                className="shrink-0 w-64 bg-[var(--bg-2)] border border-[var(--border)] rounded-xl flex flex-col"
-                style={{
-                  borderTopColor: isClosed ? "#22c55e" : stage.color,
-                  borderTopWidth: 3,
-                }}
-              >
-                {/* Column header */}
-                <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--border)]">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium">{stage.name}</span>
-                    {isClosed && (
-                      <span
-                        className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
-                        style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
-                      >
-                        Konwersja
-                      </span>
-                    )}
-                  </div>
-                  <span
-                    className="text-xs bg-[var(--surface)] px-2 py-0.5 rounded-full border border-[var(--border)]"
-                    style={{ color: "var(--muted)" }}
-                  >
-                    {stageLeads.length}
-                  </span>
-                </div>
-
-                {/* Lead cards */}
-                <SortableContext items={stageLeads.map((l) => l.id)}>
-                  <div className="flex flex-col gap-2 p-3 min-h-[120px] flex-1">
-                    {stageLeads.map((lead) => (
-                      <LeadCard
-                        key={lead.id}
-                        lead={lead}
-                        isDragging={lead.id === activeId}
-                        isClosedStage={isClosed}
-                      />
-                    ))}
-                    {stageLeads.length === 0 && (
-                      <div
-                        className="text-xs text-center py-6"
-                        style={{ color: "var(--muted)" }}
-                      >
-                        Upuść lead tutaj
-                      </div>
-                    )}
-                  </div>
-                </SortableContext>
-
-                {/* Closed stage cost summary */}
-                {isClosed && stageLeads.length > 0 && (
-                  <div
-                    className="mx-3 mb-3 px-3 py-2.5 rounded-lg text-xs"
-                    style={{
-                      background: "rgba(34,197,94,0.05)",
-                      border: "1px solid rgba(34,197,94,0.15)",
-                    }}
-                  >
-                    <div className="flex justify-between mb-1">
-                      <span style={{ color: "var(--muted)" }}>Zamknięte leady</span>
-                      <span className="font-semibold" style={{ color: "#22c55e" }}>
-                        {stageLeads.length}
-                      </span>
-                    </div>
-                    {columnMetaLeads.length > 0 && (
-                      <>
-                        <div className="flex justify-between mb-1">
-                          <span style={{ color: "var(--muted)" }}>z Meta Ads</span>
-                          <span className="font-semibold">{columnMetaLeads.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span style={{ color: "var(--muted)" }}>Koszt pozysk.</span>
-                          <span
-                            className="font-semibold tabular-nums"
-                            style={{ color: "#3b82f6" }}
-                          >
-                            {pln(columnMetaSpend)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                stage={stage}
+                stageLeads={stageLeads}
+                activeId={activeId}
+                isClosed={isClosed}
+                columnMetaLeads={columnMetaLeads}
+                columnMetaSpend={columnMetaSpend}
+              />
             );
           })}
         </div>
