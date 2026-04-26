@@ -113,13 +113,50 @@ export default async function Dashboard() {
     }
   }
 
-  // Fetch closed leads with revenue for the chart
-  const { data: revenueLeads } = await supabase
-    .from("leads")
-    .select("value_pln, updated_at")
-    .eq("workspace_id", WORKSPACE_ID)
-    .not("value_pln", "is", null)
-    .gte("updated_at", thirtyDaysAgo);
+  // Fetch email + SMS stats and closed leads revenue in parallel
+  const [revenueLeadsRes, emailMsgRes, smsRecipRes, smsCampRes] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("value_pln, updated_at")
+      .eq("workspace_id", WORKSPACE_ID)
+      .not("value_pln", "is", null)
+      .gte("updated_at", thirtyDaysAgo),
+    supabase
+      .from("email_messages")
+      .select("opened_at, clicked_at")
+      .eq("workspace_id", WORKSPACE_ID)
+      .not("sent_at", "is", null)
+      .gte("sent_at", thirtyDaysAgo),
+    supabase
+      .from("sms_campaign_recipients")
+      .select("replied_at")
+      .eq("workspace_id", WORKSPACE_ID)
+      .gte("created_at", thirtyDaysAgo),
+    supabase
+      .from("sms_campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", WORKSPACE_ID),
+  ]);
+  const revenueLeads = revenueLeadsRes.data;
+
+  // Email stats aggregation
+  let emailTotalSent = 0, emailTotalOpened = 0, emailTotalClicked = 0;
+  for (const m of emailMsgRes.data ?? []) {
+    emailTotalSent++;
+    if (m.opened_at) emailTotalOpened++;
+    if (m.clicked_at) emailTotalClicked++;
+  }
+  const emailOpenRate  = emailTotalSent > 0 ? (emailTotalOpened  / emailTotalSent) * 100 : 0;
+  const emailClickRate = emailTotalSent > 0 ? (emailTotalClicked / emailTotalSent) * 100 : 0;
+
+  // SMS stats aggregation
+  let smsTotalSent = 0, smsTotalReplied = 0;
+  for (const r of smsRecipRes.data ?? []) {
+    smsTotalSent++;
+    if (r.replied_at) smsTotalReplied++;
+  }
+  const smsReplyRate     = smsTotalSent > 0 ? (smsTotalReplied / smsTotalSent) * 100 : 0;
+  const smsCampaignCount = smsCampRes.count ?? 0;
 
   // Build daily revenue map
   const revenueByDay: Record<string, number> = {};
@@ -295,6 +332,58 @@ export default async function Dashboard() {
           totalSpend: totals.spend,
         } satisfies MetaAdsSummary) : null}
       />
+
+      {/* Communication channels */}
+      {(emailTotalSent > 0 || smsTotalSent > 0) && (
+        <section
+          className="rounded-lg p-5"
+          style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+        >
+          <h2 className="text-[13.5px] font-semibold tracking-tight mb-4">Kanały komunikacji (30 dni)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {emailTotalSent > 0 && (
+              <div className="rounded-lg p-4" style={{ background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.14)" }}>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
+                  <span className="text-[11px] font-semibold" style={{ color: "#8b5cf6" }}>E-mail</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Wysłane",    value: fmt(emailTotalSent) },
+                    { label: "Open Rate",  value: `${emailOpenRate.toFixed(1)}%` },
+                    { label: "Click Rate", value: `${emailClickRate.toFixed(1)}%` },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <div className="text-[9.5px] font-medium mb-1 uppercase tracking-wide" style={{ color: "var(--muted)" }}>{item.label}</div>
+                      <div className="text-[15px] font-semibold">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {smsTotalSent > 0 && (
+              <div className="rounded-lg p-4" style={{ background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.14)" }}>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
+                  <span className="text-[11px] font-semibold" style={{ color: "#22c55e" }}>SMS</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Wysłane",    value: fmt(smsTotalSent) },
+                    { label: "Reply Rate", value: `${smsReplyRate.toFixed(1)}%` },
+                    { label: "Kampanie",   value: fmt(smsCampaignCount) },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <div className="text-[9.5px] font-medium mb-1 uppercase tracking-wide" style={{ color: "var(--muted)" }}>{item.label}</div>
+                      <div className="text-[15px] font-semibold">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Campaigns */}
       <section

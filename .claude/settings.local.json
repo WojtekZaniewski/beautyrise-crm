@@ -26,7 +26,8 @@
       "Bash(xargs grep *)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(npx next *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")"
     ]
   }
 }

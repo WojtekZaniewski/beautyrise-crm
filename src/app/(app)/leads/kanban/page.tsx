@@ -17,6 +17,27 @@ export type MetaStats = {
   totalImpressions: number;
 };
 
+export type EmailStats = {
+  totalSent: number;
+  totalOpened: number;
+  totalClicked: number;
+  openRate: number;
+  clickRate: number;
+  totalToday: number;
+  total7d: number;
+};
+export type EmailDailyPoint = { date: string; sent: number; opened: number; clicked: number };
+
+export type SmsStats = {
+  totalSent: number;
+  totalReplied: number;
+  replyRate: number;
+  campaignCount: number;
+  totalToday: number;
+  total7d: number;
+};
+export type SmsDailyPoint = { date: string; sent: number; replied: number };
+
 export default async function KanbanPage({
   searchParams,
 }: {
@@ -165,6 +186,89 @@ export default async function KanbanPage({
   }
   const dailyMetrics = Object.values(metricsByDate);
 
+  // Email & SMS stats (30 days)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+  const sevenDaysAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  let emailStats: EmailStats | null = null;
+  let emailDailyMetrics: EmailDailyPoint[] = [];
+  {
+    const { data: emailRaw } = await supabase
+      .from("email_messages")
+      .select("sent_at, opened_at, clicked_at")
+      .eq("workspace_id", WORKSPACE_ID)
+      .not("sent_at", "is", null)
+      .gte("sent_at", thirtyDaysAgo);
+
+    if (emailRaw && emailRaw.length > 0) {
+      const dMap: Record<string, { sent: number; opened: number; clicked: number }> = {};
+      let totalSent = 0, totalOpened = 0, totalClicked = 0, totalToday = 0, total7d = 0;
+      for (const m of emailRaw) {
+        const ds = (m.sent_at as string).split("T")[0];
+        if (!dMap[ds]) dMap[ds] = { sent: 0, opened: 0, clicked: 0 };
+        dMap[ds].sent++;
+        if (m.opened_at) { dMap[ds].opened++; totalOpened++; }
+        if (m.clicked_at) { dMap[ds].clicked++; totalClicked++; }
+        totalSent++;
+        if (ds === todayStr) totalToday++;
+        if (ds >= sevenDaysAgoStr) total7d++;
+      }
+      emailStats = { totalSent, totalOpened, totalClicked,
+        openRate: totalSent > 0 ? (totalOpened / totalSent) * 100 : 0,
+        clickRate: totalSent > 0 ? (totalClicked / totalSent) * 100 : 0,
+        totalToday, total7d };
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        const ds = d.toISOString().split("T")[0];
+        const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+        const dm = dMap[ds] ?? { sent: 0, opened: 0, clicked: 0 };
+        emailDailyMetrics.push({ date: lbl, ...dm });
+      }
+    }
+  }
+
+  let smsStats: SmsStats | null = null;
+  let smsDailyMetrics: SmsDailyPoint[] = [];
+  {
+    const [recipientsRes, campaignsCountRes] = await Promise.all([
+      supabase
+        .from("sms_campaign_recipients")
+        .select("sent_at, replied_at, created_at")
+        .eq("workspace_id", WORKSPACE_ID)
+        .gte("created_at", thirtyDaysAgo),
+      supabase
+        .from("sms_campaigns")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", WORKSPACE_ID),
+    ]);
+    const smsRaw = recipientsRes.data ?? [];
+    if (smsRaw.length > 0) {
+      const dMap: Record<string, { sent: number; replied: number }> = {};
+      let totalSent = 0, totalReplied = 0, totalToday = 0, total7d = 0;
+      for (const r of smsRaw) {
+        const ds = ((r.sent_at ?? r.created_at) as string).split("T")[0];
+        if (!dMap[ds]) dMap[ds] = { sent: 0, replied: 0 };
+        dMap[ds].sent++;
+        if (r.replied_at) { dMap[ds].replied++; totalReplied++; }
+        totalSent++;
+        if (ds === todayStr) totalToday++;
+        if (ds >= sevenDaysAgoStr) total7d++;
+      }
+      smsStats = { totalSent, totalReplied,
+        replyRate: totalSent > 0 ? (totalReplied / totalSent) * 100 : 0,
+        campaignCount: campaignsCountRes.count ?? 0,
+        totalToday, total7d };
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 86400000);
+        const ds = d.toISOString().split("T")[0];
+        const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+        const dm = dMap[ds] ?? { sent: 0, replied: 0 };
+        smsDailyMetrics.push({ date: lbl, ...dm });
+      }
+    }
+  }
+
   // Enrich leads with per-campaign acquisition cost
   const leads = leadsRaw.map((lead) => ({
     ...lead,
@@ -194,6 +298,10 @@ export default async function KanbanPage({
         source={source}
         metaStats={metaStats}
         dailyMetrics={dailyMetrics}
+        emailStats={emailStats}
+        emailDailyMetrics={emailDailyMetrics}
+        smsStats={smsStats}
+        smsDailyMetrics={smsDailyMetrics}
       />
     </div>
   );

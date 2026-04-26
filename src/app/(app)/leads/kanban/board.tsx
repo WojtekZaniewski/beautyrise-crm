@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
-import type { MetaStats } from "./page";
+import type { MetaStats, EmailStats, SmsStats, EmailDailyPoint, SmsDailyPoint } from "./page";
 import {
   AreaChart,
   Area,
@@ -446,6 +446,8 @@ function KanbanFinancialPanel({
   totalRevenue,
   metaStats,
   dailyMetrics,
+  emailStats,
+  smsStats,
 }: {
   leads: Lead[];
   closedStageId: string | null;
@@ -453,6 +455,8 @@ function KanbanFinancialPanel({
   totalRevenue: number;
   metaStats: MetaStats | null;
   dailyMetrics: DailyMetric[];
+  emailStats?: EmailStats | null;
+  smsStats?: SmsStats | null;
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
@@ -519,6 +523,52 @@ function KanbanFinancialPanel({
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe</span>
+
+      {/* Mini channel summaries (visible in "all sources" view) */}
+      {(emailStats || smsStats) && (
+        <div className="flex flex-col gap-2">
+          {emailStats && (
+            <div className="rounded-lg px-3 py-2.5" style={{ background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.14)" }}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
+                <span className="text-[10.5px] font-semibold" style={{ color: "#8b5cf6" }}>E-mail (30 dni)</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { label: "Wysłane", value: emailStats.totalSent.toLocaleString("pl-PL") },
+                  { label: "Open Rate", value: `${emailStats.openRate.toFixed(1)}%` },
+                  { label: "Click Rate", value: `${emailStats.clickRate.toFixed(1)}%` },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-md px-2 py-1.5" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+                    <div className="text-[9px]" style={{ color: "var(--muted)" }}>{s.label}</div>
+                    <div className="text-[12px] font-semibold tabular-nums">{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {smsStats && (
+            <div className="rounded-lg px-3 py-2.5" style={{ background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.14)" }}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
+                <span className="text-[10.5px] font-semibold" style={{ color: "#22c55e" }}>SMS (30 dni)</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { label: "Wysłane", value: smsStats.totalSent.toLocaleString("pl-PL") },
+                  { label: "Odpowiedzi", value: smsStats.totalReplied.toLocaleString("pl-PL") },
+                  { label: "Reply Rate", value: `${smsStats.replyRate.toFixed(1)}%` },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-md px-2 py-1.5" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+                    <div className="text-[9px]" style={{ color: "var(--muted)" }}>{s.label}</div>
+                    <div className="text-[12px] font-semibold tabular-nums">{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Clickable Meta Ads stats */}
       {metaItems.length > 0 && (
@@ -644,6 +694,196 @@ function KanbanFinancialPanel({
   );
 }
 
+function KanbanEmailPanel({
+  emailStats,
+  emailDailyMetrics,
+}: {
+  emailStats: EmailStats;
+  emailDailyMetrics: EmailDailyPoint[];
+}) {
+  type EFilter = "sent" | "opened" | "clicked";
+  const [filter, setFilter] = useState<EFilter>("sent");
+  const colorMap: Record<EFilter, string> = { sent: "#8b5cf6", opened: "#3b82f6", clicked: "#22c55e" };
+  const labelMap: Record<EFilter, string> = { sent: "Wysłane", opened: "Otwarte", clicked: "Kliknięte" };
+  const color = colorMap[filter];
+
+  const statCards: { key: EFilter; label: string; value: string }[] = [
+    { key: "sent",    label: "Wysłane",   value: emailStats.totalSent.toLocaleString("pl-PL") },
+    { key: "opened",  label: "Otwarte",   value: emailStats.totalOpened.toLocaleString("pl-PL") },
+    { key: "clicked", label: "Kliknięte", value: emailStats.totalClicked.toLocaleString("pl-PL") },
+  ];
+  const rateCards = [
+    { label: "Open Rate",  value: `${emailStats.openRate.toFixed(1)}%`,  color: "#3b82f6" },
+    { label: "Click Rate", value: `${emailStats.clickRate.toFixed(1)}%`, color: "#22c55e" },
+  ];
+  const periodCards = [
+    { label: "Dziś",  value: emailStats.totalToday },
+    { label: "7 dni", value: emailStats.total7d },
+    { label: "30 dni",value: emailStats.totalSent },
+  ];
+
+  return (
+    <div
+      className="flex-1 min-w-[400px] rounded-xl p-5 flex flex-col gap-4"
+      style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+    >
+      <div className="flex items-center gap-2">
+        <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
+          style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
+        <span className="text-[13px] font-semibold tracking-tight">E-mail (30 dni)</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-1.5">
+        {rateCards.map((r) => (
+          <div key={r.label} className="rounded-lg px-3 py-2.5"
+            style={{ background: `${r.color}08`, border: `1px solid ${r.color}25` }}>
+            <div className="text-[10px] mb-1" style={{ color: "var(--muted)" }}>{r.label}</div>
+            <div className="text-[22px] font-semibold tabular-nums leading-none" style={{ color: r.color }}>{r.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        {periodCards.map((p) => (
+          <div key={p.label} className="rounded-lg px-2.5 py-2 text-center"
+            style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+            <div className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{p.label}</div>
+            <div className="text-[18px] font-semibold tabular-nums" style={{ color: "#8b5cf6" }}>{p.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-1.5">
+        {statCards.map((s) => {
+          const active = filter === s.key;
+          const c = colorMap[s.key];
+          return (
+            <button key={s.key} onClick={() => setFilter(s.key)}
+              className="flex-1 flex flex-col text-left px-2.5 py-2 rounded-lg transition-all"
+              style={{ background: active ? `${c}12` : "var(--surface)", border: active ? `1px solid ${c}40` : "1px solid var(--border)" }}>
+              <span className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{s.label}</span>
+              <span className="text-[13px] font-semibold tabular-nums" style={{ color: active ? c : "var(--text)" }}>{s.value}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={emailDailyMetrics} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id="emailPanelGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+          <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={6} />
+          <YAxis tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
+          <Tooltip
+            formatter={(v: unknown) => [String(v), labelMap[filter]]}
+            contentStyle={{ fontSize: 11, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 8px" }}
+          />
+          <Area type="monotone" dataKey={filter} name={labelMap[filter]} stroke={color} fill="url(#emailPanelGrad)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function KanbanSmsPanel({
+  smsStats,
+  smsDailyMetrics,
+}: {
+  smsStats: SmsStats;
+  smsDailyMetrics: SmsDailyPoint[];
+}) {
+  type SmsFilter = "sent" | "replied";
+  const [filter, setFilter] = useState<SmsFilter>("sent");
+  const colorMap: Record<SmsFilter, string> = { sent: "#22c55e", replied: "#f97316" };
+  const labelMap: Record<SmsFilter, string> = { sent: "Wysłane", replied: "Odpowiedzi" };
+  const color = colorMap[filter];
+
+  const statCards: { key: SmsFilter; label: string; value: string; color: string }[] = [
+    { key: "sent",    label: "Wysłane (30 dni)", value: smsStats.totalSent.toLocaleString("pl-PL"),    color: "#22c55e" },
+    { key: "replied", label: "Odpowiedzi",        value: smsStats.totalReplied.toLocaleString("pl-PL"), color: "#f97316" },
+  ];
+  const rateCards = [
+    { label: "Reply Rate", value: `${smsStats.replyRate.toFixed(1)}%`, color: "#f97316" },
+    { label: "Kampanie",   value: String(smsStats.campaignCount),      color: "#22c55e" },
+  ];
+  const periodCards = [
+    { label: "Dziś",  value: smsStats.totalToday },
+    { label: "7 dni", value: smsStats.total7d },
+    { label: "30 dni",value: smsStats.totalSent },
+  ];
+
+  return (
+    <div
+      className="flex-1 min-w-[400px] rounded-xl p-5 flex flex-col gap-4"
+      style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+    >
+      <div className="flex items-center gap-2">
+        <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
+          style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
+        <span className="text-[13px] font-semibold tracking-tight">SMS (30 dni)</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-1.5">
+        {rateCards.map((r) => (
+          <div key={r.label} className="rounded-lg px-3 py-2.5"
+            style={{ background: `${r.color}08`, border: `1px solid ${r.color}25` }}>
+            <div className="text-[10px] mb-1" style={{ color: "var(--muted)" }}>{r.label}</div>
+            <div className="text-[22px] font-semibold tabular-nums leading-none" style={{ color: r.color }}>{r.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        {periodCards.map((p) => (
+          <div key={p.label} className="rounded-lg px-2.5 py-2 text-center"
+            style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+            <div className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{p.label}</div>
+            <div className="text-[18px] font-semibold tabular-nums" style={{ color: "#22c55e" }}>{p.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-1.5">
+        {statCards.map((s) => {
+          const active = filter === s.key;
+          return (
+            <button key={s.key} onClick={() => setFilter(s.key)}
+              className="flex-1 flex flex-col text-left px-3 py-2.5 rounded-lg transition-all"
+              style={{ background: active ? `${s.color}12` : "var(--surface)", border: active ? `1px solid ${s.color}40` : "1px solid var(--border)" }}>
+              <span className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{s.label}</span>
+              <span className="text-[15px] font-semibold tabular-nums" style={{ color: active ? s.color : "var(--text)" }}>{s.value}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={smsDailyMetrics} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id="smsPanelGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+          <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={6} />
+          <YAxis tick={{ fontSize: 9, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
+          <Tooltip
+            formatter={(v: unknown) => [String(v), labelMap[filter]]}
+            contentStyle={{ fontSize: 11, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 8px" }}
+          />
+          <Area type="monotone" dataKey={filter} name={labelMap[filter]} stroke={color} fill="url(#smsPanelGrad)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 const PAGE_SIZE = 20;
 
 export function KanbanBoard({
@@ -652,12 +892,20 @@ export function KanbanBoard({
   source,
   metaStats,
   dailyMetrics,
+  emailStats,
+  emailDailyMetrics,
+  smsStats,
+  smsDailyMetrics,
 }: {
   stages: Stage[];
   initialLeads: Lead[];
   source: string;
   metaStats: MetaStats | null;
   dailyMetrics: DailyMetric[];
+  emailStats: EmailStats | null;
+  emailDailyMetrics: EmailDailyPoint[];
+  smsStats: SmsStats | null;
+  smsDailyMetrics: SmsDailyPoint[];
 }) {
   const [leads, setLeads] = useState(initialLeads);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -937,7 +1185,13 @@ export function KanbanBoard({
         })}
       </div>
 
-      {showMetaStats && (
+      {source === "email" && emailStats && (
+        <KanbanEmailPanel emailStats={emailStats} emailDailyMetrics={emailDailyMetrics} />
+      )}
+      {source === "sms" && smsStats && (
+        <KanbanSmsPanel smsStats={smsStats} smsDailyMetrics={smsDailyMetrics} />
+      )}
+      {(source === "meta_ads" || source === "all") && showMetaStats && (
         <KanbanFinancialPanel
           leads={leads}
           closedStageId={closedStageId}
@@ -945,6 +1199,8 @@ export function KanbanBoard({
           totalRevenue={totalRevenue}
           metaStats={metaStats}
           dailyMetrics={dailyMetrics}
+          emailStats={source === "all" ? emailStats : null}
+          smsStats={source === "all" ? smsStats : null}
         />
       )}
       </div>
