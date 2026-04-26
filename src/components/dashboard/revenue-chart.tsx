@@ -115,7 +115,7 @@ export function RevenueChart({
             width={60}
           />
           <Tooltip
-            formatter={(v: unknown, name: string | undefined) => [pln(v as number), name ?? ""]}
+            formatter={(v: unknown) => pln(v as number)}
             contentStyle={{
               fontSize: 12,
               background: "var(--panel-solid)",
