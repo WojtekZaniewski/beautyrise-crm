@@ -514,8 +514,8 @@ function KanbanFinancialPanel({
 
   return (
     <div
-      className="shrink-0 rounded-xl p-5 flex flex-col gap-4"
-      style={{ width: 420, background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+      className="flex-1 min-w-[400px] rounded-xl p-5 flex flex-col gap-4"
+      style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe</span>
 
@@ -643,6 +643,8 @@ function KanbanFinancialPanel({
   );
 }
 
+const PAGE_SIZE = 20;
+
 export function KanbanBoard({
   stages,
   initialLeads,
@@ -659,8 +661,16 @@ export function KanbanBoard({
   const [leads, setLeads] = useState(initialLeads);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overStageId, setOverStageId] = useState<string | null>(null);
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({});
   const dragCounters = useRef<Record<string, number>>({});
   const supabase = createClient();
+
+  function getVisibleCount(stageId: string) {
+    return visibleCounts[stageId] ?? PAGE_SIZE;
+  }
+  function showMore(stageId: string, total: number) {
+    setVisibleCounts((prev) => ({ ...prev, [stageId]: Math.min((prev[stageId] ?? PAGE_SIZE) + PAGE_SIZE, total) }));
+  }
 
   const closedStageId = stages.length > 0 ? stages[stages.length - 1].id : null;
 
@@ -743,7 +753,7 @@ export function KanbanBoard({
       )}
 
       <div className="flex gap-5 items-start">
-      <div className="flex gap-4 overflow-x-auto pb-4 flex-1 min-w-0">
+      <div className="flex gap-4 overflow-x-auto pb-4 min-w-0">
         {stages.map((stage) => {
           const stageLeads = getLeadsForStage(stage.id);
           const isClosed = stage.id === closedStageId;
@@ -828,7 +838,7 @@ export function KanbanBoard({
 
               {/* Lead cards */}
               <div className="flex flex-col gap-2 p-3 min-h-[140px] flex-1">
-                {stageLeads.map((lead) => (
+                {stageLeads.slice(0, getVisibleCount(stage.id)).map((lead) => (
                   <LeadCard
                     key={lead.id}
                     lead={lead}
@@ -851,6 +861,27 @@ export function KanbanBoard({
                   >
                     Upuść lead tutaj
                   </div>
+                )}
+                {stageLeads.length > getVisibleCount(stage.id) && (
+                  <button
+                    onClick={() => showMore(stage.id, stageLeads.length)}
+                    className="mt-1 w-full py-2 rounded-lg text-[11.5px] font-medium transition-colors"
+                    style={{
+                      background: "var(--ba-4)",
+                      border: "1px solid var(--border)",
+                      color: "var(--muted)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = "var(--text)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "var(--border-strong)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.color = "var(--muted)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                    }}
+                  >
+                    Zobacz więcej ({stageLeads.length - getVisibleCount(stage.id)} ukrytych)
+                  </button>
                 )}
               </div>
 
