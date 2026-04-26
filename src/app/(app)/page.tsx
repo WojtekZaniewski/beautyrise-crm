@@ -3,6 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
 import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
+import { RevenueChart, type DayPoint } from "@/components/dashboard/revenue-chart";
 
 function fmt(n: number | null | undefined, decimals = 0) {
   if (n == null || isNaN(n)) return "—";
@@ -37,6 +38,8 @@ export default async function Dashboard() {
   const weekIso = new Date(Date.now() - 7 * 86400000).toISOString();
   const sevenDaysAgoDate = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
   const thirtyDaysAgoDate = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
   const [todayRes, weekRes, leadsRes, metaIntRes] = await Promise.all([
     supabase
@@ -109,6 +112,42 @@ export default async function Dashboard() {
       metaCpl7d = totalLeads7 > 0 ? totalSpend7 / totalLeads7 : null;
     }
   }
+
+  // Fetch closed leads with revenue for the chart
+  const { data: revenueLeads } = await supabase
+    .from("leads")
+    .select("value_pln, updated_at")
+    .eq("workspace_id", WORKSPACE_ID)
+    .not("value_pln", "is", null)
+    .gte("updated_at", thirtyDaysAgo);
+
+  // Build daily revenue map
+  const revenueByDay: Record<string, number> = {};
+  for (const lead of revenueLeads ?? []) {
+    const day = (lead.updated_at as string).split("T")[0];
+    revenueByDay[day] = (revenueByDay[day] ?? 0) + parseFloat(lead.value_pln as string);
+  }
+
+  // Build daily spend map from already-fetched metrics
+  const spendByDay: Record<string, number> = {};
+  for (const m of metrics) {
+    spendByDay[m.date] = (spendByDay[m.date] ?? 0) + parseFloat(m.spend ?? "0");
+  }
+
+  // Build 30-day combined dataset
+  const chartData: DayPoint[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const dateStr = d.toISOString().split("T")[0];
+    chartData.push({
+      date: d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
+      spend: spendByDay[dateStr] ?? 0,
+      revenue: revenueByDay[dateStr] ?? 0,
+    });
+  }
+
+  const chartTotalSpend = chartData.reduce((s, d) => s + d.spend, 0);
+  const chartTotalRevenue = chartData.reduce((s, d) => s + d.revenue, 0);
 
   // Aggregate metrics per campaign (30 days)
   type CampaignAgg = {
@@ -221,6 +260,12 @@ export default async function Dashboard() {
           </div>
         )}
       </section>
+
+      <RevenueChart
+        data={chartData}
+        totalSpend={chartTotalSpend}
+        totalRevenue={chartTotalRevenue}
+      />
 
       {/* Campaigns */}
       <section

@@ -5,6 +5,16 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import type { MetaStats } from "./page";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  ReferenceLine,
+} from "recharts";
 
 type Stage = { id: string; name: string; color: string };
 type Lead = {
@@ -82,45 +92,98 @@ function MetaStatsBar({
     red: { bg: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" },
   };
 
+  const hasChart = totalRevenue > 0 || convertedAcquisitionCost > 0;
+  const barData = [
+    { name: "Koszt", value: convertedAcquisitionCost, color: "#3b82f6" },
+    { name: "Przychód", value: totalRevenue, color: "#22c55e" },
+    { name: "Zysk", value: profit, color: profit >= 0 ? "#22c55e" : "#ef4444" },
+  ];
+
   return (
     <div
-      className="flex flex-wrap gap-3 mb-5 p-4 rounded-xl items-center"
+      className="flex gap-4 mb-5 p-4 rounded-xl"
       style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.18)" }}
     >
-      <div className="flex items-center gap-1.5 mr-1 self-start pt-1">
-        <div
-          className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
-          style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
-        >
-          f
-        </div>
-        <span className="text-[11px] font-semibold" style={{ color: "#3b82f6" }}>
-          Meta Ads
-        </span>
-      </div>
-      {items.map((item) => {
-        const hs = item.highlight ? highlightStyle[item.highlight] : null;
-        return (
+      {/* Left: label + stats chips */}
+      <div className="flex flex-wrap gap-3 items-center flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mr-1 self-start pt-1">
           <div
-            key={item.label}
-            className="flex flex-col px-3 py-2 rounded-lg min-w-[80px]"
-            style={{
-              background: hs ? hs.bg : "var(--surface)",
-              border: hs ? hs.border : "1px solid var(--border)",
-            }}
+            className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
+            style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
           >
-            <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>
-              {item.label}
-            </span>
-            <span
-              className="text-[13px] font-semibold tabular-nums"
-              style={{ color: hs ? hs.color : "var(--text)" }}
-            >
-              {item.value}
-            </span>
+            f
           </div>
-        );
-      })}
+          <span className="text-[11px] font-semibold" style={{ color: "#3b82f6" }}>
+            Meta Ads
+          </span>
+        </div>
+        {items.map((item) => {
+          const hs = item.highlight ? highlightStyle[item.highlight] : null;
+          return (
+            <div
+              key={item.label}
+              className="flex flex-col px-3 py-2 rounded-lg min-w-[80px]"
+              style={{
+                background: hs ? hs.bg : "var(--surface)",
+                border: hs ? hs.border : "1px solid var(--border)",
+              }}
+            >
+              <span className="text-[10px] mb-0.5" style={{ color: "var(--muted)" }}>
+                {item.label}
+              </span>
+              <span
+                className="text-[13px] font-semibold tabular-nums"
+                style={{ color: hs ? hs.color : "var(--text)" }}
+              >
+                {item.value}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Right: bar chart — Koszt vs Przychód vs Zysk */}
+      {hasChart && (
+        <div
+          className="shrink-0 flex flex-col pl-4"
+          style={{ width: 220, borderLeft: "1px solid rgba(59,130,246,0.2)" }}
+        >
+          <span
+            className="text-[10px] font-semibold uppercase tracking-wide mb-1"
+            style={{ color: "var(--muted)" }}
+          >
+            Koszt vs Przychód
+          </span>
+          <ResponsiveContainer width="100%" height={90}>
+            <BarChart data={barData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barCategoryGap="30%">
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 9, fill: "var(--muted)" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis hide domain={["auto", "auto"]} />
+              <ReferenceLine y={0} stroke="rgba(0,0,0,0.1)" />
+              <Tooltip
+                formatter={(v: unknown) => [pln(v as number)]}
+                labelStyle={{ fontSize: 11 }}
+                contentStyle={{
+                  fontSize: 11,
+                  background: "var(--panel-solid)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  padding: "4px 8px",
+                }}
+              />
+              <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+                {barData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
