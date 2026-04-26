@@ -456,7 +456,8 @@ function KanbanFinancialPanel({
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
-  const profit = totalRevenue - convertedAcquisitionCost;
+  const totalSpend = metaStats?.totalSpend ?? convertedAcquisitionCost;
+  const profit = totalRevenue - totalSpend;
   const isFinancial = filter === "spend" || filter === "revenue" || filter === "both";
   const color = FILTER_COLOR[filter];
 
@@ -495,8 +496,8 @@ function KanbanFinancialPanel({
   }, [leads, closedStageId, dailyMetrics]);
 
   const summary = [
-    { label: "Wydatki",  value: pln(convertedAcquisitionCost), color: "#3b82f6" },
-    { label: "Przychód", value: pln(totalRevenue),              color: "#22c55e" },
+    { label: "Wydatki",  value: pln(totalSpend),   color: "#3b82f6" },
+    { label: "Przychód", value: pln(totalRevenue),  color: "#22c55e" },
     { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#22c55e" : "#ef4444" },
   ];
 

@@ -137,14 +137,19 @@ export default async function KanbanPage({
     }
   }
 
-  // Aggregate daily metrics by date (for the chart panel)
+  // Aggregate daily metrics by date (for the chart panel) — same campaign filter as metaStats
+  const filteredCampaignIds =
+    source === "meta_ads" && campaign !== "all"
+      ? [campaign]
+      : (campaigns ?? []).map((c) => c.id);
+
   type DailyMetric = { date: string; spend: number; clicks: number; impressions: number; leadsCount: number };
   const metricsByDate: Record<string, DailyMetric> = {};
-  if (campaigns && campaigns.length > 0) {
+  if (filteredCampaignIds.length > 0) {
     const allMetrics = await supabase
       .from("campaign_metrics_daily")
       .select("date, spend, clicks, impressions, leads_count")
-      .in("campaign_id", campaigns.map((c) => c.id))
+      .in("campaign_id", filteredCampaignIds)
       .gte("date", new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]);
 
     for (const m of (allMetrics.data ?? [])) {
