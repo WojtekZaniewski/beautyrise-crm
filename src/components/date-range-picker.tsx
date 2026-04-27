@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 const PRESETS = [
@@ -15,17 +15,34 @@ function toStr(d: Date) {
 }
 
 export function DateRangePicker({ from, to }: { from: string; to: string }) {
-  const router     = useRouter();
-  const pathname   = usePathname();
-  const params     = useSearchParams();
+  const router   = useRouter();
+  const pathname = usePathname();
+  const params   = useSearchParams();
+
   const [open, setOpen] = useState(false);
+  const [pos,  setPos]  = useState<{ top: number; right: number } | null>(null);
   const [cf, setCf]     = useState(from);
   const [ct, setCt]     = useState(to);
-  const ref = useRef<HTMLDivElement>(null);
+
+  const btnRef     = useRef<HTMLButtonElement>(null);
+  const dropRef    = useRef<HTMLDivElement>(null);
+
+  const openDropdown = useCallback(() => {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (rect) {
+      setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    }
+    setOpen(true);
+  }, []);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        btnRef.current  && !btnRef.current.contains(e.target as Node) &&
+        dropRef.current && !dropRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -53,9 +70,10 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
   const label = matchedPreset ? matchedPreset.label : `${fmt(from)} – ${fmt(to)}`;
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
-        onClick={() => setOpen((v) => !v)}
+        ref={btnRef}
+        onClick={() => (open ? setOpen(false) : openDropdown())}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all"
         style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
       >
@@ -70,10 +88,21 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
         </svg>
       </button>
 
-      {open && (
+      {open && pos && (
         <div
-          className="absolute right-0 top-full mt-1.5 z-50 rounded-xl p-3 min-w-[210px]"
-          style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "0 8px 30px rgba(0,0,0,0.15)" }}
+          ref={dropRef}
+          style={{
+            position: "fixed",
+            top: pos.top,
+            right: pos.right,
+            zIndex: 9999,
+            background: "var(--panel-solid)",
+            border: "1px solid var(--border)",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
+            borderRadius: "0.75rem",
+            padding: "0.75rem",
+            minWidth: "210px",
+          }}
         >
           <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Zakres</p>
           <div className="grid grid-cols-2 gap-1 mb-3">
@@ -119,6 +148,6 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
