@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getStagesForWorkspace } from "@/lib/pipeline";
+import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { sourceLabel } from "@/lib/constants";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
@@ -25,7 +25,8 @@ export default async function LeadsPage({
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
-  const stages = await getStagesForWorkspace(WORKSPACE_ID);
+  const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
+  const stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
 
   let query = supabase
     .from("leads")
