@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/server";
+﻿import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getPipelines } from "@/lib/pipeline";
 import { NewLeadForm } from "./form";
@@ -18,7 +18,7 @@ export default async function NewLeadPage() {
     : { data: [] };
 
   return (
-    <div className="px-8 py-8 max-w-xl mx-auto">
+    <div className="px-4 py-4 sm:px-8 sm:py-8 max-w-xl mx-auto">
       <h1 className="text-2xl font-semibold mb-6">Nowy lead</h1>
       <NewLeadForm
         pipelines={pipelines}
@@ -28,3 +28,4 @@ export default async function NewLeadPage() {
     </div>
   );
 }
+

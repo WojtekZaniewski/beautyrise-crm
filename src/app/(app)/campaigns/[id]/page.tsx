@@ -63,7 +63,7 @@ export default async function CampaignDetailPage({
   ];
 
   return (
-    <div className="px-8 py-8 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-8 sm:py-8 max-w-6xl mx-auto">
       <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
         <Link href="/campaigns" className="hover:text-[var(--text)] transition-colors">Kampanie</Link>
         <span>/</span>
@@ -96,7 +96,7 @@ export default async function CampaignDetailPage({
         <MetricsChart data={chartData} />
       </section>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <section className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-6">
           <h2 className="font-semibold mb-4">Metryki dzienne</h2>
           {(metrics ?? []).length === 0 ? (

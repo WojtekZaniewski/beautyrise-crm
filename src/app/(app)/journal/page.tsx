@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+﻿import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { JournalClient } from "./journal-client";
 
@@ -45,8 +45,8 @@ export default async function JournalPage() {
   const days = Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <div className="px-8 py-8 max-w-3xl mx-auto anim-page">
-      <div className="heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
+    <div className="px-4 py-4 sm:px-8 sm:py-8 max-w-3xl mx-auto anim-page">
+      <div className="heat-glow -mx-4 sm:-mx-8 -mt-4 sm:-mt-8 px-4 sm:px-8 pt-4 sm:pt-8 pb-5 mb-6">
         <h1 className="text-2xl font-semibold mb-1">Dziennik</h1>
         <p className="text-sm" style={{ color: "var(--muted)" }}>
           Archiwum notatek i zadań z ostatnich 90 dni.
@@ -56,3 +56,4 @@ export default async function JournalPage() {
     </div>
   );
 }
+

@@ -302,16 +302,16 @@ export default async function Dashboard({
   ];
 
   return (
-    <div className="px-7 py-7 max-w-6xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page">
       {/* Header */}
-      <div className="flex items-center justify-between heat-glow -mx-7 -mt-7 px-7 pt-7 pb-5 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-y-3 heat-glow -mx-4 sm:-mx-7 -mt-4 sm:-mt-7 px-4 sm:px-7 pt-4 sm:pt-7 pb-5 mb-6">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight">Dashboard</h1>
+          <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-tight">Dashboard</h1>
           <p className="text-[13px] text-[var(--muted)] mt-0.5">Przegląd aktywności</p>
         </div>
         <div className="flex items-center gap-2">
           <DateRangePicker from={fromDate} to={toDate} />
-          <Link href="/leads/new" className="btn-primary rounded-md px-4 py-2 text-[13px]">
+          <Link href="/leads/new" className="btn-primary rounded-md px-3 sm:px-4 py-2 text-[13px]">
             + Nowy lead
           </Link>
         </div>

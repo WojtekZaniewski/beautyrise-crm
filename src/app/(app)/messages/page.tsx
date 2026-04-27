@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/server";
+﻿import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { ConversationsLive } from "@/components/messages/conversations-live";
 import { type Conversation } from "@/components/messages/conversations-list";
@@ -59,9 +59,9 @@ export default async function MessagesPage() {
   const isStale = integration !== null && (hoursAgo === null || hoursAgo > 24);
 
   return (
-    <div className="px-7 py-7 max-w-4xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-4xl mx-auto anim-page">
       <div
-        className="flex items-center justify-between heat-glow -mx-7 -mt-7 px-7 pt-7 pb-5 mb-6"
+        className="flex flex-wrap items-center justify-between heat-glow -mx-4 sm:-mx-7 -mt-4 sm:-mt-7 px-4 sm:px-7 pt-4 sm:pt-7 pb-5 mb-6"
       >
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight">Wiadomości</h1>
@@ -93,3 +93,4 @@ export default async function MessagesPage() {
     </div>
   );
 }
+

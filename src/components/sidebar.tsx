@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { WorkspaceSwitcher } from "./workspace-switcher";
+import { useNav } from "./nav-context";
 
 type Workspace = { id: string; name: string; slug: string };
 
@@ -202,8 +203,12 @@ export function Sidebar({
   currentWorkspaceId: string;
 }) {
   const path = usePathname();
+  const { open: mobileOpen, setOpen } = useNav();
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
+
+  // Close drawer when navigating
+  useEffect(() => { setOpen(false); }, [path, setOpen]);
 
   const [totalUnread, setTotalUnread] = useState(0);
   const supabase = createClient();
@@ -247,13 +252,38 @@ export function Sidebar({
   }, [currentWorkspaceId, supabase]);
 
   return (
+    <>
+      {/* Mobile overlay backdrop */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-200 ${
+          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setOpen(false)}
+      />
+
     <aside
-      className="w-[220px] shrink-0 flex flex-col h-screen sticky top-0"
+      className={`
+        fixed inset-y-0 left-0 z-50 lg:relative lg:inset-auto lg:z-auto
+        w-[220px] shrink-0 flex flex-col h-screen lg:sticky lg:top-0
+        transition-transform duration-250 ease-in-out
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
+      `}
       style={{
         borderRight: "1px solid var(--border)",
         background: "var(--surface)",
       }}
     >
+      {/* Mobile close button */}
+      <button
+        className="lg:hidden absolute top-3 right-3 z-10 p-1.5 rounded-md transition-colors hover:bg-[var(--ba-4)]"
+        style={{ color: "var(--muted)" }}
+        onClick={() => setOpen(false)}
+        aria-label="Zamknij menu"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
       <WorkspaceSwitcher
         workspaces={workspaces}
         currentWorkspaceId={currentWorkspaceId}
@@ -298,5 +328,6 @@ export function Sidebar({
         <p className="text-[10px] text-[var(--muted)]/40 px-3 pt-1">v1.0.0</p>
       </div>
     </aside>
+    </>
   );
 }

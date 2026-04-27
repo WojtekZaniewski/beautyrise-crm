@@ -294,9 +294,9 @@ export default async function KanbanPage({
   }));
 
   return (
-    <div className="px-8 py-8 anim-page">
-      <div className="flex items-center gap-3 heat-glow -mx-8 -mt-8 px-8 pt-8 pb-5 mb-6">
-        <h1 className="text-2xl font-semibold">Kanban</h1>
+    <div className="px-4 py-4 sm:px-8 sm:py-8 anim-page">
+      <div className="flex flex-wrap items-center gap-3 heat-glow -mx-4 sm:-mx-8 -mt-4 sm:-mt-8 px-4 sm:px-8 pt-4 sm:pt-8 pb-5 mb-6">
+        <h1 className="text-xl sm:text-2xl font-semibold">Kanban</h1>
         <SourceSelect current={source} />
         {source === "meta_ads" && (
           <CampaignSelect campaigns={campaigns ?? []} current={campaign} />

@@ -80,26 +80,26 @@ export default async function LeadsPage({
   const activeSource = sourceParam ?? "meta_ads";
 
   return (
-    <div className="px-7 py-7 max-w-6xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page">
       {/* Header */}
-      <div className="flex items-center justify-between heat-glow -mx-7 -mt-7 px-7 pt-7 pb-5 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-y-3 heat-glow -mx-4 sm:-mx-7 -mt-4 sm:-mt-7 px-4 sm:px-7 pt-4 sm:pt-7 pb-5 mb-6">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight">Leady</h1>
+          <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-tight">Leady</h1>
           <p className="text-[13px] text-[var(--muted)] mt-0.5">
             {leads.length} {leads.length === 1 ? "lead" : "leadów"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a
             href={exportUrl}
-            className="px-3.5 py-2 rounded-md text-[13px] font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors"
+            className="hidden sm:inline-flex px-3.5 py-2 rounded-md text-[13px] font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors"
             style={{ border: "1px solid var(--border-strong)" }}
           >
             Eksport CSV
           </a>
           <Link
             href="/leads/import"
-            className="px-3.5 py-2 rounded-md text-[13px] font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors"
+            className="hidden sm:inline-flex px-3.5 py-2 rounded-md text-[13px] font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors"
             style={{ border: "1px solid var(--border-strong)" }}
           >
             Import CSV
@@ -121,7 +121,8 @@ export default async function LeadsPage({
       </div>
 
       {/* Source tabs */}
-      <div className="flex items-center gap-1.5 mb-4">
+      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mb-4">
+      <div className="flex items-center gap-1.5 w-max sm:w-auto pb-1">
         {sourceTabs.map((tab) => {
           const isActive = activeSource === tab.value;
           return (
@@ -147,19 +148,20 @@ export default async function LeadsPage({
           );
         })}
       </div>
+      </div>
 
       <LeadsFilters stages={stages} tags={tagsData ?? []} />
 
       {/* Table */}
       <div
-        className="rounded-lg overflow-hidden"
+        className="rounded-lg overflow-x-auto"
         style={{
           background: "var(--panel-solid)",
           border: "1px solid var(--border)",
           boxShadow: "var(--shadow-sm)",
         }}
       >
-        <table className="w-full text-[13px]">
+        <table className="w-full min-w-[640px] text-[13px]">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
               {["Imię i nazwisko", "Telefon", "E-mail", "Etap", "Tagi", "Źródło", "Data", ""].map(

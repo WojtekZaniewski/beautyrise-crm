@@ -61,7 +61,7 @@ export default async function LeadDetailPage({
   );
 
   return (
-    <div className="px-7 py-7 max-w-5xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-5xl mx-auto anim-page">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-[12.5px] mb-6" style={{ color: "var(--muted)" }}>
         <Link href="/leads" className="hover:text-[var(--text)] transition-colors">
@@ -71,9 +71,9 @@ export default async function LeadDetailPage({
         <span style={{ color: "var(--text)" }}>{lead.full_name}</span>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main column */}
-        <div className="col-span-2 flex flex-col gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
           {/* Lead info card */}
           <div style={panelStyle} className="p-6">
             <div className="flex items-start justify-between mb-5">
