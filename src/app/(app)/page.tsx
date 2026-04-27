@@ -40,6 +40,14 @@ export default async function Dashboard({
 
   const stageIds = stages.map((s) => s.id);
 
+  // Last stage per pipeline = "closed/won" stage for revenue tracking
+  const stagesByPipeline = new Map<string, string[]>();
+  for (const stage of stages) {
+    if (!stagesByPipeline.has(stage.pipeline_id)) stagesByPipeline.set(stage.pipeline_id, []);
+    stagesByPipeline.get(stage.pipeline_id)!.push(stage.id);
+  }
+  const closedStageIds = [...stagesByPipeline.values()].map((ids) => ids[ids.length - 1]);
+
   // Date range (defaults to last 30 days)
   const todayStr = new Date().toISOString().split("T")[0];
   const defaultFrom = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
@@ -140,6 +148,7 @@ export default async function Dashboard({
       .eq("workspace_id", WORKSPACE_ID)
       .eq("archived", false)
       .not("value_pln", "is", null)
+      .in("stage_id", closedStageIds.length > 0 ? closedStageIds : ["__none__"])
       .gte("updated_at", fromIso)
       .lte("updated_at", toIso),
     supabase

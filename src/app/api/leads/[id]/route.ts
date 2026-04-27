@@ -129,6 +129,7 @@ export async function PATCH(
   if ("archived" in body && typeof body.archived === "boolean") {
     update.archived = body.archived;
     update.deleted_at = body.archived ? new Date().toISOString() : null;
+    if (body.archived) update.value_pln = null;
   }
 
   if ("stage_id" in body && (typeof body.stage_id === "string" || body.stage_id === null)) {
