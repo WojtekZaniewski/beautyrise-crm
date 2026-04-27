@@ -5,6 +5,7 @@ import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
 import { RevenueChart, type DayPoint, type MetaAdsSummary } from "@/components/dashboard/revenue-chart";
 import { ChannelsChart } from "@/components/dashboard/channels-chart";
+import { DateRangePicker } from "@/components/date-range-picker";
 
 function fmt(n: number | null | undefined, decimals = 0) {
   if (n == null || isNaN(n)) return "—";
@@ -28,19 +29,35 @@ const statusLabel: Record<string, { label: string; color: string }> = {
   DELETED: { label: "Usunięta", color: "#ef4444" },
 };
 
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams?: Promise<{ from?: string; to?: string }>;
+}) {
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
   const stages = await getStagesForWorkspace(WORKSPACE_ID);
 
   const stageIds = stages.map((s) => s.id);
 
+  // Date range (defaults to last 30 days)
+  const todayStr = new Date().toISOString().split("T")[0];
+  const defaultFrom = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+  const sp = await searchParams;
+  const fromDate = sp?.from ?? defaultFrom;
+  const toDate   = sp?.to   ?? todayStr;
+  const fromIso  = fromDate + "T00:00:00.000Z";
+  const toIso    = toDate   + "T23:59:59.999Z";
+
+  // Range label for chart titles
+  const numDays = Math.round((new Date(toDate).getTime() - new Date(fromDate).getTime()) / 86400000) + 1;
+  const rangeLabelMap: Record<number, string> = { 7: "7 dni", 30: "30 dni", 90: "90 dni", 365: "Rok" };
+  const rangeLabel = rangeLabelMap[numDays] ?? `${fromDate.slice(5).replace("-", ".")} – ${toDate.slice(5).replace("-", ".")}`;
+
+  // Fixed relative dates for stat cards (always relative to now)
   const todayIso = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
   const weekIso = new Date(Date.now() - 7 * 86400000).toISOString();
   const sevenDaysAgoDate = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
-  const thirtyDaysAgoDate = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
-
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
 
   const [todayRes, weekRes, leadsRes, metaIntRes] = await Promise.all([
     supabase
@@ -102,7 +119,8 @@ export default async function Dashboard() {
         .from("campaign_metrics_daily")
         .select("campaign_id, date, spend, impressions, clicks, leads_count, cpl, ctr")
         .in("campaign_id", ids)
-        .gte("date", thirtyDaysAgoDate);
+        .gte("date", fromDate)
+        .lte("date", toDate);
       metrics = (metricsData ?? []) as MetricRow[];
 
       // 7-day aggregates for stat cards
@@ -120,19 +138,23 @@ export default async function Dashboard() {
       .from("leads")
       .select("value_pln, updated_at")
       .eq("workspace_id", WORKSPACE_ID)
+      .eq("archived", false)
       .not("value_pln", "is", null)
-      .gte("updated_at", thirtyDaysAgo),
+      .gte("updated_at", fromIso)
+      .lte("updated_at", toIso),
     supabase
       .from("email_messages")
       .select("sent_at, opened_at, clicked_at")
       .eq("workspace_id", WORKSPACE_ID)
       .not("sent_at", "is", null)
-      .gte("sent_at", thirtyDaysAgo),
+      .gte("sent_at", fromIso)
+      .lte("sent_at", toIso),
     supabase
       .from("sms_campaign_recipients")
       .select("sent_at, replied_at, created_at")
       .eq("workspace_id", WORKSPACE_ID)
-      .gte("created_at", thirtyDaysAgo),
+      .gte("created_at", fromIso)
+      .lte("created_at", toIso),
     supabase
       .from("sms_campaigns")
       .select("id", { count: "exact", head: true })
@@ -156,8 +178,7 @@ export default async function Dashboard() {
 
   type EmailDayPoint = { date: string; sent: number; opened: number; clicked: number };
   const emailChartData: EmailDayPoint[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
+  for (let d = new Date(fromDate + "T12:00:00"); d <= new Date(toDate + "T12:00:00"); d.setDate(d.getDate() + 1)) {
     const ds = d.toISOString().split("T")[0];
     emailChartData.push({
       date: d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
@@ -180,8 +201,7 @@ export default async function Dashboard() {
 
   type SmsDayPoint = { date: string; sent: number; replied: number };
   const smsChartData: SmsDayPoint[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
+  for (let d = new Date(fromDate + "T12:00:00"); d <= new Date(toDate + "T12:00:00"); d.setDate(d.getDate() + 1)) {
     const ds = d.toISOString().split("T")[0];
     smsChartData.push({
       date: d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
@@ -212,11 +232,10 @@ export default async function Dashboard() {
     leadsByDay[m.date]       = (leadsByDay[m.date]       ?? 0) + (m.leads_count ?? 0);
   }
 
-  // Build 30-day combined dataset
+  // Build date-range combined dataset
   const chartData: DayPoint[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    const dateStr = d.toISOString().split("T")[0];
+  for (let d = new Date(fromDate + "T12:00:00"); d <= new Date(toDate + "T12:00:00"); d.setDate(d.getDate() + 1)) {
+    const dateStr    = d.toISOString().split("T")[0];
     const daySpend       = spendByDay[dateStr]       ?? 0;
     const dayClicks      = clicksByDay[dateStr]      ?? 0;
     const dayImpressions = impressionsByDay[dateStr] ?? 0;
@@ -281,9 +300,12 @@ export default async function Dashboard() {
           <h1 className="text-[22px] font-semibold tracking-tight">Dashboard</h1>
           <p className="text-[13px] text-[var(--muted)] mt-0.5">Przegląd aktywności</p>
         </div>
-        <Link href="/leads/new" className="btn-primary rounded-md px-4 py-2 text-[13px]">
-          + Nowy lead
-        </Link>
+        <div className="flex items-center gap-2">
+          <DateRangePicker from={fromDate} to={toDate} />
+          <Link href="/leads/new" className="btn-primary rounded-md px-4 py-2 text-[13px]">
+            + Nowy lead
+          </Link>
+        </div>
       </div>
 
       {/* Stats grid */}
@@ -353,6 +375,7 @@ export default async function Dashboard() {
         data={chartData}
         totalSpend={chartTotalSpend}
         totalRevenue={chartTotalRevenue}
+        rangeLabel={rangeLabel}
         metaStats={metaConnected && totals.spend > 0 ? ({
           avgCPL: totalCpl,
           avgCPC: totals.clicks > 0 ? totals.spend / totals.clicks : null,
@@ -366,6 +389,7 @@ export default async function Dashboard() {
 
       {/* Communication channels chart */}
       <ChannelsChart
+        rangeLabel={rangeLabel}
         emailData={emailChartData}
         emailTotalSent={emailTotalSent}
         emailTotalOpened={emailTotalOpened}

@@ -16,6 +16,7 @@ type SmsFilter   = "sent" | "replied";
 export function ChannelsChart({
   emailData, emailTotalSent, emailTotalOpened, emailTotalClicked, emailOpenRate, emailClickRate,
   smsData, smsTotalSent, smsTotalReplied, smsReplyRate, smsCampaignCount,
+  rangeLabel = "30 dni",
 }: {
   emailData: EmailDayPoint[];
   emailTotalSent: number; emailTotalOpened: number; emailTotalClicked: number;
@@ -23,6 +24,7 @@ export function ChannelsChart({
   smsData: SmsDayPoint[];
   smsTotalSent: number; smsTotalReplied: number;
   smsReplyRate: number; smsCampaignCount: number;
+  rangeLabel?: string;
 }) {
   const [tab, setTab]             = useState<Tab>("email");
   const [emailFilter, setEmailFilter] = useState<EmailFilter>("sent");
@@ -43,7 +45,7 @@ export function ChannelsChart({
     >
       {/* Header + tabs */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[13.5px] font-semibold tracking-tight">Kanały komunikacji (30 dni)</h2>
+        <h2 className="text-[13.5px] font-semibold tracking-tight">Kanały komunikacji ({rangeLabel})</h2>
         <div className="flex gap-1">
           {([
             { key: "email" as Tab, label: "E-mail", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.3)" },

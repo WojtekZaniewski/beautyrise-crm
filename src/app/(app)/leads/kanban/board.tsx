@@ -448,6 +448,9 @@ function KanbanFinancialPanel({
   dailyMetrics,
   emailStats,
   smsStats,
+  fromDate,
+  toDate,
+  rangeLabel,
 }: {
   leads: Lead[];
   closedStageId: string | null;
@@ -457,6 +460,9 @@ function KanbanFinancialPanel({
   dailyMetrics: DailyMetric[];
   emailStats?: EmailStats | null;
   smsStats?: SmsStats | null;
+  fromDate: string;
+  toDate: string;
+  rangeLabel: string;
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
@@ -468,11 +474,10 @@ function KanbanFinancialPanel({
   const chartData = useMemo(() => {
     const dmByDate = Object.fromEntries(dailyMetrics.map((m) => [m.date, m]));
     const result: Record<string, number>[] = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 86400000);
+    for (let d = new Date(fromDate + "T12:00:00"); d <= new Date(toDate + "T12:00:00"); d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0];
-      const label = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
-      const dm = dmByDate[dateStr];
+      const label   = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+      const dm      = dmByDate[dateStr];
 
       const dayRevLeads = closedStageId
         ? leads.filter((l) => l.stage_id === closedStageId && l.value_pln != null && l.created_at.startsWith(dateStr))
@@ -497,7 +502,7 @@ function KanbanFinancialPanel({
       });
     }
     return result;
-  }, [leads, closedStageId, dailyMetrics]);
+  }, [leads, closedStageId, dailyMetrics, fromDate, toDate]);
 
   const summary = [
     { label: "Wydatki",  value: pln(totalSpend),   color: "#3b82f6" },
@@ -522,7 +527,7 @@ function KanbanFinancialPanel({
       className="flex-1 min-w-[400px] rounded-xl p-5 flex flex-col gap-4"
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
-      <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe</span>
+      <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe ({rangeLabel})</span>
 
       {/* Mini channel summaries (visible in "all sources" view) */}
       {(emailStats || smsStats) && (
@@ -697,9 +702,11 @@ function KanbanFinancialPanel({
 function KanbanEmailPanel({
   emailStats,
   emailDailyMetrics,
+  rangeLabel,
 }: {
   emailStats: EmailStats;
   emailDailyMetrics: EmailDailyPoint[];
+  rangeLabel: string;
 }) {
   type EFilter = "sent" | "opened" | "clicked";
   const [filter, setFilter] = useState<EFilter>("sent");
@@ -730,7 +737,7 @@ function KanbanEmailPanel({
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
           style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
-        <span className="text-[13px] font-semibold tracking-tight">E-mail (30 dni)</span>
+        <span className="text-[13px] font-semibold tracking-tight">E-mail ({rangeLabel})</span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
@@ -793,9 +800,11 @@ function KanbanEmailPanel({
 function KanbanSmsPanel({
   smsStats,
   smsDailyMetrics,
+  rangeLabel,
 }: {
   smsStats: SmsStats;
   smsDailyMetrics: SmsDailyPoint[];
+  rangeLabel: string;
 }) {
   type SmsFilter = "sent" | "replied";
   const [filter, setFilter] = useState<SmsFilter>("sent");
@@ -825,7 +834,7 @@ function KanbanSmsPanel({
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
           style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
-        <span className="text-[13px] font-semibold tracking-tight">SMS (30 dni)</span>
+        <span className="text-[13px] font-semibold tracking-tight">SMS ({rangeLabel})</span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
@@ -896,6 +905,9 @@ export function KanbanBoard({
   emailDailyMetrics,
   smsStats,
   smsDailyMetrics,
+  fromDate,
+  toDate,
+  rangeLabel,
 }: {
   stages: Stage[];
   initialLeads: Lead[];
@@ -906,6 +918,9 @@ export function KanbanBoard({
   emailDailyMetrics: EmailDailyPoint[];
   smsStats: SmsStats;
   smsDailyMetrics: SmsDailyPoint[];
+  fromDate: string;
+  toDate: string;
+  rangeLabel: string;
 }) {
   const [leads, setLeads] = useState(initialLeads);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -1186,10 +1201,10 @@ export function KanbanBoard({
       </div>
 
       {source === "email" && (
-        <KanbanEmailPanel emailStats={emailStats} emailDailyMetrics={emailDailyMetrics} />
+        <KanbanEmailPanel emailStats={emailStats} emailDailyMetrics={emailDailyMetrics} rangeLabel={rangeLabel} />
       )}
       {source === "sms" && (
-        <KanbanSmsPanel smsStats={smsStats} smsDailyMetrics={smsDailyMetrics} />
+        <KanbanSmsPanel smsStats={smsStats} smsDailyMetrics={smsDailyMetrics} rangeLabel={rangeLabel} />
       )}
       {(source === "meta_ads" || source === "all") && showMetaStats && (
         <KanbanFinancialPanel
@@ -1201,6 +1216,9 @@ export function KanbanBoard({
           dailyMetrics={dailyMetrics}
           emailStats={source === "all" ? emailStats : null}
           smsStats={source === "all" ? smsStats : null}
+          fromDate={fromDate}
+          toDate={toDate}
+          rangeLabel={rangeLabel}
         />
       )}
       </div>

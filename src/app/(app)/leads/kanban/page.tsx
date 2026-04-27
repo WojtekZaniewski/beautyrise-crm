@@ -3,9 +3,10 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { SourceSelect } from "@/components/source-select";
 import { CampaignSelect } from "@/components/campaign-select";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { KanbanBoard } from "./board";
 
-type SearchParams = Promise<{ source?: string; campaign?: string }>;
+type SearchParams = Promise<{ source?: string; campaign?: string; from?: string; to?: string }>;
 
 export type MetaStats = {
   totalSpend: number;
@@ -43,9 +44,22 @@ export default async function KanbanPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { source = "all", campaign = "all" } = await searchParams;
+  const { source = "all", campaign = "all", from: fromParam, to: toParam } = await searchParams;
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
+
+  // Date range (default: last 30 days)
+  const todayStr   = new Date().toISOString().split("T")[0];
+  const defaultFrom = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+  const fromDate   = fromParam ?? defaultFrom;
+  const toDate     = toParam   ?? todayStr;
+  const fromIso    = fromDate + "T00:00:00.000Z";
+  const toIso      = toDate   + "T23:59:59.999Z";
+
+  const numDays = Math.round((new Date(toDate).getTime() - new Date(fromDate).getTime()) / 86400000) + 1;
+  const rangeLabelMap: Record<number, string> = { 7: "7 dni", 30: "30 dni", 90: "90 dni", 365: "Rok" };
+  const rangeLabel = rangeLabelMap[numDays] ?? `${fromDate.slice(5).replace("-", ".")} – ${toDate.slice(5).replace("-", ".")}`;
+
 
   const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
   const stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
@@ -104,12 +118,12 @@ export default async function KanbanPage({
         ? [campaign]
         : campaigns.map((c) => c.id);
 
-    const thirtyDaysAgoDate = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
     const { data: metrics } = await supabase
       .from("campaign_metrics_daily")
       .select("campaign_id, date, spend, impressions, clicks, leads_count")
       .in("campaign_id", campaignIds)
-      .gte("date", thirtyDaysAgoDate);
+      .gte("date", fromDate)
+      .lte("date", toDate);
 
     if (metrics && metrics.length > 0) {
       let totalSpend = 0;
@@ -171,7 +185,8 @@ export default async function KanbanPage({
       .from("campaign_metrics_daily")
       .select("date, spend, clicks, impressions, leads_count")
       .in("campaign_id", filteredCampaignIds)
-      .gte("date", new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0]);
+      .gte("date", fromDate)
+      .lte("date", toDate);
 
     for (const m of (allMetrics.data ?? [])) {
       const date = m.date as string;
@@ -186,10 +201,8 @@ export default async function KanbanPage({
   }
   const dailyMetrics = Object.values(metricsByDate);
 
-  // Email & SMS stats (30 days)
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+  // Email & SMS stats (selected date range)
   const sevenDaysAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
-  const todayStr = new Date().toISOString().split("T")[0];
 
   // Email stats — always built (zeroed when no data)
   const emailDMap: Record<string, { sent: number; opened: number; clicked: number }> = {};
@@ -200,7 +213,8 @@ export default async function KanbanPage({
       .select("sent_at, opened_at, clicked_at")
       .eq("workspace_id", WORKSPACE_ID)
       .not("sent_at", "is", null)
-      .gte("sent_at", thirtyDaysAgo);
+      .gte("sent_at", fromIso)
+      .lte("sent_at", toIso);
     for (const m of emailRaw ?? []) {
       const ds = (m.sent_at as string).split("T")[0];
       if (!emailDMap[ds]) emailDMap[ds] = { sent: 0, opened: 0, clicked: 0 };
@@ -219,9 +233,8 @@ export default async function KanbanPage({
     totalToday: emailToday, total7d: email7d,
   };
   const emailDailyMetrics: EmailDailyPoint[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    const ds = d.toISOString().split("T")[0];
+  for (let d = new Date(fromDate + "T12:00:00"); d <= new Date(toDate + "T12:00:00"); d.setDate(d.getDate() + 1)) {
+    const ds  = d.toISOString().split("T")[0];
     const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
     emailDailyMetrics.push({ date: lbl, ...(emailDMap[ds] ?? { sent: 0, opened: 0, clicked: 0 }) });
   }
@@ -236,7 +249,8 @@ export default async function KanbanPage({
         .from("sms_campaign_recipients")
         .select("sent_at, replied_at, created_at")
         .eq("workspace_id", WORKSPACE_ID)
-        .gte("created_at", thirtyDaysAgo),
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso),
       supabase
         .from("sms_campaigns")
         .select("id", { count: "exact", head: true })
@@ -260,9 +274,8 @@ export default async function KanbanPage({
     totalToday: smsToday, total7d: sms7d,
   };
   const smsDailyMetrics: SmsDailyPoint[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    const ds = d.toISOString().split("T")[0];
+  for (let d = new Date(fromDate + "T12:00:00"); d <= new Date(toDate + "T12:00:00"); d.setDate(d.getDate() + 1)) {
+    const ds  = d.toISOString().split("T")[0];
     const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
     smsDailyMetrics.push({ date: lbl, ...(smsDMap[ds] ?? { sent: 0, replied: 0 }) });
   }
@@ -288,9 +301,12 @@ export default async function KanbanPage({
         {source === "meta_ads" && (
           <CampaignSelect campaigns={campaigns ?? []} current={campaign} />
         )}
+        <div className="ml-auto">
+          <DateRangePicker from={fromDate} to={toDate} />
+        </div>
       </div>
       <KanbanBoard
-        key={`${source}-${campaign}`}
+        key={`${source}-${campaign}-${fromDate}-${toDate}`}
         stages={stages}
         initialLeads={leads}
         source={source}
@@ -300,6 +316,9 @@ export default async function KanbanPage({
         emailDailyMetrics={emailDailyMetrics}
         smsStats={smsStats}
         smsDailyMetrics={smsDailyMetrics}
+        fromDate={fromDate}
+        toDate={toDate}
+        rangeLabel={rangeLabel}
       />
     </div>
   );

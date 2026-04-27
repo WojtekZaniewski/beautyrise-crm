@@ -72,11 +72,13 @@ export function RevenueChart({
   totalSpend,
   totalRevenue,
   metaStats,
+  rangeLabel = "30 dni",
 }: {
   data: DayPoint[];
   totalSpend: number;
   totalRevenue: number;
   metaStats?: MetaAdsSummary | null;
+  rangeLabel?: string;
 }) {
   const [filter, setFilter] = useState<FilterMode>("both");
 
@@ -111,7 +113,7 @@ export function RevenueChart({
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[13.5px] font-semibold tracking-tight">Wyniki finansowe (30 dni)</h2>
+        <h2 className="text-[13.5px] font-semibold tracking-tight">Wyniki finansowe ({rangeLabel})</h2>
         <div className="flex gap-1">
           {MAIN_FILTERS.map((f) => (
             <button
