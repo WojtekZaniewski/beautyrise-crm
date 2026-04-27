@@ -902,9 +902,9 @@ export function KanbanBoard({
   source: string;
   metaStats: MetaStats | null;
   dailyMetrics: DailyMetric[];
-  emailStats: EmailStats | null;
+  emailStats: EmailStats;
   emailDailyMetrics: EmailDailyPoint[];
-  smsStats: SmsStats | null;
+  smsStats: SmsStats;
   smsDailyMetrics: SmsDailyPoint[];
 }) {
   const [leads, setLeads] = useState(initialLeads);
@@ -1185,10 +1185,10 @@ export function KanbanBoard({
         })}
       </div>
 
-      {source === "email" && emailStats && (
+      {source === "email" && (
         <KanbanEmailPanel emailStats={emailStats} emailDailyMetrics={emailDailyMetrics} />
       )}
-      {source === "sms" && smsStats && (
+      {source === "sms" && (
         <KanbanSmsPanel smsStats={smsStats} smsDailyMetrics={smsDailyMetrics} />
       )}
       {(source === "meta_ads" || source === "all") && showMetaStats && (

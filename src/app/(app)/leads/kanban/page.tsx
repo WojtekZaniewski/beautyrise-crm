@@ -191,8 +191,9 @@ export default async function KanbanPage({
   const sevenDaysAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
   const todayStr = new Date().toISOString().split("T")[0];
 
-  let emailStats: EmailStats | null = null;
-  let emailDailyMetrics: EmailDailyPoint[] = [];
+  // Email stats — always built (zeroed when no data)
+  const emailDMap: Record<string, { sent: number; opened: number; clicked: number }> = {};
+  let emailTotalSent = 0, emailTotalOpened = 0, emailTotalClicked = 0, emailToday = 0, email7d = 0;
   {
     const { data: emailRaw } = await supabase
       .from("email_messages")
@@ -200,36 +201,35 @@ export default async function KanbanPage({
       .eq("workspace_id", WORKSPACE_ID)
       .not("sent_at", "is", null)
       .gte("sent_at", thirtyDaysAgo);
-
-    if (emailRaw && emailRaw.length > 0) {
-      const dMap: Record<string, { sent: number; opened: number; clicked: number }> = {};
-      let totalSent = 0, totalOpened = 0, totalClicked = 0, totalToday = 0, total7d = 0;
-      for (const m of emailRaw) {
-        const ds = (m.sent_at as string).split("T")[0];
-        if (!dMap[ds]) dMap[ds] = { sent: 0, opened: 0, clicked: 0 };
-        dMap[ds].sent++;
-        if (m.opened_at) { dMap[ds].opened++; totalOpened++; }
-        if (m.clicked_at) { dMap[ds].clicked++; totalClicked++; }
-        totalSent++;
-        if (ds === todayStr) totalToday++;
-        if (ds >= sevenDaysAgoStr) total7d++;
-      }
-      emailStats = { totalSent, totalOpened, totalClicked,
-        openRate: totalSent > 0 ? (totalOpened / totalSent) * 100 : 0,
-        clickRate: totalSent > 0 ? (totalClicked / totalSent) * 100 : 0,
-        totalToday, total7d };
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(Date.now() - i * 86400000);
-        const ds = d.toISOString().split("T")[0];
-        const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
-        const dm = dMap[ds] ?? { sent: 0, opened: 0, clicked: 0 };
-        emailDailyMetrics.push({ date: lbl, ...dm });
-      }
+    for (const m of emailRaw ?? []) {
+      const ds = (m.sent_at as string).split("T")[0];
+      if (!emailDMap[ds]) emailDMap[ds] = { sent: 0, opened: 0, clicked: 0 };
+      emailDMap[ds].sent++;
+      if (m.opened_at) { emailDMap[ds].opened++; emailTotalOpened++; }
+      if (m.clicked_at) { emailDMap[ds].clicked++; emailTotalClicked++; }
+      emailTotalSent++;
+      if (ds === todayStr) emailToday++;
+      if (ds >= sevenDaysAgoStr) email7d++;
     }
   }
+  const emailStats: EmailStats = {
+    totalSent: emailTotalSent, totalOpened: emailTotalOpened, totalClicked: emailTotalClicked,
+    openRate:  emailTotalSent > 0 ? (emailTotalOpened  / emailTotalSent) * 100 : 0,
+    clickRate: emailTotalSent > 0 ? (emailTotalClicked / emailTotalSent) * 100 : 0,
+    totalToday: emailToday, total7d: email7d,
+  };
+  const emailDailyMetrics: EmailDailyPoint[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const ds = d.toISOString().split("T")[0];
+    const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+    emailDailyMetrics.push({ date: lbl, ...(emailDMap[ds] ?? { sent: 0, opened: 0, clicked: 0 }) });
+  }
 
-  let smsStats: SmsStats | null = null;
-  let smsDailyMetrics: SmsDailyPoint[] = [];
+  // SMS stats — always built (zeroed when no data)
+  const smsDMap: Record<string, { sent: number; replied: number }> = {};
+  let smsTotalSent = 0, smsTotalReplied = 0, smsToday = 0, sms7d = 0;
+  let smsCampaignCount = 0;
   {
     const [recipientsRes, campaignsCountRes] = await Promise.all([
       supabase
@@ -242,31 +242,29 @@ export default async function KanbanPage({
         .select("id", { count: "exact", head: true })
         .eq("workspace_id", WORKSPACE_ID),
     ]);
-    const smsRaw = recipientsRes.data ?? [];
-    if (smsRaw.length > 0) {
-      const dMap: Record<string, { sent: number; replied: number }> = {};
-      let totalSent = 0, totalReplied = 0, totalToday = 0, total7d = 0;
-      for (const r of smsRaw) {
-        const ds = ((r.sent_at ?? r.created_at) as string).split("T")[0];
-        if (!dMap[ds]) dMap[ds] = { sent: 0, replied: 0 };
-        dMap[ds].sent++;
-        if (r.replied_at) { dMap[ds].replied++; totalReplied++; }
-        totalSent++;
-        if (ds === todayStr) totalToday++;
-        if (ds >= sevenDaysAgoStr) total7d++;
-      }
-      smsStats = { totalSent, totalReplied,
-        replyRate: totalSent > 0 ? (totalReplied / totalSent) * 100 : 0,
-        campaignCount: campaignsCountRes.count ?? 0,
-        totalToday, total7d };
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(Date.now() - i * 86400000);
-        const ds = d.toISOString().split("T")[0];
-        const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
-        const dm = dMap[ds] ?? { sent: 0, replied: 0 };
-        smsDailyMetrics.push({ date: lbl, ...dm });
-      }
+    smsCampaignCount = campaignsCountRes.count ?? 0;
+    for (const r of recipientsRes.data ?? []) {
+      const ds = ((r.sent_at ?? r.created_at) as string).split("T")[0];
+      if (!smsDMap[ds]) smsDMap[ds] = { sent: 0, replied: 0 };
+      smsDMap[ds].sent++;
+      if (r.replied_at) { smsDMap[ds].replied++; smsTotalReplied++; }
+      smsTotalSent++;
+      if (ds === todayStr) smsToday++;
+      if (ds >= sevenDaysAgoStr) sms7d++;
     }
+  }
+  const smsStats: SmsStats = {
+    totalSent: smsTotalSent, totalReplied: smsTotalReplied,
+    replyRate: smsTotalSent > 0 ? (smsTotalReplied / smsTotalSent) * 100 : 0,
+    campaignCount: smsCampaignCount,
+    totalToday: smsToday, total7d: sms7d,
+  };
+  const smsDailyMetrics: SmsDailyPoint[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000);
+    const ds = d.toISOString().split("T")[0];
+    const lbl = d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
+    smsDailyMetrics.push({ date: lbl, ...(smsDMap[ds] ?? { sent: 0, replied: 0 }) });
   }
 
   // Enrich leads with per-campaign acquisition cost
