@@ -20,17 +20,21 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
   const params   = useSearchParams();
 
   const [open, setOpen] = useState(false);
-  const [pos,  setPos]  = useState<{ top: number; right: number } | null>(null);
+  const [pos,  setPos]  = useState<{ top: number; left: number } | null>(null);
   const [cf, setCf]     = useState(from);
   const [ct, setCt]     = useState(to);
 
   const btnRef     = useRef<HTMLButtonElement>(null);
   const dropRef    = useRef<HTMLDivElement>(null);
 
+  const DROP_W = 220;
+
   const openDropdown = useCallback(() => {
     const rect = btnRef.current?.getBoundingClientRect();
     if (rect) {
-      setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+      // right-align dropdown with button, clamped so it doesn't overflow left
+      const left = Math.max(8, rect.right - DROP_W);
+      setPos({ top: rect.bottom + 6, left });
     }
     setOpen(true);
   }, []);
@@ -94,14 +98,14 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
           style={{
             position: "fixed",
             top: pos.top,
-            right: pos.right,
+            left: pos.left,
+            width: DROP_W,
             zIndex: 9999,
             background: "var(--panel-solid)",
             border: "1px solid var(--border)",
             boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
             borderRadius: "0.75rem",
             padding: "0.75rem",
-            minWidth: "210px",
           }}
         >
           <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Zakres</p>
