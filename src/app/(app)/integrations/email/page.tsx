@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
 
@@ -112,12 +113,27 @@ function EmptyState({ icon = true, text }: { icon?: boolean; text: string }) {
 
 // ─── Outreach Tab ─────────────────────────────────────────────────────────────
 
+const EMAIL_CAMPAIGN_TYPES: { value: string; label: string; color: string }[] = [
+  { value: "outreach",   label: "Outreach",    color: "#3b82f6" },
+  { value: "followup",   label: "Follow-up",   color: "#8b5cf6" },
+  { value: "promo",      label: "Promocja",    color: "#f59e0b" },
+  { value: "newsletter", label: "Newsletter",  color: "#22c55e" },
+  { value: "welcome",    label: "Powitanie",   color: "#06b6d4" },
+  { value: "other",      label: "Inne",        color: "#94a3b8" },
+];
+
+function parseEmailCampaignName(raw: string): { type: string | null; name: string } {
+  const m = raw.match(/^\[([a-z]+)\]\s*(.*)/s);
+  return m ? { type: m[1], name: m[2] } : { type: null, name: raw };
+}
+
 function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selected, setSelected] = useState<CampaignDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [showSend, setShowSend] = useState(false);
+  const [newCampaignType, setNewCampaignType] = useState("outreach");
   const [newForm, setNewForm] = useState({ name: "", subject: "", body_html: "", body_text: "", account_id: "" });
   const [recipientsText, setRecipientsText] = useState("");
   const [sending, setSending] = useState(false);
@@ -157,8 +173,9 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
 
   const createCampaign = async () => {
     if (!newForm.name || !newForm.subject || !newForm.account_id) return;
+    const fullName = `[${newCampaignType}] ${newForm.name}`;
     const res = await fetch("/api/email/outreach/campaigns", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newForm),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...newForm, name: fullName }),
     });
     if (res.ok) {
       setShowNew(false);
@@ -274,7 +291,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                 }}
               >
                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                  <span className="text-sm font-medium truncate" style={{ color: isActive ? "var(--accent)" : "var(--text)" }}>{c.name}</span>
+                  <span className="text-sm font-medium truncate" style={{ color: isActive ? "var(--accent)" : "var(--text)" }}>{parseEmailCampaignName(c.name).name}</span>
                   <StatusBadge status={c.status} />
                 </div>
                 <div className="text-xs text-[var(--muted)] truncate">{c.subject}</div>
@@ -419,6 +436,25 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
             <p className="text-sm text-[var(--muted)]">Najpierw dodaj konto email w zakładce Konta.</p>
           ) : (
             <>
+              <div>
+                <label className="text-xs text-[var(--muted)] block mb-1.5">Typ kampanii</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {EMAIL_CAMPAIGN_TYPES.map(t => (
+                    <button
+                      key={t.value}
+                      onClick={() => setNewCampaignType(t.value)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={
+                        newCampaignType === t.value
+                          ? { backgroundColor: t.color + "20", color: t.color, border: `1px solid ${t.color}40` }
+                          : { background: "var(--ba-4)", color: "var(--muted)", border: "1px solid var(--border)" }
+                      }
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Input label="Nazwa kampanii" value={newForm.name} onChange={v => setNewForm(f => ({ ...f, name: v }))} placeholder="np. Lead Magnet Wrzesień 2026" />
               <Input label="Temat wiadomości" value={newForm.subject} onChange={v => setNewForm(f => ({ ...f, subject: v }))} placeholder="np. Odbierz swój bezpłatny poradnik" />
               <div>
@@ -964,7 +1000,9 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 export default function EmailPage() {
-  const [tab, setTab] = useState<TabId>("outreach");
+  const searchParams = useSearchParams();
+  const defaultTab = (searchParams.get("tab") as TabId | null) ?? "outreach";
+  const [tab, setTab] = useState<TabId>(defaultTab);
   const [accounts, setAccounts] = useState<EmailAccount[]>([]);
 
   const loadAccounts = useCallback(async () => {

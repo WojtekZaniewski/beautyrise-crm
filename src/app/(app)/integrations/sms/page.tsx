@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import { createClient } from "@/lib/supabase/client";
 
@@ -183,6 +184,15 @@ function SendTab({ configured }: { configured: boolean }) {
 
 // ─── Campaign Tab ─────────────────────────────────────────────────────────────
 
+const SMS_CAMPAIGN_TYPES: { value: string; label: string; color: string }[] = [
+  { value: "outreach",  label: "Outreach",      color: "#3b82f6" },
+  { value: "followup",  label: "Follow-up",     color: "#8b5cf6" },
+  { value: "promo",     label: "Promocja",      color: "#f59e0b" },
+  { value: "reminder",  label: "Przypomnienie", color: "#22c55e" },
+  { value: "info",      label: "Informacja",    color: "#6b7280" },
+  { value: "other",     label: "Inne",          color: "#94a3b8" },
+];
+
 type Recipient = { phone: string; name: string; email: string; lead_id?: string };
 type CrmLead = { id: string; full_name: string; phone: string; email: string | null; source: string };
 
@@ -239,6 +249,8 @@ function parseCsvText(text: string): Recipient[] {
 }
 
 function CampaignTab({ configured }: { configured: boolean }) {
+  const [campaignType, setCampaignType] = useState("outreach");
+  const [campaignName, setCampaignName] = useState("");
   const [template, setTemplate] = useState("");
   const [sourceMode, setSourceMode] = useState<"paste" | "crm" | "csv">("paste");
   const [pasteText, setPasteText] = useState("");
@@ -312,11 +324,13 @@ function CampaignTab({ configured }: { configured: boolean }) {
     setProgress({ done: 0, total: recipients.length, failed: 0 });
 
     // Create campaign record with recipients upfront
+    const autoName = campaignName.trim() || `Kampania SMS ${new Date().toLocaleDateString("pl-PL")}`;
+    const fullName = `[${campaignType}] ${autoName}`;
     const campaignRes = await fetch("/api/sms/campaigns", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: `Kampania SMS ${new Date().toLocaleDateString("pl-PL")}`,
+        name: fullName,
         template,
         recipients: recipients.map(r => ({ phone: r.phone, name: r.name, lead_id: r.lead_id, message_body: applyTemplate(template, r) })),
       }),
@@ -360,9 +374,38 @@ function CampaignTab({ configured }: { configured: boolean }) {
   return (
     <div className="max-w-3xl flex flex-col gap-5">
 
+      {/* Step 0: Campaign type + name */}
+      <Panel className="p-5 flex flex-col gap-4">
+        <div className="font-medium text-sm">1. Typ i nazwa kampanii</div>
+        <div className="flex flex-wrap gap-2">
+          {SMS_CAMPAIGN_TYPES.map(t => (
+            <button
+              key={t.value}
+              onClick={() => setCampaignType(t.value)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={
+                campaignType === t.value
+                  ? { backgroundColor: t.color + "20", color: t.color, border: `1px solid ${t.color}40` }
+                  : { background: "var(--ba-4)", color: "var(--muted)", border: "1px solid var(--border)" }
+              }
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type="text"
+          placeholder={`Kampania SMS ${new Date().toLocaleDateString("pl-PL")}`}
+          value={campaignName}
+          onChange={e => setCampaignName(e.target.value)}
+          className="w-full rounded-lg px-3 py-2.5 text-sm"
+          style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }}
+        />
+      </Panel>
+
       {/* Step 1: Template */}
       <Panel className="p-5 flex flex-col gap-4">
-        <div className="font-medium text-sm">1. Treść wiadomości</div>
+        <div className="font-medium text-sm">2. Treść wiadomości</div>
 
         {/* Variable chips */}
         <div className="flex flex-wrap gap-2">
@@ -407,7 +450,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
 
       {/* Step 2: Recipients */}
       <Panel className="p-5 flex flex-col gap-4">
-        <div className="font-medium text-sm">2. Odbiorcy</div>
+        <div className="font-medium text-sm">3. Odbiorcy</div>
 
         {/* Mode tabs */}
         <div className="flex gap-1 rounded-lg p-1" style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}>
@@ -525,7 +568,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
       {/* Step 3: Preview & Send */}
       {recipients.length > 0 && template.trim() && (
         <Panel className="p-5 flex flex-col gap-4">
-          <div className="font-medium text-sm">3. Podgląd i wyślij</div>
+          <div className="font-medium text-sm">4. Podgląd i wyślij</div>
 
           {/* Preview table */}
           <div className="rounded-lg overflow-hidden text-sm" style={{ border: "1px solid var(--border)" }}>
@@ -1011,7 +1054,9 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 export default function SmsIntegrationPage() {
-  const [tab, setTab] = useState<TabId>("config");
+  const searchParams = useSearchParams();
+  const defaultTab = (searchParams.get("tab") as TabId | null) ?? "config";
+  const [tab, setTab] = useState<TabId>(defaultTab);
   const [configured, setConfigured] = useState(false);
 
   const refreshConfig = useCallback(async () => {

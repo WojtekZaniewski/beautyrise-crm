@@ -130,7 +130,6 @@ const primary = [
   { href: "/", label: "Dashboard", icon: Icons.dashboard },
   { href: "/leads", label: "Leady", icon: Icons.leads },
   { href: "/leads/kanban", label: "Kanban", icon: Icons.kanban },
-  { href: "/campaigns", label: "Kampanie", icon: Icons.campaigns },
   { href: "/messages", label: "Wiadomości", icon: Icons.messages, isMessages: true },
   { href: "/team-chat", label: "Czat zespołu", icon: Icons.teamChat },
   { href: "/journal", label: "Dziennik", icon: Icons.journal },
@@ -138,8 +137,11 @@ const primary = [
 
 const integrationsNav = [
   { href: "/integrations/meta", label: "Meta Ads", icon: Icons.meta },
+  { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
   { href: "/integrations/email", label: "Email", icon: Icons.email },
+  { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
   { href: "/integrations/sms", label: "SMS", icon: Icons.sms },
+  { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
 ];
 
 const settingsNav = [
