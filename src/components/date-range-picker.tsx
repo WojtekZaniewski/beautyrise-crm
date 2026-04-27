@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 const PRESETS = [
@@ -9,6 +10,8 @@ const PRESETS = [
   { label: "90 dni", days: 90  },
   { label: "Rok",    days: 365 },
 ];
+
+const DROP_W = 220;
 
 function toStr(d: Date) {
   return d.toISOString().split("T")[0];
@@ -24,16 +27,14 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
   const [cf, setCf]     = useState(from);
   const [ct, setCt]     = useState(to);
 
-  const btnRef     = useRef<HTMLButtonElement>(null);
-  const dropRef    = useRef<HTMLDivElement>(null);
-
-  const DROP_W = 220;
+  const btnRef  = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   const openDropdown = useCallback(() => {
     const rect = btnRef.current?.getBoundingClientRect();
     if (rect) {
-      // right-align dropdown with button, clamped so it doesn't overflow left
-      const left = Math.max(8, rect.right - DROP_W);
+      // right-align dropdown with button, clamped to viewport bounds
+      const left = Math.max(8, Math.min(rect.right - DROP_W, window.innerWidth - DROP_W - 8));
       setPos({ top: rect.bottom + 6, left });
     }
     setOpen(true);
@@ -73,6 +74,67 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
   };
   const label = matchedPreset ? matchedPreset.label : `${fmt(from)} – ${fmt(to)}`;
 
+  const dropdown = open && pos ? (
+    <div
+      ref={dropRef}
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: DROP_W,
+        zIndex: 99999,
+        background: "var(--panel-solid)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
+        borderRadius: "0.75rem",
+        padding: "0.75rem",
+      }}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Zakres</p>
+      <div className="grid grid-cols-2 gap-1 mb-3">
+        {PRESETS.map((p) => {
+          const active = matchedPreset?.label === p.label;
+          return (
+            <button
+              key={p.label}
+              onClick={() => go(toStr(new Date(Date.now() - p.days * 86400000)), todayStr)}
+              className="px-2.5 py-1.5 rounded-md text-[11px] font-medium text-left transition-all"
+              style={{
+                background: active ? "var(--accent-subtle)" : "var(--ba-3)",
+                color:      active ? "var(--accent-2)"       : "var(--text)",
+                border:     active ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
+              }}
+            >
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="h-px mb-3" style={{ background: "var(--border)" }} />
+      <p className="text-[10px] font-medium mb-1.5" style={{ color: "var(--muted)" }}>Własny zakres</p>
+      <div className="flex flex-col gap-1.5">
+        <input
+          type="date" value={cf} max={ct}
+          onChange={(e) => setCf(e.target.value)}
+          className="w-full px-2 py-1.5 rounded-md text-[11px]"
+          style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
+        />
+        <input
+          type="date" value={ct} min={cf} max={todayStr}
+          onChange={(e) => setCt(e.target.value)}
+          className="w-full px-2 py-1.5 rounded-md text-[11px]"
+          style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
+        />
+        <button
+          onClick={() => cf && ct && go(cf, ct)}
+          className="w-full py-1.5 rounded-md text-[11px] font-semibold btn-primary mt-0.5"
+        >
+          Zastosuj
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       <button
@@ -92,66 +154,7 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
         </svg>
       </button>
 
-      {open && pos && (
-        <div
-          ref={dropRef}
-          style={{
-            position: "fixed",
-            top: pos.top,
-            left: pos.left,
-            width: DROP_W,
-            zIndex: 9999,
-            background: "var(--panel-solid)",
-            border: "1px solid var(--border)",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
-            borderRadius: "0.75rem",
-            padding: "0.75rem",
-          }}
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Zakres</p>
-          <div className="grid grid-cols-2 gap-1 mb-3">
-            {PRESETS.map((p) => {
-              const active = matchedPreset?.label === p.label;
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => go(toStr(new Date(Date.now() - p.days * 86400000)), todayStr)}
-                  className="px-2.5 py-1.5 rounded-md text-[11px] font-medium text-left transition-all"
-                  style={{
-                    background: active ? "var(--accent-subtle)" : "var(--ba-3)",
-                    color:      active ? "var(--accent-2)"       : "var(--text)",
-                    border:     active ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
-                  }}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="h-px mb-3" style={{ background: "var(--border)" }} />
-          <p className="text-[10px] font-medium mb-1.5" style={{ color: "var(--muted)" }}>Własny zakres</p>
-          <div className="flex flex-col gap-1.5">
-            <input
-              type="date" value={cf} max={ct}
-              onChange={(e) => setCf(e.target.value)}
-              className="w-full px-2 py-1.5 rounded-md text-[11px]"
-              style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-            <input
-              type="date" value={ct} min={cf} max={todayStr}
-              onChange={(e) => setCt(e.target.value)}
-              className="w-full px-2 py-1.5 rounded-md text-[11px]"
-              style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
-            />
-            <button
-              onClick={() => cf && ct && go(cf, ct)}
-              className="w-full py-1.5 rounded-md text-[11px] font-semibold btn-primary mt-0.5"
-            >
-              Zastosuj
-            </button>
-          </div>
-        </div>
-      )}
+      {typeof document !== "undefined" && dropdown && createPortal(dropdown, document.body)}
     </>
   );
 }
