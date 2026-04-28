@@ -66,11 +66,11 @@ export default async function KanbanPage({
   const stageIds = stages.map((s) => s.id);
 
   // Fetch all campaigns for this workspace (needed for dropdown + metrics)
-  const { data: campaigns } = await supabase
-    .from("campaigns")
-    .select("id, name")
-    .eq("workspace_id", WORKSPACE_ID)
-    .order("name");
+  const [{ data: campaigns }, { data: emailCampaigns }, { data: smsCampaigns }] = await Promise.all([
+    supabase.from("campaigns").select("id, name").eq("workspace_id", WORKSPACE_ID).order("name"),
+    supabase.from("email_outreach_campaigns").select("id, name").eq("workspace_id", WORKSPACE_ID).order("created_at", { ascending: false }),
+    supabase.from("sms_campaigns").select("id, name").eq("workspace_id", WORKSPACE_ID).order("created_at", { ascending: false }),
+  ]);
 
   // Leads query
   let leadsRaw: Array<{
@@ -208,22 +208,42 @@ export default async function KanbanPage({
   const emailDMap: Record<string, { sent: number; opened: number; clicked: number }> = {};
   let emailTotalSent = 0, emailTotalOpened = 0, emailTotalClicked = 0, emailToday = 0, email7d = 0;
   {
-    const { data: emailRaw } = await supabase
-      .from("email_messages")
-      .select("sent_at, opened_at, clicked_at")
-      .eq("workspace_id", WORKSPACE_ID)
-      .not("sent_at", "is", null)
-      .gte("sent_at", fromIso)
-      .lte("sent_at", toIso);
-    for (const m of emailRaw ?? []) {
-      const ds = (m.sent_at as string).split("T")[0];
-      if (!emailDMap[ds]) emailDMap[ds] = { sent: 0, opened: 0, clicked: 0 };
-      emailDMap[ds].sent++;
-      if (m.opened_at) { emailDMap[ds].opened++; emailTotalOpened++; }
-      if (m.clicked_at) { emailDMap[ds].clicked++; emailTotalClicked++; }
-      emailTotalSent++;
-      if (ds === todayStr) emailToday++;
-      if (ds >= sevenDaysAgoStr) email7d++;
+    // When specific email outreach campaign selected, use email_outreach_recipients
+    if (source === "email" && campaign !== "all") {
+      const { data: emailRaw } = await supabase
+        .from("email_outreach_recipients")
+        .select("sent_at, opened_at, clicked_at")
+        .eq("campaign_id", campaign)
+        .not("sent_at", "is", null);
+      for (const m of emailRaw ?? []) {
+        const ds = (m.sent_at as string).split("T")[0];
+        if (ds < fromDate || ds > toDate) continue;
+        if (!emailDMap[ds]) emailDMap[ds] = { sent: 0, opened: 0, clicked: 0 };
+        emailDMap[ds].sent++;
+        if (m.opened_at) { emailDMap[ds].opened++; emailTotalOpened++; }
+        if (m.clicked_at) { emailDMap[ds].clicked++; emailTotalClicked++; }
+        emailTotalSent++;
+        if (ds === todayStr) emailToday++;
+        if (ds >= sevenDaysAgoStr) email7d++;
+      }
+    } else {
+      const { data: emailRaw } = await supabase
+        .from("email_messages")
+        .select("sent_at, opened_at, clicked_at")
+        .eq("workspace_id", WORKSPACE_ID)
+        .not("sent_at", "is", null)
+        .gte("sent_at", fromIso)
+        .lte("sent_at", toIso);
+      for (const m of emailRaw ?? []) {
+        const ds = (m.sent_at as string).split("T")[0];
+        if (!emailDMap[ds]) emailDMap[ds] = { sent: 0, opened: 0, clicked: 0 };
+        emailDMap[ds].sent++;
+        if (m.opened_at) { emailDMap[ds].opened++; emailTotalOpened++; }
+        if (m.clicked_at) { emailDMap[ds].clicked++; emailTotalClicked++; }
+        emailTotalSent++;
+        if (ds === todayStr) emailToday++;
+        if (ds >= sevenDaysAgoStr) email7d++;
+      }
     }
   }
   const emailStats: EmailStats = {
@@ -244,17 +264,20 @@ export default async function KanbanPage({
   let smsTotalSent = 0, smsTotalReplied = 0, smsToday = 0, sms7d = 0;
   let smsCampaignCount = 0;
   {
+    let recipientsQuery = supabase
+      .from("sms_campaign_recipients")
+      .select("sent_at, replied_at, created_at")
+      .eq("workspace_id", WORKSPACE_ID)
+      .gte("created_at", fromIso)
+      .lte("created_at", toIso);
+
+    if (source === "sms" && campaign !== "all") {
+      recipientsQuery = recipientsQuery.eq("campaign_id", campaign);
+    }
+
     const [recipientsRes, campaignsCountRes] = await Promise.all([
-      supabase
-        .from("sms_campaign_recipients")
-        .select("sent_at, replied_at, created_at")
-        .eq("workspace_id", WORKSPACE_ID)
-        .gte("created_at", fromIso)
-        .lte("created_at", toIso),
-      supabase
-        .from("sms_campaigns")
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", WORKSPACE_ID),
+      recipientsQuery,
+      supabase.from("sms_campaigns").select("id", { count: "exact", head: true }).eq("workspace_id", WORKSPACE_ID),
     ]);
     smsCampaignCount = campaignsCountRes.count ?? 0;
     for (const r of recipientsRes.data ?? []) {
@@ -293,13 +316,26 @@ export default async function KanbanPage({
         : null,
   }));
 
+  const selectedEmailCampaignName = campaign !== "all"
+    ? (emailCampaigns ?? []).find((c) => c.id === campaign)?.name ?? null
+    : null;
+  const selectedSmsCampaignName = campaign !== "all"
+    ? (smsCampaigns ?? []).find((c) => c.id === campaign)?.name ?? null
+    : null;
+
   return (
     <div className="px-4 py-4 sm:px-8 sm:py-8 anim-page">
       <div className="flex flex-wrap items-center gap-3 heat-glow -mx-4 sm:-mx-8 -mt-4 sm:-mt-8 px-4 sm:px-8 pt-4 sm:pt-8 pb-5 mb-6">
         <h1 className="text-xl sm:text-2xl font-semibold">Kanban</h1>
         <SourceSelect current={source} />
         {source === "meta_ads" && (
-          <CampaignSelect campaigns={campaigns ?? []} current={campaign} />
+          <CampaignSelect campaigns={campaigns ?? []} current={campaign} source="meta_ads" />
+        )}
+        {source === "email" && (emailCampaigns ?? []).length > 0 && (
+          <CampaignSelect campaigns={emailCampaigns ?? []} current={campaign} source="email" />
+        )}
+        {source === "sms" && (smsCampaigns ?? []).length > 0 && (
+          <CampaignSelect campaigns={smsCampaigns ?? []} current={campaign} source="sms" />
         )}
         <div className="ml-auto">
           <DateRangePicker from={fromDate} to={toDate} />
@@ -319,6 +355,8 @@ export default async function KanbanPage({
         fromDate={fromDate}
         toDate={toDate}
         rangeLabel={rangeLabel}
+        selectedEmailCampaignName={selectedEmailCampaignName}
+        selectedSmsCampaignName={selectedSmsCampaignName}
       />
     </div>
   );

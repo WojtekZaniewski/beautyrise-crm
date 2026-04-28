@@ -703,10 +703,12 @@ function KanbanEmailPanel({
   emailStats,
   emailDailyMetrics,
   rangeLabel,
+  campaignName,
 }: {
   emailStats: EmailStats;
   emailDailyMetrics: EmailDailyPoint[];
   rangeLabel: string;
+  campaignName?: string;
 }) {
   type EFilter = "sent" | "opened" | "clicked";
   const [filter, setFilter] = useState<EFilter>("sent");
@@ -737,7 +739,9 @@ function KanbanEmailPanel({
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
           style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
-        <span className="text-[13px] font-semibold tracking-tight">E-mail ({rangeLabel})</span>
+        <span className="text-[13px] font-semibold tracking-tight">
+          E-mail ({rangeLabel}){campaignName ? ` — ${campaignName}` : ""}
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
@@ -801,10 +805,12 @@ function KanbanSmsPanel({
   smsStats,
   smsDailyMetrics,
   rangeLabel,
+  campaignName,
 }: {
   smsStats: SmsStats;
   smsDailyMetrics: SmsDailyPoint[];
   rangeLabel: string;
+  campaignName?: string;
 }) {
   type SmsFilter = "sent" | "replied";
   const [filter, setFilter] = useState<SmsFilter>("sent");
@@ -834,7 +840,9 @@ function KanbanSmsPanel({
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
           style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
-        <span className="text-[13px] font-semibold tracking-tight">SMS ({rangeLabel})</span>
+        <span className="text-[13px] font-semibold tracking-tight">
+          SMS ({rangeLabel}){campaignName ? ` — ${campaignName}` : ""}
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
@@ -908,6 +916,8 @@ export function KanbanBoard({
   fromDate,
   toDate,
   rangeLabel,
+  selectedEmailCampaignName,
+  selectedSmsCampaignName,
 }: {
   stages: Stage[];
   initialLeads: Lead[];
@@ -921,6 +931,8 @@ export function KanbanBoard({
   fromDate: string;
   toDate: string;
   rangeLabel: string;
+  selectedEmailCampaignName?: string | null;
+  selectedSmsCampaignName?: string | null;
 }) {
   const [leads, setLeads] = useState(initialLeads);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -1201,10 +1213,20 @@ export function KanbanBoard({
       </div>
 
       {source === "email" && (
-        <KanbanEmailPanel emailStats={emailStats} emailDailyMetrics={emailDailyMetrics} rangeLabel={rangeLabel} />
+        <KanbanEmailPanel
+          emailStats={emailStats}
+          emailDailyMetrics={emailDailyMetrics}
+          rangeLabel={rangeLabel}
+          campaignName={selectedEmailCampaignName ?? undefined}
+        />
       )}
       {source === "sms" && (
-        <KanbanSmsPanel smsStats={smsStats} smsDailyMetrics={smsDailyMetrics} rangeLabel={rangeLabel} />
+        <KanbanSmsPanel
+          smsStats={smsStats}
+          smsDailyMetrics={smsDailyMetrics}
+          rangeLabel={rangeLabel}
+          campaignName={selectedSmsCampaignName ?? undefined}
+        />
       )}
       {(source === "meta_ads" || source === "all") && showMetaStats && (
         <KanbanFinancialPanel

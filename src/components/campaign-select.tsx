@@ -7,9 +7,11 @@ type Campaign = { id: string; name: string };
 export function CampaignSelect({
   campaigns,
   current,
+  source = "meta_ads",
 }: {
   campaigns: Campaign[];
   current: string;
+  source?: string;
 }) {
   const router = useRouter();
 
@@ -17,7 +19,7 @@ export function CampaignSelect({
     <select
       value={current}
       onChange={(e) =>
-        router.push(`/leads/kanban?source=meta_ads&campaign=${e.target.value}`)
+        router.push(`/leads/kanban?source=${source}&campaign=${e.target.value}`)
       }
       className="rounded-lg px-3 py-1.5 text-sm outline-none transition-colors"
       style={{

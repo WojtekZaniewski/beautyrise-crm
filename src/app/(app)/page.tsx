@@ -3,8 +3,14 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
 import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
-import { RevenueChart, type DayPoint, type MetaAdsSummary } from "@/components/dashboard/revenue-chart";
-import { ChannelsChart } from "@/components/dashboard/channels-chart";
+import {
+  UnifiedCampaignChart,
+  type DayPoint,
+  type MetaAdsSummary,
+  type MetaCampaignStats,
+  type EmailCampaignStats,
+  type SmsCampaignStats,
+} from "@/components/dashboard/unified-campaign-chart";
 import { DateRangePicker } from "@/components/date-range-picker";
 
 function fmt(n: number | null | undefined, decimals = 0) {
@@ -141,7 +147,7 @@ export default async function Dashboard({
   }
 
   // Fetch email + SMS stats and closed leads revenue in parallel
-  const [revenueLeadsRes, emailMsgRes, smsRecipRes, smsCampRes] = await Promise.all([
+  const [revenueLeadsRes, emailMsgRes, smsRecipRes, smsCampRes, emailOutreachRes] = await Promise.all([
     supabase
       .from("leads")
       .select("value_pln, updated_at")
@@ -160,14 +166,20 @@ export default async function Dashboard({
       .lte("sent_at", toIso),
     supabase
       .from("sms_campaign_recipients")
-      .select("sent_at, replied_at, created_at")
+      .select("sent_at, replied_at, created_at, campaign_id")
       .eq("workspace_id", WORKSPACE_ID)
       .gte("created_at", fromIso)
       .lte("created_at", toIso),
     supabase
       .from("sms_campaigns")
-      .select("id", { count: "exact", head: true })
-      .eq("workspace_id", WORKSPACE_ID),
+      .select("id, name, status, total_sent")
+      .eq("workspace_id", WORKSPACE_ID)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("email_outreach_campaigns")
+      .select("id, name, status, total_sent, email_outreach_recipients(opened_at, clicked_at, replied_at)")
+      .eq("workspace_id", WORKSPACE_ID)
+      .order("created_at", { ascending: false }),
   ]);
   const revenueLeads = revenueLeadsRes.data;
 
@@ -205,8 +217,47 @@ export default async function Dashboard({
     if (r.replied_at) { smsByDay[ds].replied++; smsTotalReplied++; }
     smsTotalSent++;
   }
-  const smsReplyRate     = smsTotalSent > 0 ? (smsTotalReplied / smsTotalSent) * 100 : 0;
-  const smsCampaignCount = smsCampRes.count ?? 0;
+  const smsReplyRate = smsTotalSent > 0 ? (smsTotalReplied / smsTotalSent) * 100 : 0;
+
+  // Per-campaign SMS stats
+  const smsRepliesByCamp: Record<string, number> = {};
+  for (const r of smsRecipRes.data ?? []) {
+    const cid = (r as { campaign_id?: string }).campaign_id;
+    if (cid && r.replied_at) smsRepliesByCamp[cid] = (smsRepliesByCamp[cid] ?? 0) + 1;
+  }
+  const smsCampaignStats: SmsCampaignStats[] = (smsCampRes.data ?? []).map(c => {
+    const sent    = c.total_sent ?? 0;
+    const replied = smsRepliesByCamp[c.id] ?? 0;
+    return {
+      id: c.id,
+      name: c.name.replace(/^\[[a-z]+\]\s*/i, ""),
+      sent,
+      replied,
+      replyRate: sent > 0 ? (replied / sent) * 100 : 0,
+    };
+  });
+
+  // Per-campaign email outreach stats
+  type EmailOutreachRaw = {
+    id: string; name: string; status: string; total_sent: number;
+    email_outreach_recipients: { opened_at: string | null; clicked_at: string | null; replied_at: string | null }[];
+  };
+  const emailOutreachData = (emailOutreachRes.data ?? []) as unknown as EmailOutreachRaw[];
+  const emailCampaignStats: EmailCampaignStats[] = emailOutreachData.map(c => {
+    const recs    = c.email_outreach_recipients ?? [];
+    const sent    = c.total_sent || recs.length;
+    const opened  = recs.filter(r => r.opened_at).length;
+    const clicked = recs.filter(r => r.clicked_at).length;
+    const replied = recs.filter(r => r.replied_at).length;
+    return {
+      id: c.id,
+      name: c.name.replace(/^\[[a-z]+\]\s*/i, ""),
+      sent, opened, clicked, replied,
+      openRate:  sent > 0 ? (opened  / sent) * 100 : 0,
+      clickRate: sent > 0 ? (clicked / sent) * 100 : 0,
+      replyRate: sent > 0 ? (replied / sent) * 100 : 0,
+    };
+  });
 
   type SmsDayPoint = { date: string; sent: number; replied: number };
   const smsChartData: SmsDayPoint[] = [];
@@ -380,11 +431,9 @@ export default async function Dashboard({
         )}
       </section>
 
-      <RevenueChart
-        data={chartData}
-        totalSpend={chartTotalSpend}
-        totalRevenue={chartTotalRevenue}
+      <UnifiedCampaignChart
         rangeLabel={rangeLabel}
+        metaChartData={chartData}
         metaStats={metaConnected && totals.spend > 0 ? ({
           avgCPL: totalCpl,
           avgCPC: totals.clicks > 0 ? totals.spend / totals.clicks : null,
@@ -394,22 +443,30 @@ export default async function Dashboard({
           totalImpressions: totals.impressions,
           totalSpend: totals.spend,
         } satisfies MetaAdsSummary) : null}
-      />
-
-      {/* Communication channels chart */}
-      <ChannelsChart
-        rangeLabel={rangeLabel}
-        emailData={emailChartData}
+        totalSpend={chartTotalSpend}
+        totalRevenue={chartTotalRevenue}
+        metaCampaigns={campaignAgg.map(c => ({
+          id: c.id,
+          name: c.name,
+          spend: c.spend,
+          impressions: c.impressions,
+          clicks: c.clicks,
+          leads: c.leads,
+          cpl: c.cpl,
+          ctr: c.ctr,
+        } satisfies MetaCampaignStats))}
+        emailChartData={emailChartData}
         emailTotalSent={emailTotalSent}
         emailTotalOpened={emailTotalOpened}
         emailTotalClicked={emailTotalClicked}
         emailOpenRate={emailOpenRate}
         emailClickRate={emailClickRate}
-        smsData={smsChartData}
+        emailCampaigns={emailCampaignStats}
+        smsChartData={smsChartData}
         smsTotalSent={smsTotalSent}
         smsTotalReplied={smsTotalReplied}
         smsReplyRate={smsReplyRate}
-        smsCampaignCount={smsCampaignCount}
+        smsCampaigns={smsCampaignStats}
       />
 
       {/* Campaigns */}
