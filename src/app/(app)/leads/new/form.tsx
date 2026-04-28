@@ -33,6 +33,7 @@ export function NewLeadForm({
     full_name: "",
     phone: "",
     email: "",
+    nip: "",
     source: "manual",
     stage_id: pipelineStages[0]?.id ?? "",
     notes: "",
@@ -56,6 +57,7 @@ export function NewLeadForm({
         full_name: form.full_name,
         phone: form.phone || null,
         email: form.email || null,
+        nip: form.nip || null,
         source: form.source,
         stage_id: form.stage_id || null,
         notes: form.notes || null,
@@ -84,6 +86,7 @@ export function NewLeadForm({
     { key: "full_name", label: "Imię i nazwisko *", type: "text", required: true, placeholder: "Anna Kowalska" },
     { key: "phone", label: "Telefon", type: "tel", required: false, placeholder: "+48 600 000 000" },
     { key: "email", label: "E-mail", type: "email", required: false, placeholder: "anna@example.com" },
+    { key: "nip", label: "NIP", type: "text", required: false, placeholder: "1234567890" },
   ];
 
   return (

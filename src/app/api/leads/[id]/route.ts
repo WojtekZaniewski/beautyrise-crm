@@ -111,7 +111,7 @@ export async function PATCH(
   const workspaceId = await getCurrentWorkspaceId();
 
   const body = await req.json();
-  const stringFields = ["full_name", "phone", "email"] as const;
+  const stringFields = ["full_name", "phone", "email", "nip", "dofinansowanie_typ", "dofinansowanie_obsługa"] as const;
   const update: Record<string, string | number | boolean | null> = {};
 
   for (const key of stringFields) {

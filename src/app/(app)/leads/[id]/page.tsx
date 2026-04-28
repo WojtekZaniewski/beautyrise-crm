@@ -5,6 +5,7 @@ import { StageSelect } from "./stage-select";
 import { AddNote } from "./add-note";
 import { LeadTags } from "./tags";
 import { ValueEdit } from "./value-edit";
+import { LeadNipField, LeadSegmentationFields } from "./lead-extra-fields";
 import { sourceLabel, eventLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
@@ -121,6 +122,7 @@ export default async function LeadDetailPage({
                 </div>
                 <ValueEdit leadId={id} value={lead.value_pln as number | null} />
               </div>
+              <LeadNipField leadId={id} nip={(lead as Record<string, unknown>).nip as string | null} />
               <div>
                 <div
                   className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-1"
@@ -154,6 +156,12 @@ export default async function LeadDetailPage({
                 <div className="text-[13px] whitespace-pre-wrap">{lead.notes}</div>
               </div>
             )}
+
+            <LeadSegmentationFields
+              leadId={id}
+              typ={(lead as Record<string, unknown>).dofinansowanie_typ as string | null}
+              obsluga={(lead as Record<string, unknown>)["dofinansowanie_obsługa"] as string | null}
+            />
           </div>
 
           {/* Timeline */}
