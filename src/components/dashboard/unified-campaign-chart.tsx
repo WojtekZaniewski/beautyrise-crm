@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
+  AreaChart, Area, BarChart, Bar, Cell,
+  XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 
@@ -425,16 +426,34 @@ export function UnifiedCampaignChart({
                   <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#22c55e" />
                 )}
               </div>
-              <div className="rounded-lg px-4 py-4 flex flex-col gap-3" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Lejek kampanii</p>
-                <FunnelBar label="Wysłane"    value={selectedEmail.sent}    total={selectedEmail.sent}    color="#8b5cf6" />
-                <FunnelBar label="Otwarte"    value={selectedEmail.opened}  total={selectedEmail.sent}    color="#3b82f6" />
-                <FunnelBar label="Kliknięcia" value={selectedEmail.clicked} total={selectedEmail.sent}    color="#22c55e" />
-                <FunnelBar label="Odpowiedzi" value={selectedEmail.replied} total={selectedEmail.sent}    color="#f59e0b" />
-                {selectedEmail.leadsWon > 0 && (
-                  <FunnelBar label="Leady zamknięte" value={selectedEmail.leadsWon} total={selectedEmail.sent} color="#06b6d4" />
-                )}
-              </div>
+              {(() => {
+                const bars = [
+                  { name: "Wysłane",    value: selectedEmail.sent,    color: "#8b5cf6" },
+                  { name: "Otwarte",    value: selectedEmail.opened,  color: "#3b82f6" },
+                  { name: "Kliknięcia", value: selectedEmail.clicked, color: "#22c55e" },
+                  { name: "Odpowiedzi", value: selectedEmail.replied, color: "#f59e0b" },
+                  ...(selectedEmail.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedEmail.leadsWon, color: "#06b6d4" }] : []),
+                ];
+                return (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
+                      <Tooltip
+                        {...CHART_STYLE}
+                        formatter={(v: unknown) => [String(v), ""]}
+                        cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {bars.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                );
+              })()}
             </>
           ) : (
             <>
@@ -509,14 +528,32 @@ export function UnifiedCampaignChart({
                   <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#22c55e" />
                 )}
               </div>
-              <div className="rounded-lg px-4 py-4 flex flex-col gap-3" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Lejek kampanii</p>
-                <FunnelBar label="Wysłane"    value={selectedSms.sent}    total={selectedSms.sent}    color="#22c55e" />
-                <FunnelBar label="Odpowiedzi" value={selectedSms.replied} total={selectedSms.sent}    color="#f97316" />
-                {selectedSms.leadsWon > 0 && (
-                  <FunnelBar label="Leady zamknięte" value={selectedSms.leadsWon} total={selectedSms.sent} color="#06b6d4" />
-                )}
-              </div>
+              {(() => {
+                const bars = [
+                  { name: "Wysłane",    value: selectedSms.sent,    color: "#22c55e" },
+                  { name: "Odpowiedzi", value: selectedSms.replied, color: "#f97316" },
+                  ...(selectedSms.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedSms.leadsWon, color: "#06b6d4" }] : []),
+                ];
+                return (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
+                      <Tooltip
+                        {...CHART_STYLE}
+                        formatter={(v: unknown) => [String(v), ""]}
+                        cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {bars.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                );
+              })()}
             </>
           ) : (
             <>
