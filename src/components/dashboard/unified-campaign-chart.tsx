@@ -60,6 +60,29 @@ function RateCard({ label, value, color }: { label: string; value: string; color
   );
 }
 
+function FunnelBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.min((value / total) * 100, 100) : 0;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>{label}</span>
+        <span className="text-[11px] tabular-nums">
+          <span className="font-semibold">{value.toLocaleString("pl-PL")}</span>
+          {total > 0 && value !== total && (
+            <span className="ml-1" style={{ color: "var(--muted)" }}>({pct.toFixed(1)}%)</span>
+          )}
+        </span>
+      </div>
+      <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "var(--ba-4)" }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: color }}
+        />
+      </div>
+    </div>
+  );
+}
+
 const CHART_STYLE = {
   contentStyle: {
     fontSize: 12,
@@ -386,21 +409,33 @@ export function UnifiedCampaignChart({
           )}
 
           {selectedEmail ? (
-            <div className="flex flex-wrap gap-3">
-              <StatCard label="Wysłane"    value={selectedEmail.sent.toLocaleString("pl-PL")}    color="#8b5cf6" />
-              <StatCard label="Otwarte"    value={selectedEmail.opened.toLocaleString("pl-PL")}  color="#3b82f6" />
-              <StatCard label="Kliknięcia" value={selectedEmail.clicked.toLocaleString("pl-PL")} color="#22c55e" />
-              <StatCard label="Odpowiedzi" value={selectedEmail.replied.toLocaleString("pl-PL")} color="#f59e0b" />
-              <StatCard label="Open Rate"  value={`${selectedEmail.openRate.toFixed(1)}%`}       color="#3b82f6" />
-              <StatCard label="Click Rate" value={`${selectedEmail.clickRate.toFixed(1)}%`}      color="#22c55e" />
-              <StatCard label="Reply Rate" value={`${selectedEmail.replyRate.toFixed(1)}%`}      color="#f59e0b" />
-              {selectedEmail.leadsWon > 0 && (
-                <StatCard label="Leady zamknięte" value={selectedEmail.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
-              )}
-              {selectedEmail.revenue > 0 && (
-                <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#22c55e" />
-              )}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-3 mb-5">
+                <StatCard label="Wysłane"    value={selectedEmail.sent.toLocaleString("pl-PL")}    color="#8b5cf6" />
+                <StatCard label="Otwarte"    value={selectedEmail.opened.toLocaleString("pl-PL")}  color="#3b82f6" />
+                <StatCard label="Kliknięcia" value={selectedEmail.clicked.toLocaleString("pl-PL")} color="#22c55e" />
+                <StatCard label="Odpowiedzi" value={selectedEmail.replied.toLocaleString("pl-PL")} color="#f59e0b" />
+                <StatCard label="Open Rate"  value={`${selectedEmail.openRate.toFixed(1)}%`}       color="#3b82f6" />
+                <StatCard label="Click Rate" value={`${selectedEmail.clickRate.toFixed(1)}%`}      color="#22c55e" />
+                <StatCard label="Reply Rate" value={`${selectedEmail.replyRate.toFixed(1)}%`}      color="#f59e0b" />
+                {selectedEmail.leadsWon > 0 && (
+                  <StatCard label="Leady zamknięte" value={selectedEmail.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
+                )}
+                {selectedEmail.revenue > 0 && (
+                  <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#22c55e" />
+                )}
+              </div>
+              <div className="rounded-lg px-4 py-4 flex flex-col gap-3" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Lejek kampanii</p>
+                <FunnelBar label="Wysłane"    value={selectedEmail.sent}    total={selectedEmail.sent}    color="#8b5cf6" />
+                <FunnelBar label="Otwarte"    value={selectedEmail.opened}  total={selectedEmail.sent}    color="#3b82f6" />
+                <FunnelBar label="Kliknięcia" value={selectedEmail.clicked} total={selectedEmail.sent}    color="#22c55e" />
+                <FunnelBar label="Odpowiedzi" value={selectedEmail.replied} total={selectedEmail.sent}    color="#f59e0b" />
+                {selectedEmail.leadsWon > 0 && (
+                  <FunnelBar label="Leady zamknięte" value={selectedEmail.leadsWon} total={selectedEmail.sent} color="#06b6d4" />
+                )}
+              </div>
+            </>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2 mb-3">
@@ -462,17 +497,27 @@ export function UnifiedCampaignChart({
           )}
 
           {selectedSms ? (
-            <div className="flex flex-wrap gap-3">
-              <StatCard label="Wysłane"    value={selectedSms.sent.toLocaleString("pl-PL")}    color="#22c55e" />
-              <StatCard label="Odpowiedzi" value={selectedSms.replied.toLocaleString("pl-PL")} color="#f97316" />
-              <StatCard label="Reply Rate" value={`${selectedSms.replyRate.toFixed(1)}%`}      color="#f97316" />
-              {selectedSms.leadsWon > 0 && (
-                <StatCard label="Leady zamknięte" value={selectedSms.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
-              )}
-              {selectedSms.revenue > 0 && (
-                <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#22c55e" />
-              )}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-3 mb-5">
+                <StatCard label="Wysłane"    value={selectedSms.sent.toLocaleString("pl-PL")}    color="#22c55e" />
+                <StatCard label="Odpowiedzi" value={selectedSms.replied.toLocaleString("pl-PL")} color="#f97316" />
+                <StatCard label="Reply Rate" value={`${selectedSms.replyRate.toFixed(1)}%`}      color="#f97316" />
+                {selectedSms.leadsWon > 0 && (
+                  <StatCard label="Leady zamknięte" value={selectedSms.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
+                )}
+                {selectedSms.revenue > 0 && (
+                  <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#22c55e" />
+                )}
+              </div>
+              <div className="rounded-lg px-4 py-4 flex flex-col gap-3" style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Lejek kampanii</p>
+                <FunnelBar label="Wysłane"    value={selectedSms.sent}    total={selectedSms.sent}    color="#22c55e" />
+                <FunnelBar label="Odpowiedzi" value={selectedSms.replied} total={selectedSms.sent}    color="#f97316" />
+                {selectedSms.leadsWon > 0 && (
+                  <FunnelBar label="Leady zamknięte" value={selectedSms.leadsWon} total={selectedSms.sent} color="#06b6d4" />
+                )}
+              </div>
+            </>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2 mb-3">
