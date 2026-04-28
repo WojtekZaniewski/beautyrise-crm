@@ -167,7 +167,7 @@ export function LeadSegmentationFields({
         <div className={labelClass} style={{ color: "var(--muted)" }}>Obsługa</div>
         <SegmentSelect
           leadId={leadId}
-          field="dofinansowanie_obsługa"
+          field="dofinansowanie_obsluga"
           value={obsluga}
           options={[
             { value: "conpro", label: "Conpro" },

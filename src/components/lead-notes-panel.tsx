@@ -8,6 +8,9 @@ type LeadGroup = { name: string; campaigns: string[] };
 type LeadDuplicate = { id: string; full_name: string; phone: string | null; email: string | null };
 type LeadDetails = {
   id: string; full_name: string; phone: string | null; email: string | null;
+  nip: string | null;
+  dofinansowanie_typ: string | null;
+  "dofinansowanie_obsluga": string | null;
   source: string; sourceLabel: string; created_at: string; groups: LeadGroup[];
   potential_score?: number | null;
 };
@@ -67,6 +70,10 @@ export function LeadNotesPanel({
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editNip, setEditNip] = useState("");
+  const [editDofTyp, setEditDofTyp] = useState("");
+  const [editDofObsluga, setEditDofObsluga] = useState("");
+  const [savingSegment, setSavingSegment] = useState(false);
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
   const [duplicates, setDuplicates] = useState<LeadDuplicate[]>([]);
@@ -86,6 +93,9 @@ export function LeadNotesPanel({
       setEditName(d.full_name ?? "");
       setEditPhone(d.phone ?? "");
       setEditEmail(d.email ?? "");
+      setEditNip(d.nip ?? "");
+      setEditDofTyp(d.dofinansowanie_typ ?? "");
+      setEditDofObsluga(d["dofinansowanie_obsluga"] ?? "");
       if (d.potential_score !== undefined) setScore(d.potential_score ?? null);
     }
   }, []);
@@ -145,7 +155,7 @@ export function LeadNotesPanel({
     const res = await fetch(`/api/leads/${resolvedLeadId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ full_name: editName, phone: editPhone, email: editEmail }),
+      body: JSON.stringify({ full_name: editName, phone: editPhone, email: editEmail, nip: editNip }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -160,6 +170,17 @@ export function LeadNotesPanel({
       await loadDetails(resolvedLeadId);
     }
     setSavingDetails(false);
+  }
+
+  async function saveSegmentField(field: string, value: string) {
+    if (!resolvedLeadId) return;
+    setSavingSegment(true);
+    await fetch(`/api/leads/${resolvedLeadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value || null }),
+    });
+    setSavingSegment(false);
   }
 
   async function handleScoreClick(val: number) {
@@ -365,6 +386,11 @@ export function LeadNotesPanel({
                     <input value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="jan@example.com" type="email" style={inp} />
                   </div>
 
+                  <div>
+                    <label style={{ fontSize: "11px", color: "var(--muted)", display: "block", marginBottom: "6px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>NIP</label>
+                    <input value={editNip} onChange={e => setEditNip(e.target.value)} placeholder="1234567890" style={inp} />
+                  </div>
+
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <button type="submit" disabled={savingDetails} className="btn-primary"
                       style={{ padding: "9px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, opacity: savingDetails ? 0.5 : 1 }}>
@@ -373,6 +399,49 @@ export function LeadNotesPanel({
                     {detailsSaved && <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 500 }}>✓ Zapisano</span>}
                   </div>
                 </form>
+
+                {/* Segmentacja dofinansowań */}
+                <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div style={{ paddingTop: "4px", borderTop: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "14px", marginTop: "14px" }}>
+                      Segmentacja — Dofinansowania
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "11px", color: "var(--muted)", display: "block", marginBottom: "6px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Typ dofinansowania
+                        </label>
+                        <select
+                          value={editDofTyp}
+                          onChange={e => { setEditDofTyp(e.target.value); saveSegmentField("dofinansowanie_typ", e.target.value); }}
+                          disabled={savingSegment}
+                          style={{ ...inp, appearance: "auto", opacity: savingSegment ? 0.6 : 1, background: editDofTyp ? "rgba(255,76,0,0.06)" : "var(--ba-4)", border: editDofTyp ? "1px solid rgba(255,76,0,0.3)" : "1px solid var(--border-strong)" }}
+                        >
+                          <option value="">— nie wybrano —</option>
+                          <option value="bur">Dofinansowanie z BUR</option>
+                          <option value="zwykle">Zwykłe dofinansowanie</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: "11px", color: "var(--muted)", display: "block", marginBottom: "6px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          Obsługa
+                        </label>
+                        <select
+                          value={editDofObsluga}
+                          onChange={e => { setEditDofObsluga(e.target.value); saveSegmentField("dofinansowanie_obsluga", e.target.value); }}
+                          disabled={savingSegment}
+                          style={{ ...inp, appearance: "auto", opacity: savingSegment ? 0.6 : 1, background: editDofObsluga ? "rgba(255,76,0,0.06)" : "var(--ba-4)", border: editDofObsluga ? "1px solid rgba(255,76,0,0.3)" : "1px solid var(--border-strong)" }}
+                        >
+                          <option value="">— nie wybrano —</option>
+                          <option value="conpro">Conpro</option>
+                          <option value="martyna">Martyna</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Origin + integrations */}
                 {details && (

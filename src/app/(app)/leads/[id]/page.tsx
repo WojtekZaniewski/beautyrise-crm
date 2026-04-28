@@ -160,7 +160,7 @@ export default async function LeadDetailPage({
             <LeadSegmentationFields
               leadId={id}
               typ={(lead as Record<string, unknown>).dofinansowanie_typ as string | null}
-              obsluga={(lead as Record<string, unknown>)["dofinansowanie_obsługa"] as string | null}
+              obsluga={(lead as Record<string, unknown>)["dofinansowanie_obsluga"] as string | null}
             />
           </div>
 

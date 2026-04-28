@@ -12,7 +12,7 @@ export async function GET(
 
   const { data } = await supabase
     .from("leads")
-    .select("id, full_name, phone, email, source, created_at, potential_score")
+    .select("id, full_name, phone, email, nip, dofinansowanie_typ, dofinansowanie_obsluga, source, created_at, potential_score")
     .eq("id", id)
     .eq("workspace_id", workspaceId)
     .maybeSingle();
@@ -111,7 +111,7 @@ export async function PATCH(
   const workspaceId = await getCurrentWorkspaceId();
 
   const body = await req.json();
-  const stringFields = ["full_name", "phone", "email", "nip", "dofinansowanie_typ", "dofinansowanie_obsługa"] as const;
+  const stringFields = ["full_name", "phone", "email", "nip", "dofinansowanie_typ", "dofinansowanie_obsluga"] as const;
   const update: Record<string, string | number | boolean | null> = {};
 
   for (const key of stringFields) {
