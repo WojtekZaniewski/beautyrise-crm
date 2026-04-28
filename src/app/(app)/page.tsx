@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getStagesForWorkspace } from "@/lib/pipeline";
+import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
 import {
@@ -42,7 +42,8 @@ export default async function Dashboard({
 }) {
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
-  const stages = await getStagesForWorkspace(WORKSPACE_ID);
+  const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
+  const stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
 
   const stageIds = stages.map((s) => s.id);
 
@@ -166,7 +167,7 @@ export default async function Dashboard({
       .lte("sent_at", toIso),
     supabase
       .from("sms_campaign_recipients")
-      .select("sent_at, replied_at, created_at, campaign_id")
+      .select("sent_at, replied_at, created_at, campaign_id, lead_id")
       .eq("workspace_id", WORKSPACE_ID)
       .gte("created_at", fromIso)
       .lte("created_at", toIso),
@@ -177,7 +178,7 @@ export default async function Dashboard({
       .order("created_at", { ascending: false }),
     supabase
       .from("email_outreach_campaigns")
-      .select("id, name, status, total_sent, email_outreach_recipients(opened_at, clicked_at, replied_at)")
+      .select("id, name, status, total_sent, email_outreach_recipients(opened_at, clicked_at, replied_at, lead_id)")
       .eq("workspace_id", WORKSPACE_ID)
       .order("created_at", { ascending: false }),
   ]);
@@ -221,9 +222,16 @@ export default async function Dashboard({
 
   // Per-campaign SMS stats
   const smsRepliesByCamp: Record<string, number> = {};
+  const smsLeadsByCamp: Record<string, Set<string>> = {};
   for (const r of smsRecipRes.data ?? []) {
-    const cid = (r as { campaign_id?: string }).campaign_id;
-    if (cid && r.replied_at) smsRepliesByCamp[cid] = (smsRepliesByCamp[cid] ?? 0) + 1;
+    const rec = r as { campaign_id?: string; replied_at?: string | null; lead_id?: string | null };
+    const cid = rec.campaign_id;
+    if (!cid) continue;
+    if (rec.replied_at) smsRepliesByCamp[cid] = (smsRepliesByCamp[cid] ?? 0) + 1;
+    if (rec.lead_id) {
+      if (!smsLeadsByCamp[cid]) smsLeadsByCamp[cid] = new Set();
+      smsLeadsByCamp[cid].add(rec.lead_id);
+    }
   }
   const smsCampaignStats: SmsCampaignStats[] = (smsCampRes.data ?? []).map(c => {
     const sent    = c.total_sent ?? 0;
@@ -231,18 +239,27 @@ export default async function Dashboard({
     return {
       id: c.id,
       name: c.name.replace(/^\[[a-z]+\]\s*/i, ""),
-      sent,
-      replied,
+      sent, replied,
       replyRate: sent > 0 ? (replied / sent) * 100 : 0,
+      revenue: 0, leadsWon: 0,
     };
   });
 
   // Per-campaign email outreach stats
   type EmailOutreachRaw = {
     id: string; name: string; status: string; total_sent: number;
-    email_outreach_recipients: { opened_at: string | null; clicked_at: string | null; replied_at: string | null }[];
+    email_outreach_recipients: { opened_at: string | null; clicked_at: string | null; replied_at: string | null; lead_id: string | null }[];
   };
   const emailOutreachData = (emailOutreachRes.data ?? []) as unknown as EmailOutreachRaw[];
+
+  const emailLeadsByCamp: Record<string, Set<string>> = {};
+  for (const camp of emailOutreachData) {
+    emailLeadsByCamp[camp.id] = new Set();
+    for (const r of camp.email_outreach_recipients ?? []) {
+      if (r.lead_id) emailLeadsByCamp[camp.id].add(r.lead_id);
+    }
+  }
+
   const emailCampaignStats: EmailCampaignStats[] = emailOutreachData.map(c => {
     const recs    = c.email_outreach_recipients ?? [];
     const sent    = c.total_sent || recs.length;
@@ -256,8 +273,45 @@ export default async function Dashboard({
       openRate:  sent > 0 ? (opened  / sent) * 100 : 0,
       clickRate: sent > 0 ? (clicked / sent) * 100 : 0,
       replyRate: sent > 0 ? (replied / sent) * 100 : 0,
+      revenue: 0, leadsWon: 0,
     };
   });
+
+  // Enrich campaign stats with Kanban revenue (closed leads linked to campaigns)
+  const allCampLeadIds = [
+    ...new Set([
+      ...Object.values(emailLeadsByCamp).flatMap(s => [...s]),
+      ...Object.values(smsLeadsByCamp).flatMap(s => [...s]),
+    ]),
+  ];
+  if (allCampLeadIds.length > 0 && closedStageIds.length > 0) {
+    const { data: campLeadsData } = await supabase
+      .from("leads")
+      .select("id, value_pln, updated_at")
+      .in("id", allCampLeadIds)
+      .in("stage_id", closedStageIds)
+      .not("value_pln", "is", null)
+      .gte("updated_at", fromIso)
+      .lte("updated_at", toIso);
+
+    const closedLeadVal: Record<string, number> = {};
+    for (const lead of campLeadsData ?? []) {
+      closedLeadVal[lead.id] = parseFloat(String(lead.value_pln));
+    }
+
+    for (const camp of emailCampaignStats) {
+      const ids = [...(emailLeadsByCamp[camp.id] ?? new Set())];
+      const won = ids.filter(id => id in closedLeadVal);
+      camp.revenue  = won.reduce((s, id) => s + closedLeadVal[id], 0);
+      camp.leadsWon = won.length;
+    }
+    for (const camp of smsCampaignStats) {
+      const ids = [...(smsLeadsByCamp[camp.id] ?? new Set())];
+      const won = ids.filter(id => id in closedLeadVal);
+      camp.revenue  = won.reduce((s, id) => s + closedLeadVal[id], 0);
+      camp.leadsWon = won.length;
+    }
+  }
 
   type SmsDayPoint = { date: string; sent: number; replied: number };
   const smsChartData: SmsDayPoint[] = [];

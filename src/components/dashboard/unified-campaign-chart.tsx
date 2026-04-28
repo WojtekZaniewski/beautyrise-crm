@@ -21,9 +21,11 @@ export type MetaCampaignStats = {
 export type EmailCampaignStats = {
   id: string; name: string; sent: number; opened: number; clicked: number;
   replied: number; openRate: number; clickRate: number; replyRate: number;
+  revenue: number; leadsWon: number;
 };
 export type SmsCampaignStats = {
   id: string; name: string; sent: number; replied: number; replyRate: number;
+  revenue: number; leadsWon: number;
 };
 export type EmailDayPoint = { date: string; sent: number; opened: number; clicked: number };
 export type SmsDayPoint = { date: string; sent: number; replied: number };
@@ -392,6 +394,12 @@ export function UnifiedCampaignChart({
               <StatCard label="Open Rate"  value={`${selectedEmail.openRate.toFixed(1)}%`}       color="#3b82f6" />
               <StatCard label="Click Rate" value={`${selectedEmail.clickRate.toFixed(1)}%`}      color="#22c55e" />
               <StatCard label="Reply Rate" value={`${selectedEmail.replyRate.toFixed(1)}%`}      color="#f59e0b" />
+              {selectedEmail.leadsWon > 0 && (
+                <StatCard label="Leady zamknięte" value={selectedEmail.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
+              )}
+              {selectedEmail.revenue > 0 && (
+                <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#22c55e" />
+              )}
             </div>
           ) : (
             <>
@@ -458,6 +466,12 @@ export function UnifiedCampaignChart({
               <StatCard label="Wysłane"    value={selectedSms.sent.toLocaleString("pl-PL")}    color="#22c55e" />
               <StatCard label="Odpowiedzi" value={selectedSms.replied.toLocaleString("pl-PL")} color="#f97316" />
               <StatCard label="Reply Rate" value={`${selectedSms.replyRate.toFixed(1)}%`}      color="#f97316" />
+              {selectedSms.leadsWon > 0 && (
+                <StatCard label="Leady zamknięte" value={selectedSms.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
+              )}
+              {selectedSms.revenue > 0 && (
+                <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#22c55e" />
+              )}
             </div>
           ) : (
             <>
