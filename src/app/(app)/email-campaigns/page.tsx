@@ -60,9 +60,18 @@ export default async function EmailCampaignsPage() {
             {campaigns.length} {campaigns.length === 1 ? "kampania" : "kampanii"}
           </p>
         </div>
-        <Link href="/integrations/email?tab=outreach" className="btn-primary rounded-md px-4 py-2 text-[13px]">
-          + Nowa kampania
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/integrations/email"
+            className="hidden sm:inline-flex px-3.5 py-2 rounded-md text-[13px] font-medium transition-colors"
+            style={{ border: "1px solid var(--border-strong)", color: "var(--muted)" }}
+          >
+            Konfiguracja
+          </Link>
+          <Link href="/integrations/email?tab=outreach" className="btn-primary rounded-md px-4 py-2 text-[13px]">
+            + Nowa kampania
+          </Link>
+        </div>
       </div>
 
       <div

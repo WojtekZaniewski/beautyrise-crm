@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { SmsCampaignChart, type SmsDailyPoint } from "@/components/sms-campaign-chart";
 
 const CAMPAIGN_TYPES: Record<string, { label: string; color: string }> = {
   outreach:  { label: "Outreach",       color: "#3b82f6" },
@@ -71,6 +72,27 @@ export default async function SmsCampaignDetailPage({
   const replyRate = totalSent > 0 ? Math.round((totalReplied / totalSent) * 100) : 0;
   const totalFailed = recipients.filter((r) => r.status === "failed").length;
 
+  // Build daily chart data
+  const dailyMap: Record<string, { sent: number; replied: number }> = {};
+  for (const r of recipients) {
+    if (r.sent_at) {
+      const d = (r.sent_at as string).slice(0, 10);
+      if (!dailyMap[d]) dailyMap[d] = { sent: 0, replied: 0 };
+      dailyMap[d].sent++;
+    }
+    if (r.replied_at) {
+      const d = (r.replied_at as string).slice(0, 10);
+      if (!dailyMap[d]) dailyMap[d] = { sent: 0, replied: 0 };
+      dailyMap[d].replied++;
+    }
+  }
+  const dailyData: SmsDailyPoint[] = Object.entries(dailyMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, v]) => ({
+      date: new Date(date + "T12:00:00").toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
+      ...v,
+    }));
+
   const { type, name } = parseName(campaign.name as string);
   const typeInfo = type ? CAMPAIGN_TYPES[type] : null;
   const st = SMS_STATUS[(campaign.status as string)] ?? SMS_STATUS.sent;
@@ -110,9 +132,18 @@ export default async function SmsCampaignDetailPage({
             })}
           </div>
         </div>
-        <Link href="/integrations/sms?tab=campaign" className="btn-primary rounded-md px-4 py-2 text-[13px]">
-          + Nowa kampania
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/integrations/sms"
+            className="px-3.5 py-2 rounded-md text-[13px] font-medium transition-colors"
+            style={{ border: "1px solid var(--border-strong)", color: "var(--muted)" }}
+          >
+            Konfiguracja SMS
+          </Link>
+          <Link href="/integrations/sms?tab=campaign" className="btn-primary rounded-md px-4 py-2 text-[13px]">
+            + Nowa kampania
+          </Link>
+        </div>
       </div>
 
       {/* KPI cards */}
@@ -122,6 +153,15 @@ export default async function SmsCampaignDetailPage({
         <KpiCard label="Odpowiedź %" value={totalSent > 0 ? `${replyRate}%` : "—"} />
         <KpiCard label="Błędy" value={String(totalFailed)} />
       </div>
+
+      {/* Daily chart */}
+      <section
+        className="rounded-xl p-6 mb-6"
+        style={{ background: "var(--panel)", border: "1px solid var(--border)" }}
+      >
+        <h2 className="font-semibold mb-4 text-sm">Aktywność dzienna</h2>
+        <SmsCampaignChart data={dailyData} />
+      </section>
 
       {/* Template preview */}
       {campaign.template && (

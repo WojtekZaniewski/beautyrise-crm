@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { EmailCampaignChart, type EmailDailyPoint } from "@/components/email-campaign-chart";
 
 const CAMPAIGN_TYPES: Record<string, { label: string; color: string }> = {
   outreach:   { label: "Outreach",    color: "#3b82f6" },
@@ -52,18 +53,40 @@ export default async function EmailCampaignDetailPage({
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
-  const { data: campaign, error } = await supabase
-    .from("email_outreach_campaigns")
-    .select(`
-      *,
-      email_accounts ( email, display_name ),
-      email_outreach_recipients ( id, email, name, status, sent_at, opened_at, clicked_at, replied_at, lead_id )
-    `)
-    .eq("id", id)
-    .eq("workspace_id", WORKSPACE_ID)
-    .single();
+  const [{ data: campaign, error }, { data: trackingEvents }] = await Promise.all([
+    supabase
+      .from("email_outreach_campaigns")
+      .select(`
+        *,
+        email_accounts ( email, display_name ),
+        email_outreach_recipients ( id, email, name, status, sent_at, opened_at, clicked_at, replied_at, lead_id )
+      `)
+      .eq("id", id)
+      .eq("workspace_id", WORKSPACE_ID)
+      .single(),
+    supabase
+      .from("email_tracking_events")
+      .select("type, created_at")
+      .eq("campaign_id", id)
+      .order("created_at"),
+  ]);
 
   if (error || !campaign) notFound();
+
+  // Build daily chart data from tracking events
+  const dailyMap: Record<string, { opens: number; clicks: number }> = {};
+  for (const ev of trackingEvents ?? []) {
+    const day = (ev.created_at as string).slice(0, 10);
+    if (!dailyMap[day]) dailyMap[day] = { opens: 0, clicks: 0 };
+    if (ev.type === "open") dailyMap[day].opens++;
+    if (ev.type === "click") dailyMap[day].clicks++;
+  }
+  const dailyData: EmailDailyPoint[] = Object.entries(dailyMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, v]) => ({
+      date: new Date(date + "T12:00:00").toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }),
+      ...v,
+    }));
 
   type Recipient = {
     id: string; email: string; name: string | null; status: string;
@@ -125,9 +148,18 @@ export default async function EmailCampaignDetailPage({
             })}
           </div>
         </div>
-        <Link href="/integrations/email?tab=outreach" className="btn-primary rounded-md px-4 py-2 text-[13px]">
-          + Nowa kampania
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/integrations/email"
+            className="px-3.5 py-2 rounded-md text-[13px] font-medium transition-colors"
+            style={{ border: "1px solid var(--border-strong)", color: "var(--muted)" }}
+          >
+            Konfiguracja Email
+          </Link>
+          <Link href="/integrations/email?tab=outreach" className="btn-primary rounded-md px-4 py-2 text-[13px]">
+            + Nowa kampania
+          </Link>
+        </div>
       </div>
 
       {/* KPI cards */}
@@ -137,6 +169,15 @@ export default async function EmailCampaignDetailPage({
         <KpiCard label="Kliknięcia" value={sent > 0 ? `${clickRate}%` : "—"} sub={`${clicked} kliknięć`} />
         <KpiCard label="Odpowiedzi" value={sent > 0 ? `${replyRate}%` : "—"} sub={`${replied} odpowiedzi`} />
       </div>
+
+      {/* Daily chart */}
+      <section
+        className="rounded-xl p-6 mb-6"
+        style={{ background: "var(--panel)", border: "1px solid var(--border)" }}
+      >
+        <h2 className="font-semibold mb-4 text-sm">Aktywność dzienna</h2>
+        <EmailCampaignChart data={dailyData} />
+      </section>
 
       {/* Body preview */}
       {(campaign.body_text as string) && (

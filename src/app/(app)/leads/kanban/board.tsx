@@ -524,7 +524,7 @@ function KanbanFinancialPanel({
 
   return (
     <div
-      className="w-full xl:w-[420px] xl:shrink-0 rounded-xl p-5 flex flex-col gap-4"
+      className="w-full xl:flex-1 rounded-xl p-5 flex flex-col gap-4"
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <span className="text-[13px] font-semibold tracking-tight">Wyniki finansowe ({rangeLabel})</span>
@@ -731,7 +731,7 @@ function KanbanEmailPanel({
 
   return (
     <div
-      className="w-full xl:w-[420px] xl:shrink-0 rounded-xl p-5 flex flex-col gap-4"
+      className="w-full xl:flex-1 rounded-xl p-5 flex flex-col gap-4"
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <div className="flex items-center gap-2">
@@ -828,7 +828,7 @@ function KanbanSmsPanel({
 
   return (
     <div
-      className="w-full xl:w-[420px] xl:shrink-0 rounded-xl p-5 flex flex-col gap-4"
+      className="w-full xl:flex-1 rounded-xl p-5 flex flex-col gap-4"
       style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
     >
       <div className="flex items-center gap-2">
@@ -1017,7 +1017,7 @@ export function KanbanBoard({
       )}
 
       <div className="flex flex-col xl:flex-row gap-5 items-start">
-      <div className="flex gap-4 overflow-x-auto pb-4 min-w-0 w-full xl:flex-1">
+      <div className="flex gap-4 overflow-x-auto pb-4 min-w-0 w-full xl:w-fit xl:max-w-[calc(100%-460px)] xl:shrink-0">
         {stages.map((stage) => {
           const stageLeads = getLeadsForStage(stage.id);
           const isClosed = stage.id === closedStageId;

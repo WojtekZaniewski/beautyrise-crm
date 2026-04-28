@@ -138,9 +138,7 @@ const primary = [
 const integrationsNav = [
   { href: "/integrations/meta", label: "Meta Ads", icon: Icons.meta },
   { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
-  { href: "/integrations/email", label: "Email", icon: Icons.email },
   { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
-  { href: "/integrations/sms", label: "SMS", icon: Icons.sms },
   { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
 ];
 

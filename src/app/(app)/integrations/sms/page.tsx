@@ -263,6 +263,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
   const [done, setDone] = useState(false);
+  const [sentCampaignId, setSentCampaignId] = useState<string | null>(null);
   const stopRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -358,7 +359,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
       });
     }
 
-    setSending(false); setDone(true);
+    setSending(false); setDone(true); setSentCampaignId(campaignId);
   };
 
   if (!configured) return (
@@ -605,7 +606,18 @@ function CampaignTab({ configured }: { configured: boolean }) {
               <div className="w-full rounded-full h-1.5" style={{ background: "var(--ba-8)" }}>
                 <div className="h-1.5 rounded-full transition-all" style={{ width: `${(progress.done / progress.total) * 100}%`, background: progress.failed > 0 ? "#f59e0b" : "var(--accent)" }} />
               </div>
-              {done && progress.failed === 0 && <p className="text-sm" style={{ color: "#16a34a" }}>✓ Wszystkie SMS-y wysłane pomyślnie.</p>}
+              {done && progress.failed === 0 && (
+                <div className="flex items-center gap-3">
+                  <p className="text-sm" style={{ color: "#16a34a" }}>✓ Wszystkie SMS-y wysłane pomyślnie.</p>
+                  {sentCampaignId && (
+                    <a href={`/sms-campaigns/${sentCampaignId}`}
+                      className="text-sm font-medium underline"
+                      style={{ color: "var(--accent-2)" }}>
+                      Zobacz statystyki →
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
