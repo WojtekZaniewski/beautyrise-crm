@@ -99,8 +99,8 @@ export default async function KanbanPage({
       q = q.eq("source", source);
     }
 
-    // Filter by specific campaign when Meta Ads + campaign selected
-    if (source === "meta_ads" && campaign !== "all") {
+    // Filter by specific campaign (works for all sources: meta_ads, email, sms)
+    if (campaign !== "all") {
       q = q.eq("source_campaign_id", campaign);
     }
 

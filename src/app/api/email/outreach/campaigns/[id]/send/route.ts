@@ -4,6 +4,88 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { sendMail } from "@/lib/email/smtp";
 import { decryptPassword } from "@/lib/email/crypto";
 
+async function getFirstStageId(supabase: ReturnType<typeof createServiceClient>, workspaceId: string): Promise<string | null> {
+  const { data: pipeline } = await supabase
+    .from("pipelines")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!pipeline?.id) return null;
+
+  const { data: stages } = await supabase
+    .from("pipeline_stages")
+    .select("id")
+    .eq("pipeline_id", pipeline.id)
+    .order("order", { ascending: true })
+    .limit(1);
+  return stages?.[0]?.id ?? null;
+}
+
+async function resolveLeadId(
+  supabase: ReturnType<typeof createServiceClient>,
+  workspaceId: string,
+  campaignId: string,
+  recipient: { email: string; name?: string; lead_id?: string },
+  firstStageId: string | null,
+): Promise<string | null> {
+  if (recipient.lead_id) {
+    // Lead already known — put it in the pipeline and mark as email source
+    const updates: Record<string, unknown> = {
+      source: "email",
+      source_campaign_id: campaignId,
+      updated_at: new Date().toISOString(),
+    };
+    await supabase.from("leads").update(updates).eq("id", recipient.lead_id);
+    if (firstStageId) {
+      await supabase
+        .from("leads")
+        .update({ stage_id: firstStageId, updated_at: new Date().toISOString() })
+        .eq("id", recipient.lead_id)
+        .is("stage_id", null);
+    }
+    return recipient.lead_id;
+  }
+
+  // Try to find existing lead by email
+  const { data: found } = await supabase
+    .from("leads")
+    .select("id, stage_id")
+    .eq("workspace_id", workspaceId)
+    .eq("email", recipient.email)
+    .eq("archived", false)
+    .limit(1)
+    .maybeSingle();
+
+  if (found) {
+    const updates: Record<string, unknown> = {
+      source: "email",
+      source_campaign_id: campaignId,
+      updated_at: new Date().toISOString(),
+    };
+    if (firstStageId && !found.stage_id) updates.stage_id = firstStageId;
+    await supabase.from("leads").update(updates).eq("id", found.id);
+    return found.id;
+  }
+
+  // Create a new lead
+  if (!firstStageId) return null;
+  const { data: created } = await supabase
+    .from("leads")
+    .insert({
+      workspace_id: workspaceId,
+      full_name: recipient.name || recipient.email,
+      email: recipient.email,
+      source: "email",
+      source_campaign_id: campaignId,
+      stage_id: firstStageId,
+    })
+    .select("id")
+    .single();
+  return created?.id ?? null;
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -32,6 +114,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       email: string; display_name: string; password_enc: string;
     };
     const password = decryptPassword(account.password_enc);
+    const firstStageId = await getFirstStageId(supabase, workspaceId);
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
     let sent = 0;
@@ -39,6 +122,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     for (const recipient of recipients) {
       try {
+        // Auto-create or update lead so it appears in Kanban
+        const leadId = await resolveLeadId(supabase, workspaceId, id, recipient, firstStageId);
+
         // Insert recipient row
         const { data: recipientRow } = await supabase
           .from("email_outreach_recipients")
@@ -46,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             campaign_id: id,
             email: recipient.email,
             name: recipient.name,
-            lead_id: recipient.lead_id,
+            lead_id: leadId,
             status: "pending",
           })
           .select("id")
