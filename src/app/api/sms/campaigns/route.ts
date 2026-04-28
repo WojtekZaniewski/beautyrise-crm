@@ -28,20 +28,23 @@ async function resolveLeadIdForSms(
   recipient: { phone: string; name?: string; lead_id?: string },
   firstStageId: string | null,
 ): Promise<string | null> {
+  const now = new Date().toISOString();
+
   if (recipient.lead_id) {
-    const updates: Record<string, unknown> = {
-      source: "sms",
-      source_campaign_id: campaignId,
-      updated_at: new Date().toISOString(),
-    };
-    await supabase.from("leads").update(updates).eq("id", recipient.lead_id);
+    // Always update source_campaign_id (UUID, always valid)
+    await supabase.from("leads")
+      .update({ source_campaign_id: campaignId, updated_at: now })
+      .eq("id", recipient.lead_id);
     if (firstStageId) {
-      await supabase
-        .from("leads")
-        .update({ stage_id: firstStageId, updated_at: new Date().toISOString() })
+      await supabase.from("leads")
+        .update({ stage_id: firstStageId, updated_at: now })
         .eq("id", recipient.lead_id)
         .is("stage_id", null);
     }
+    // Try "sms" source (may fail if enum not applied — ignored)
+    await supabase.from("leads")
+      .update({ source: "sms", updated_at: now })
+      .eq("id", recipient.lead_id);
     return recipient.lead_id;
   }
 
@@ -56,31 +59,44 @@ async function resolveLeadIdForSms(
     .maybeSingle();
 
   if (found) {
-    const updates: Record<string, unknown> = {
-      source: "sms",
-      source_campaign_id: campaignId,
-      updated_at: new Date().toISOString(),
-    };
-    if (firstStageId && !found.stage_id) updates.stage_id = firstStageId;
-    await supabase.from("leads").update(updates).eq("id", found.id);
+    await supabase.from("leads")
+      .update({ source_campaign_id: campaignId, updated_at: now })
+      .eq("id", found.id);
+    if (firstStageId && !found.stage_id) {
+      await supabase.from("leads")
+        .update({ stage_id: firstStageId, updated_at: now })
+        .eq("id", found.id);
+    }
+    await supabase.from("leads")
+      .update({ source: "sms", updated_at: now })
+      .eq("id", found.id);
     return found.id;
   }
 
-  // Create a new lead
   if (!firstStageId) return null;
-  const { data: created } = await supabase
+
+  const basePayload = {
+    workspace_id: workspaceId,
+    full_name: recipient.name || recipient.phone,
+    phone: recipient.phone,
+    source_campaign_id: campaignId,
+    stage_id: firstStageId,
+  };
+
+  // Try "sms" source first, fall back to "manual"
+  const { data: withSms, error: smsErr } = await supabase
     .from("leads")
-    .insert({
-      workspace_id: workspaceId,
-      full_name: recipient.name || recipient.phone,
-      phone: recipient.phone,
-      source: "sms",
-      source_campaign_id: campaignId,
-      stage_id: firstStageId,
-    })
+    .insert({ ...basePayload, source: "sms" })
     .select("id")
     .single();
-  return created?.id ?? null;
+  if (!smsErr && withSms) return withSms.id;
+
+  const { data: withManual } = await supabase
+    .from("leads")
+    .insert({ ...basePayload, source: "manual" })
+    .select("id")
+    .single();
+  return withManual?.id ?? null;
 }
 
 export async function GET() {
@@ -122,7 +138,6 @@ export async function POST(req: NextRequest) {
   if (Array.isArray(recipients) && recipients.length > 0) {
     const firstStageId = await getFirstStageId(supabase, workspaceId);
 
-    // Resolve/create leads for all recipients, then bulk-insert
     const resolvedRecipients = await Promise.all(
       recipients.map(async (r: { phone: string; name?: string; lead_id?: string; message_body?: string }) => {
         const leadId = await resolveLeadIdForSms(supabase, workspaceId, campaign.id, r, firstStageId);

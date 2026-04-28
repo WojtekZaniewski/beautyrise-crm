@@ -28,7 +28,8 @@
       "Bash(npx next *)",
       "Bash(git stash *)",
       "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")",
-      "Bash(grep -E \"\\\\.sql$\")"
+      "Bash(grep -E \"\\\\.sql$\")",
+      "Bash(npx supabase *)"
     ]
   }
 }

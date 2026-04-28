@@ -30,25 +30,28 @@ async function resolveLeadId(
   recipient: { email: string; name?: string; lead_id?: string },
   firstStageId: string | null,
 ): Promise<string | null> {
+  const now = new Date().toISOString();
+
   if (recipient.lead_id) {
-    // Lead already known — put it in the pipeline and mark as email source
-    const updates: Record<string, unknown> = {
-      source: "email",
-      source_campaign_id: campaignId,
-      updated_at: new Date().toISOString(),
-    };
-    await supabase.from("leads").update(updates).eq("id", recipient.lead_id);
+    // Always update source_campaign_id (UUID, always valid)
+    await supabase.from("leads")
+      .update({ source_campaign_id: campaignId, updated_at: now })
+      .eq("id", recipient.lead_id);
+    // Assign to first stage only if lead has no stage yet
     if (firstStageId) {
-      await supabase
-        .from("leads")
-        .update({ stage_id: firstStageId, updated_at: new Date().toISOString() })
+      await supabase.from("leads")
+        .update({ stage_id: firstStageId, updated_at: now })
         .eq("id", recipient.lead_id)
         .is("stage_id", null);
     }
+    // Try to set source to "email" (may fail if enum not yet applied — ignored)
+    await supabase.from("leads")
+      .update({ source: "email", updated_at: now })
+      .eq("id", recipient.lead_id);
     return recipient.lead_id;
   }
 
-  // Try to find existing lead by email
+  // Try to find existing lead by email address
   const { data: found } = await supabase
     .from("leads")
     .select("id, stage_id")
@@ -59,31 +62,45 @@ async function resolveLeadId(
     .maybeSingle();
 
   if (found) {
-    const updates: Record<string, unknown> = {
-      source: "email",
-      source_campaign_id: campaignId,
-      updated_at: new Date().toISOString(),
-    };
-    if (firstStageId && !found.stage_id) updates.stage_id = firstStageId;
-    await supabase.from("leads").update(updates).eq("id", found.id);
+    await supabase.from("leads")
+      .update({ source_campaign_id: campaignId, updated_at: now })
+      .eq("id", found.id);
+    if (firstStageId && !found.stage_id) {
+      await supabase.from("leads")
+        .update({ stage_id: firstStageId, updated_at: now })
+        .eq("id", found.id);
+    }
+    await supabase.from("leads")
+      .update({ source: "email", updated_at: now })
+      .eq("id", found.id);
     return found.id;
   }
 
-  // Create a new lead
   if (!firstStageId) return null;
-  const { data: created } = await supabase
+
+  // Create a new lead — try "email" source first, fall back to "manual"
+  const basePayload = {
+    workspace_id: workspaceId,
+    full_name: recipient.name || recipient.email,
+    email: recipient.email,
+    source_campaign_id: campaignId,
+    stage_id: firstStageId,
+  };
+
+  const { data: withEmail, error: emailErr } = await supabase
     .from("leads")
-    .insert({
-      workspace_id: workspaceId,
-      full_name: recipient.name || recipient.email,
-      email: recipient.email,
-      source: "email",
-      source_campaign_id: campaignId,
-      stage_id: firstStageId,
-    })
+    .insert({ ...basePayload, source: "email" })
     .select("id")
     .single();
-  return created?.id ?? null;
+  if (!emailErr && withEmail) return withEmail.id;
+
+  // Fallback: "manual" source (valid in all DB versions)
+  const { data: withManual } = await supabase
+    .from("leads")
+    .insert({ ...basePayload, source: "manual" })
+    .select("id")
+    .single();
+  return withManual?.id ?? null;
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -122,10 +139,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     for (const recipient of recipients) {
       try {
-        // Auto-create or update lead so it appears in Kanban
         const leadId = await resolveLeadId(supabase, workspaceId, id, recipient, firstStageId);
 
-        // Insert recipient row
         const { data: recipientRow } = await supabase
           .from("email_outreach_recipients")
           .insert({
@@ -139,12 +154,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           .single();
 
         const recipientId = recipientRow?.id;
-
-        // Build HTML with tracking pixel
         const trackPixel = recipientId
           ? `<img src="${baseUrl}/api/email/track/open?r=${recipientId}&c=${id}" width="1" height="1" style="display:none" />`
           : "";
-
         const html = (campaign.body_html ?? "") + trackPixel;
 
         const messageId = await sendMail({

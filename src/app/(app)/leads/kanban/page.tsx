@@ -95,17 +95,40 @@ export default async function KanbanPage({
       .in("stage_id", stageIds)
       .order("created_at", { ascending: false });
 
-    if (source !== "all") {
-      q = q.eq("source", source);
+    let shouldQuery = true;
+
+    if (source === "email") {
+      // Filter by source_campaign_id — works even without "email" in lead_source enum
+      const emailIds = (emailCampaigns ?? []).map(c => c.id);
+      if (campaign !== "all") {
+        q = q.eq("source_campaign_id", campaign);
+      } else if (emailIds.length > 0) {
+        q = q.in("source_campaign_id", emailIds);
+      } else {
+        shouldQuery = false;
+      }
+    } else if (source === "sms") {
+      const smsIds = (smsCampaigns ?? []).map(c => c.id);
+      if (campaign !== "all") {
+        q = q.eq("source_campaign_id", campaign);
+      } else if (smsIds.length > 0) {
+        q = q.in("source_campaign_id", smsIds);
+      } else {
+        shouldQuery = false;
+      }
+    } else {
+      if (source !== "all") {
+        q = q.eq("source", source);
+      }
+      if (campaign !== "all") {
+        q = q.eq("source_campaign_id", campaign);
+      }
     }
 
-    // Filter by specific campaign (works for all sources: meta_ads, email, sms)
-    if (campaign !== "all") {
-      q = q.eq("source_campaign_id", campaign);
+    if (shouldQuery) {
+      const { data } = await q;
+      leadsRaw = (data ?? []) as typeof leadsRaw;
     }
-
-    const { data } = await q;
-    leadsRaw = (data ?? []) as typeof leadsRaw;
   }
 
   // Fetch Meta Ads campaign metrics (for stats bar)
