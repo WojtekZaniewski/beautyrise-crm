@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import type { MetaStats, EmailStats, SmsStats, EmailDailyPoint, SmsDailyPoint } from "./page";
 import {
@@ -312,7 +313,6 @@ function LeadCard({
 }) {
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
-  const [panelOpen, setPanelOpen] = useState(false);
 
   return (
     <div
@@ -332,15 +332,14 @@ function LeadCard({
       }}
     >
       <div className="flex items-start gap-1 mb-1">
-        <button
+        <Link
+          href={`/leads/${lead.id}`}
           draggable={false}
-          onDragStart={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); setPanelOpen(true); }}
-          className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug text-left"
-          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
+          onClick={(e) => e.stopPropagation()}
+          className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug"
         >
           {lead.full_name}
-        </button>
+        </Link>
         {isClosedStage && (
           <span
             className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5"
@@ -385,26 +384,12 @@ function LeadCard({
               ~{pln(lead.acquisition_cost!)}
             </span>
           )}
-          {lead.potential_score !== null && lead.potential_score !== undefined && (
-            <span
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-              style={{
-                background: lead.potential_score <= 3 ? "rgba(239,68,68,0.1)" : lead.potential_score <= 6 ? "rgba(245,158,11,0.1)" : "rgba(34,197,94,0.1)",
-                color: lead.potential_score <= 3 ? "#ef4444" : lead.potential_score <= 6 ? "#f59e0b" : "#16a34a",
-              }}
-            >
-              {lead.potential_score}/10
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-1" draggable={false} onDragStart={(e) => e.stopPropagation()}>
           <LeadNotesPanel
             leadId={lead.id}
             leadName={lead.full_name}
             initialScore={lead.potential_score}
-            open={panelOpen}
-            onOpenChange={setPanelOpen}
-            hideTrigger
           />
           <KanbanDeleteButton leadId={lead.id} onDelete={onDelete} />
         </div>

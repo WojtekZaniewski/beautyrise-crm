@@ -56,6 +56,38 @@ export default async function LeadDetailPage({
   const stages = stagesData;
   const allTags = tagsRes.data;
 
+  // Fetch campaign membership
+  type CampaignRef = { id: string; name: string };
+  const phone = lead.phone as string | null;
+  const email = lead.email as string | null;
+
+  const [emailRows, smsRows] = await Promise.all([
+    email
+      ? supabase.from("email_outreach_recipients")
+          .select("email_outreach_campaigns(id, name)")
+          .eq("email", email).limit(20)
+      : { data: [] as unknown[] },
+    phone
+      ? supabase.from("sms_campaign_recipients")
+          .select("sms_campaigns(id, name)")
+          .eq("phone", phone).limit(20)
+      : { data: [] as unknown[] },
+  ]);
+
+  const emailCampaigns: CampaignRef[] = [...new Map(
+    (emailRows.data ?? [])
+      .map((r) => (r as { email_outreach_campaigns: CampaignRef | null }).email_outreach_campaigns)
+      .filter((c): c is CampaignRef => c !== null)
+      .map((c) => [c.id, c])
+  ).values()];
+
+  const smsCampaigns: CampaignRef[] = [...new Map(
+    (smsRows.data ?? [])
+      .map((r) => (r as { sms_campaigns: CampaignRef | null }).sms_campaigns)
+      .filter((c): c is CampaignRef => c !== null)
+      .map((c) => [c.id, c])
+  ).values()];
+
   const stage = lead.pipeline_stages as { id: string; name: string; color: string } | null;
   const assignedIds = ((lead.lead_tags as Array<{ tag_id: string }>) ?? []).map(
     (lt) => lt.tag_id,
@@ -167,30 +199,40 @@ export default async function LeadDetailPage({
           {/* Timeline */}
           <div style={panelStyle} className="p-6">
             <h2 className="text-[13.5px] font-semibold tracking-tight mb-4">Timeline</h2>
-            <AddNote leadId={id} />
+            <AddNote leadId={id} emailCampaigns={emailCampaigns} smsCampaigns={smsCampaigns} />
 
             <div className="mt-5 flex flex-col gap-4">
-              {(events ?? []).map((ev) => (
-                <div key={ev.id} className="flex gap-3 text-[13px]">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                    style={{ background: "var(--accent)", opacity: 0.7 }}
-                  />
-                  <div>
-                    <div className="font-medium">{eventLabel[ev.type] ?? ev.type}</div>
-                    {ev.payload && Object.keys(ev.payload).length > 0 && (
-                      <div className="text-[12px] mt-0.5" style={{ color: "var(--muted)" }}>
-                        {ev.type === "note" && (ev.payload as { text?: string }).text}
-                        {ev.type === "stage_change" &&
-                          `${(ev.payload as { from?: string }).from ?? "?"} → ${(ev.payload as { to?: string }).to ?? "?"}`}
+              {(events ?? []).map((ev) => {
+                const p = ev.payload as Record<string, string> | null;
+                const isCampaignNote = ev.type === "note" && p?.context_type && p.context_type !== "general";
+                const campaignColor = p?.context_type === "email" ? "#8b5cf6" : "#22c55e";
+                return (
+                  <div key={ev.id} className="flex gap-3 text-[13px]">
+                    <div
+                      className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                      style={{ background: "var(--accent)", opacity: 0.7 }}
+                    />
+                    <div>
+                      <div className="font-medium">{eventLabel[ev.type] ?? ev.type}</div>
+                      {isCampaignNote && p?.campaign_name && (
+                        <div className="text-[10.5px] font-semibold mt-0.5" style={{ color: campaignColor }}>
+                          {p.context_type === "email" ? "📧" : "✉"} {p.campaign_name}
+                        </div>
+                      )}
+                      {p && Object.keys(p).length > 0 && (
+                        <div className="text-[12px] mt-0.5" style={{ color: "var(--muted)" }}>
+                          {ev.type === "note" && p.text}
+                          {ev.type === "stage_change" &&
+                            `${p.from ?? "?"} → ${p.to ?? "?"}`}
+                        </div>
+                      )}
+                      <div className="text-[11.5px] mt-0.5" style={{ color: "var(--muted)", opacity: 0.7 }}>
+                        {new Date(ev.created_at).toLocaleString("pl-PL")}
                       </div>
-                    )}
-                    <div className="text-[11.5px] mt-0.5" style={{ color: "var(--muted)", opacity: 0.7 }}>
-                      {new Date(ev.created_at).toLocaleString("pl-PL")}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {(events ?? []).length === 0 && (
                 <div className="text-[13px]" style={{ color: "var(--muted)" }}>
                   Brak zdarzeń.
