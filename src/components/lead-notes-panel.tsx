@@ -57,6 +57,7 @@ export function LeadNotesPanel({
   conversationId,
   open: externalOpen,
   onOpenChange,
+  hideTrigger = false,
 }: {
   leadId?: string | null;
   leadName?: string;

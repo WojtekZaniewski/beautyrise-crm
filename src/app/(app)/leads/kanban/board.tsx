@@ -385,6 +385,17 @@ function LeadCard({
               ~{pln(lead.acquisition_cost!)}
             </span>
           )}
+          {lead.potential_score !== null && lead.potential_score !== undefined && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{
+                background: lead.potential_score <= 3 ? "rgba(239,68,68,0.1)" : lead.potential_score <= 6 ? "rgba(245,158,11,0.1)" : "rgba(34,197,94,0.1)",
+                color: lead.potential_score <= 3 ? "#ef4444" : lead.potential_score <= 6 ? "#f59e0b" : "#16a34a",
+              }}
+            >
+              {lead.potential_score}/10
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1" draggable={false} onDragStart={(e) => e.stopPropagation()}>
           <LeadNotesPanel
@@ -393,6 +404,7 @@ function LeadCard({
             initialScore={lead.potential_score}
             open={panelOpen}
             onOpenChange={setPanelOpen}
+            hideTrigger
           />
           <KanbanDeleteButton leadId={lead.id} onDelete={onDelete} />
         </div>
