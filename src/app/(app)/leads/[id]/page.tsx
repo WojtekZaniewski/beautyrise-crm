@@ -10,7 +10,7 @@ import { IntegrationSidebar } from "./integration-sidebar";
 import { PotentialScore } from "./potential-score";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getStagesForWorkspace } from "@/lib/pipeline";
+import { getStagesForPipeline, getCurrentPipelineId } from "@/lib/pipeline";
 
 const panelStyle = {
   background: "var(--panel-solid)",
@@ -38,7 +38,7 @@ export default async function LeadDetailPage({
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
-  const [leadRes, eventsRes, stagesData, tagsRes] = await Promise.all([
+  const [leadRes, eventsRes, tagsRes] = await Promise.all([
     supabase
       .from("leads")
       .select(`*, pipeline_stages ( id, name, color, pipeline_id ), lead_tags ( tag_id )`)
@@ -49,7 +49,6 @@ export default async function LeadDetailPage({
       .select("*")
       .eq("lead_id", id)
       .order("created_at", { ascending: false }),
-    getStagesForWorkspace(WORKSPACE_ID),
     supabase.from("tags").select("id, name, color").eq("workspace_id", WORKSPACE_ID).order("name"),
   ]);
 
@@ -57,8 +56,13 @@ export default async function LeadDetailPage({
   if (!lead) notFound();
 
   const events = eventsRes.data;
-  const stages = stagesData;
   const allTags = tagsRes.data;
+
+  // Fetch stages only from the lead's own pipeline to avoid duplicates across pipelines
+  const leadPipelineId =
+    (lead.pipeline_stages as { pipeline_id: string } | null)?.pipeline_id ??
+    await getCurrentPipelineId(WORKSPACE_ID);
+  const stages = leadPipelineId ? await getStagesForPipeline(leadPipelineId) : [];
 
   type CampaignRef = { id: string; name: string };
   const phone = lead.phone as string | null;
