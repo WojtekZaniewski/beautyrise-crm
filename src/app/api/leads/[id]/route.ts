@@ -62,7 +62,8 @@ export async function GET(
       .limit(1),
   ]);
 
-  type Group = { name: string; campaigns: string[] };
+  type CampaignRef = { id: string; name: string };
+  type Group = { name: string; campaigns: CampaignRef[] };
   const groups: Group[] = [];
 
   const hasSms =
@@ -71,16 +72,24 @@ export async function GET(
 
   if (hasSms) {
     const campaigns = (smsCampaignRows.data ?? [])
-      .map((r) => ((r as { sms_campaigns: { name: string } | null }).sms_campaigns)?.name)
-      .filter((n): n is string => !!n);
-    groups.push({ name: "SMS", campaigns: [...new Set(campaigns)] });
+      .map((r) => {
+        const c = (r as { sms_campaigns: CampaignRef | null }).sms_campaigns;
+        return c ? { id: c.id, name: c.name } : null;
+      })
+      .filter((c): c is CampaignRef => c !== null);
+    const uniq = [...new Map(campaigns.map((c) => [c.id, c])).values()];
+    groups.push({ name: "SMS", campaigns: uniq });
   }
 
   if ((emailRecipients.data ?? []).length > 0) {
     const campaigns = (emailRecipients.data ?? [])
-      .map((r) => ((r as { email_outreach_campaigns: { name: string } | null }).email_outreach_campaigns)?.name)
-      .filter((n): n is string => !!n);
-    groups.push({ name: "Email", campaigns: [...new Set(campaigns)] });
+      .map((r) => {
+        const c = (r as { email_outreach_campaigns: CampaignRef | null }).email_outreach_campaigns;
+        return c ? { id: c.id, name: c.name } : null;
+      })
+      .filter((c): c is CampaignRef => c !== null);
+    const uniq = [...new Map(campaigns.map((c) => [c.id, c])).values()];
+    groups.push({ name: "Email", campaigns: uniq });
   }
 
   if (data.source === "meta_ads" || (metaRows.data ?? []).length > 0) {

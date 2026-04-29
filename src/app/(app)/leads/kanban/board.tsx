@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
 import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import type { MetaStats, EmailStats, SmsStats, EmailDailyPoint, SmsDailyPoint } from "./page";
 import {
@@ -313,6 +312,7 @@ function LeadCard({
 }) {
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
+  const [panelOpen, setPanelOpen] = useState(false);
 
   return (
     <div
@@ -332,14 +332,15 @@ function LeadCard({
       }}
     >
       <div className="flex items-start gap-1 mb-1">
-        <Link
-          href={`/leads/${lead.id}`}
+        <button
           draggable={false}
-          onClick={(e) => e.stopPropagation()}
-          className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug"
+          onDragStart={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); setPanelOpen(true); }}
+          className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug text-left"
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "inherit" }}
         >
           {lead.full_name}
-        </Link>
+        </button>
         {isClosedStage && (
           <span
             className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5"
@@ -390,6 +391,8 @@ function LeadCard({
             leadId={lead.id}
             leadName={lead.full_name}
             initialScore={lead.potential_score}
+            open={panelOpen}
+            onOpenChange={setPanelOpen}
           />
           <KanbanDeleteButton leadId={lead.id} onDelete={onDelete} />
         </div>

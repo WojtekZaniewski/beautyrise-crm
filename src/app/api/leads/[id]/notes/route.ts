@@ -36,7 +36,7 @@ export async function POST(
   const { id } = await params;
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
-  const { text } = await req.json();
+  const { text, context_type, campaign_id, campaign_name } = await req.json();
 
   if (!text?.trim()) return NextResponse.json({ error: "Brak treści notatki" }, { status: 400 });
 
@@ -49,9 +49,13 @@ export async function POST(
 
   if (!lead) return NextResponse.json({ error: "Nie znaleziono leada" }, { status: 404 });
 
+  const payload: Record<string, string> = { text: text.trim(), context_type: context_type || "general" };
+  if (campaign_id) payload.campaign_id = campaign_id;
+  if (campaign_name) payload.campaign_name = campaign_name;
+
   const { data, error } = await supabase
     .from("lead_events")
-    .insert({ lead_id: id, type: "note", payload: { text: text.trim() } })
+    .insert({ lead_id: id, type: "note", payload })
     .select("id, payload, created_at")
     .single();
 

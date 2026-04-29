@@ -3,8 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
-type Note = { id: string; payload: { text: string }; created_at: string };
-type LeadGroup = { name: string; campaigns: string[] };
+type NotePayload = {
+  text: string;
+  context_type?: "general" | "email" | "sms";
+  campaign_id?: string;
+  campaign_name?: string;
+};
+type Note = { id: string; payload: NotePayload; created_at: string };
+type CampaignRef = { id: string; name: string };
+type LeadGroup = { name: string; campaigns: CampaignRef[] };
 type LeadDuplicate = { id: string; full_name: string; phone: string | null; email: string | null };
 type LeadDetails = {
   id: string; full_name: string; phone: string | null; email: string | null;
@@ -14,6 +21,10 @@ type LeadDetails = {
   source: string; sourceLabel: string; created_at: string; groups: LeadGroup[];
   potential_score?: number | null;
 };
+
+type NoteContext =
+  | { type: "general" }
+  | { type: "email" | "sms"; campaign_id: string; campaign_name: string };
 
 function scoreColor(s: number): string {
   if (s <= 3) return "#ef4444";
@@ -44,6 +55,8 @@ export function LeadNotesPanel({
   fallbackEmail,
   fallbackName,
   conversationId,
+  open: externalOpen,
+  onOpenChange,
 }: {
   leadId?: string | null;
   leadName?: string;
@@ -52,8 +65,12 @@ export function LeadNotesPanel({
   fallbackEmail?: string;
   fallbackName?: string;
   conversationId?: string;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = (externalOpen ?? false) || internalOpen;
+
   const [activeTab, setActiveTab] = useState<"notes" | "details">("notes");
   const [resolvedLeadId, setResolvedLeadId] = useState<string | null>(initialLeadId ?? null);
   const [resolvedLeadName, setResolvedLeadName] = useState<string>(
@@ -63,6 +80,7 @@ export function LeadNotesPanel({
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteText, setNoteText] = useState("");
+  const [noteContext, setNoteContext] = useState<NoteContext>({ type: "general" });
   const [noteLoading, setNoteLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -101,15 +119,35 @@ export function LeadNotesPanel({
   }, []);
 
   useEffect(() => {
-    if (!open || !resolvedLeadId) return;
-    if (activeTab === "notes") loadNotes(resolvedLeadId);
-    if (activeTab === "details") loadDetails(resolvedLeadId);
-  }, [open, activeTab, resolvedLeadId, loadNotes, loadDetails]);
+    if (!isOpen || !resolvedLeadId) return;
+    loadNotes(resolvedLeadId);
+    loadDetails(resolvedLeadId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, resolvedLeadId]);
+
+  // Reset context when re-opened
+  useEffect(() => {
+    if (isOpen) {
+      setNoteContext({ type: "general" });
+      setActiveTab("notes");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen && resolvedLeadId]);
+
+  function openPanel() {
+    setInternalOpen(true);
+    onOpenChange?.(true);
+  }
+
+  function closePanel() {
+    setInternalOpen(false);
+    onOpenChange?.(false);
+  }
 
   async function handleOpen(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    if (resolvedLeadId) { setOpen(true); return; }
+    if (resolvedLeadId) { openPanel(); return; }
     if (!fallbackEmail && !fallbackName) return;
     setResolving(true);
     const res = await fetch("/api/leads/find-or-create", {
@@ -123,17 +161,38 @@ export function LeadNotesPanel({
       setResolvedLeadName(lead.full_name);
     }
     setResolving(false);
-    setOpen(true);
+    openPanel();
   }
+
+  // Filtered notes for selected context
+  const filteredNotes = notes.filter((note) => {
+    const ct = note.payload.context_type;
+    if (noteContext.type === "general") {
+      return !ct || ct === "general";
+    }
+    return ct === noteContext.type && note.payload.campaign_id === noteContext.campaign_id;
+  });
+
+  // Available contexts from details.groups
+  const emailCampaigns: CampaignRef[] =
+    details?.groups.find((g) => g.name === "Email")?.campaigns ?? [];
+  const smsCampaigns: CampaignRef[] =
+    details?.groups.find((g) => g.name === "SMS")?.campaigns ?? [];
+  const hasContextOptions = emailCampaigns.length > 0 || smsCampaigns.length > 0;
 
   async function addNote(e: React.FormEvent) {
     e.preventDefault();
     if (!noteText.trim() || !resolvedLeadId) return;
     setNoteLoading(true);
+    const body: Record<string, string> = { text: noteText, context_type: noteContext.type };
+    if (noteContext.type !== "general") {
+      body.campaign_id = noteContext.campaign_id;
+      body.campaign_name = noteContext.campaign_name;
+    }
     const res = await fetch(`/api/leads/${resolvedLeadId}/notes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: noteText }),
+      body: JSON.stringify(body),
     });
     if (res.ok) { setNoteText(""); await loadNotes(resolvedLeadId); }
     setNoteLoading(false);
@@ -166,7 +225,6 @@ export function LeadNotesPanel({
       setDetailsSaved(true);
       setTimeout(() => setDetailsSaved(false), 2500);
       if (data.duplicates?.length) setDuplicates(data.duplicates);
-      // Reload groups (integration detection may have changed)
       await loadDetails(resolvedLeadId);
     }
     setSavingDetails(false);
@@ -196,13 +254,21 @@ export function LeadNotesPanel({
     setSavingScore(false);
   }
 
-  const count = open ? notes.length : (initialCount ?? 0);
+  const count = isOpen ? notes.length : (initialCount ?? 0);
 
   const inp: React.CSSProperties = {
     width: "100%", borderRadius: "8px", padding: "9px 12px", fontSize: "13px",
     outline: "none", background: "var(--ba-4)", border: "1px solid var(--border-strong)",
     color: "var(--text)", boxSizing: "border-box", fontFamily: "inherit",
   };
+
+  const contextBtnStyle = (active: boolean, color: string): React.CSSProperties => ({
+    padding: "4px 10px", borderRadius: "6px", fontSize: "11.5px", fontWeight: 500,
+    border: active ? `1px solid ${color}55` : "1px solid var(--border-strong)",
+    background: active ? `${color}12` : "transparent",
+    color: active ? color : "var(--muted)",
+    cursor: "pointer", transition: "all 0.12s", whiteSpace: "nowrap",
+  });
 
   return (
     <>
@@ -248,9 +314,9 @@ export function LeadNotesPanel({
         )}
       </button>
 
-      {open && createPortal(
+      {isOpen && createPortal(
         <>
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50 }} onClick={() => setOpen(false)} />
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 50 }} onClick={closePanel} />
 
           <div style={{
             position: "fixed", top: 0, right: 0, bottom: 0, width: "440px", maxWidth: "95vw",
@@ -267,7 +333,7 @@ export function LeadNotesPanel({
                   </div>
                 )}
               </div>
-              <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: "20px", cursor: "pointer", lineHeight: 1, padding: "4px", flexShrink: 0 }}>×</button>
+              <button onClick={closePanel} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: "20px", cursor: "pointer", lineHeight: 1, padding: "4px", flexShrink: 0 }}>×</button>
             </div>
 
             {/* Tabs */}
@@ -288,11 +354,56 @@ export function LeadNotesPanel({
             {/* ── NOTES TAB ── */}
             {activeTab === "notes" && (
               <>
+                {/* Context selector */}
+                {hasContextOptions && (
+                  <div style={{ padding: "10px 20px 0", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+                    <div style={{ fontSize: "10px", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "8px" }}>
+                      Kontekst notatki
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingBottom: "10px" }}>
+                      <button
+                        style={contextBtnStyle(noteContext.type === "general", "var(--accent)")}
+                        onClick={() => setNoteContext({ type: "general" })}
+                      >
+                        Ogólne
+                      </button>
+                      {emailCampaigns.map((c) => (
+                        <button
+                          key={c.id}
+                          style={contextBtnStyle(
+                            noteContext.type === "email" && noteContext.campaign_id === c.id,
+                            "#8b5cf6",
+                          )}
+                          onClick={() => setNoteContext({ type: "email", campaign_id: c.id, campaign_name: c.name })}
+                        >
+                          📧 {c.name}
+                        </button>
+                      ))}
+                      {smsCampaigns.map((c) => (
+                        <button
+                          key={c.id}
+                          style={contextBtnStyle(
+                            noteContext.type === "sms" && noteContext.campaign_id === c.id,
+                            "#22c55e",
+                          )}
+                          onClick={() => setNoteContext({ type: "sms", campaign_id: c.id, campaign_name: c.name })}
+                        >
+                          ✉ {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={addNote} style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
                   <textarea
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Napisz notatkę…"
+                    placeholder={
+                      noteContext.type === "general"
+                        ? "Napisz notatkę ogólną…"
+                        : `Napisz notatkę do kampanii "${noteContext.campaign_name}"…`
+                    }
                     rows={3}
                     style={{ ...inp, resize: "vertical" }}
                     onKeyDown={(e) => {
@@ -309,17 +420,32 @@ export function LeadNotesPanel({
                     </button>
                   </div>
                 </form>
+
                 <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
-                  {notes.length === 0 ? (
-                    <div style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", paddingTop: "32px" }}>Brak notatek. Dodaj pierwszą.</div>
-                  ) : notes.map((note) => (
-                    <div key={note.id} style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--ba-4)", border: "1px solid var(--border)", marginBottom: "10px", position: "relative" }}>
-                      <div style={{ fontSize: "13px", color: "var(--text)", whiteSpace: "pre-wrap", wordBreak: "break-word", paddingRight: "28px" }}>{note.payload.text}</div>
-                      <div style={{ fontSize: "11px", color: "var(--muted)", marginTop: "6px" }}>{formatDate(note.created_at)}</div>
-                      <button onClick={() => deleteNote(note.id)} disabled={deleting === note.id} title="Usuń notatkę"
-                        style={{ position: "absolute", top: "10px", right: "10px", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "14px", lineHeight: 1, padding: "2px", opacity: deleting === note.id ? 0.4 : 1 }}>×</button>
+                  {filteredNotes.length === 0 ? (
+                    <div style={{ textAlign: "center", color: "var(--muted)", fontSize: "13px", paddingTop: "32px" }}>
+                      {noteContext.type === "general"
+                        ? "Brak notatek ogólnych. Dodaj pierwszą."
+                        : `Brak notatek dla kampanii "${noteContext.campaign_name}".`}
                     </div>
-                  ))}
+                  ) : filteredNotes.map((note) => {
+                    const isCampaignNote = note.payload.context_type && note.payload.context_type !== "general";
+                    const badgeColor = note.payload.context_type === "email" ? "#8b5cf6" : "#22c55e";
+                    return (
+                      <div key={note.id} style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--ba-4)", border: "1px solid var(--border)", marginBottom: "10px", position: "relative" }}>
+                        {isCampaignNote && note.payload.campaign_name && (
+                          <div style={{ fontSize: "10px", fontWeight: 600, color: badgeColor, marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <span>{note.payload.context_type === "email" ? "📧" : "✉"}</span>
+                            <span>{note.payload.campaign_name}</span>
+                          </div>
+                        )}
+                        <div style={{ fontSize: "13px", color: "var(--text)", whiteSpace: "pre-wrap", wordBreak: "break-word", paddingRight: "28px" }}>{note.payload.text}</div>
+                        <div style={{ fontSize: "11px", color: "var(--muted)", marginTop: "6px" }}>{formatDate(note.created_at)}</div>
+                        <button onClick={() => deleteNote(note.id)} disabled={deleting === note.id} title="Usuń notatkę"
+                          style={{ position: "absolute", top: "10px", right: "10px", background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "14px", lineHeight: 1, padding: "2px", opacity: deleting === note.id ? 0.4 : 1 }}>×</button>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -467,7 +593,7 @@ export function LeadNotesPanel({
                                 <span style={{ fontSize: "12px", fontWeight: 700, color }}>{g.name}</span>
                                 {g.campaigns.length > 0 && (
                                   <span style={{ fontSize: "11px", color, opacity: 0.85 }}>
-                                    Uczestniczy w: {g.campaigns.join(", ")}
+                                    Uczestniczy w: {g.campaigns.map((c) => c.name).join(", ")}
                                   </span>
                                 )}
                               </div>
