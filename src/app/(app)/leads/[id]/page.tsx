@@ -216,9 +216,9 @@ export default async function LeadDetailPage({
             </div>
           )}
 
-          {/* Timeline */}
+          {/* Notes */}
           <div style={panelStyle} className="p-6">
-            <h2 className="text-[13.5px] font-semibold tracking-tight mb-4">Timeline</h2>
+            <h2 className="text-[13.5px] font-semibold tracking-tight mb-4">Notatki</h2>
             <LeadTimeline
               leadId={id}
               initialEvents={mappedEvents}
