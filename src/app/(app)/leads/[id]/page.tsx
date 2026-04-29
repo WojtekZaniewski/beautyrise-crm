@@ -7,6 +7,7 @@ import { LeadTags } from "./tags";
 import { ValueEdit } from "./value-edit";
 import { LeadNipField, LeadSegmentationFields } from "./lead-extra-fields";
 import { IntegrationSidebar } from "./integration-sidebar";
+import { PotentialScore } from "./potential-score";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
@@ -188,6 +189,14 @@ export default async function LeadDetailPage({
             <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-2" style={{ color: "var(--muted)" }}>Etap</div>
               <StageSelect leadId={id} currentStageId={stage?.id ?? null} stages={stages ?? []} currentStageName={stage?.name} />
+            </div>
+
+            {/* Potential score */}
+            <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
+              <PotentialScore
+                leadId={id}
+                initialScore={(lead as Record<string, unknown>).potential_score as number | null}
+              />
             </div>
 
             {/* Segmentation — only in general view */}

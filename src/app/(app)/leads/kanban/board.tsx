@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import type { MetaStats, EmailStats, SmsStats, EmailDailyPoint, SmsDailyPoint } from "./page";
 import {
   AreaChart,
@@ -386,11 +385,6 @@ function LeadCard({
           )}
         </div>
         <div className="flex items-center gap-1" draggable={false} onDragStart={(e) => e.stopPropagation()}>
-          <LeadNotesPanel
-            leadId={lead.id}
-            leadName={lead.full_name}
-            initialScore={lead.potential_score}
-          />
           <KanbanDeleteButton leadId={lead.id} onDelete={onDelete} />
         </div>
       </div>

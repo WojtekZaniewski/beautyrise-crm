@@ -4,7 +4,6 @@ import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { sourceLabel } from "@/lib/constants";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
-import { LeadNotesPanel } from "@/components/lead-notes-panel";
 import { DeleteLeadButton } from "@/components/delete-lead-button";
 
 type SearchParams = Promise<{
@@ -285,10 +284,7 @@ export default async function LeadsPage({
                       })}
                     </td>
                     <td className="px-4 py-3">
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                        <LeadNotesPanel leadId={lead.id} leadName={lead.full_name} initialScore={(lead as { potential_score?: number | null }).potential_score} />
-                        <DeleteLeadButton leadId={lead.id} />
-                      </div>
+                      <DeleteLeadButton leadId={lead.id} />
                     </td>
                   </tr>
                 );
