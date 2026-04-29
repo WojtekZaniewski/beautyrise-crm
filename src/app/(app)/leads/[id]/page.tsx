@@ -60,35 +60,18 @@ export default async function LeadDetailPage({
   const allTags = tagsRes.data;
 
   type CampaignRef = { id: string; name: string };
-  const phone = lead.phone as string | null;
-  const email = lead.email as string | null;
 
-  const [emailRows, smsRows] = await Promise.all([
-    email
-      ? supabase.from("email_outreach_recipients").select("email_outreach_campaigns(id, name)").eq("email", email).limit(20)
-      : { data: [] as unknown[] },
-    phone
-      ? supabase.from("sms_campaign_recipients").select("sms_campaigns(id, name)").eq("phone", phone).limit(20)
-      : { data: [] as unknown[] },
+  const [emailCampsRes, smsCampsRes] = await Promise.all([
+    supabase.from("email_outreach_campaigns").select("id, name").eq("workspace_id", WORKSPACE_ID).order("name"),
+    supabase.from("sms_campaigns").select("id, name").eq("workspace_id", WORKSPACE_ID).order("name"),
   ]);
 
-  const emailCampaigns: CampaignRef[] = [...new Map(
-    (emailRows.data ?? [])
-      .map((r) => (r as { email_outreach_campaigns: CampaignRef | null }).email_outreach_campaigns)
-      .filter((c): c is CampaignRef => c !== null)
-      .map((c) => [c.id, c])
-  ).values()];
-
-  const smsCampaigns: CampaignRef[] = [...new Map(
-    (smsRows.data ?? [])
-      .map((r) => (r as { sms_campaigns: CampaignRef | null }).sms_campaigns)
-      .filter((c): c is CampaignRef => c !== null)
-      .map((c) => [c.id, c])
-  ).values()];
+  const emailCampaigns: CampaignRef[] = emailCampsRes.data ?? [];
+  const smsCampaigns: CampaignRef[] = smsCampsRes.data ?? [];
 
   const stage = lead.pipeline_stages as { id: string; name: string; color: string } | null;
   const assignedIds = ((lead.lead_tags as Array<{ tag_id: string }>) ?? []).map((lt) => lt.tag_id);
-  const hasMetaAds = (lead.source as string) === "meta_ads";
+  const hasMetaAds = true;
   const leadCampaignName = (lead as Record<string, unknown>).campaign_name as string | null;
 
   // Resolve active campaign name from ctx + cid
