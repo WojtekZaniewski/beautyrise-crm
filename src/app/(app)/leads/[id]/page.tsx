@@ -181,6 +181,12 @@ export default async function LeadDetailPage({
               </div>
             )}
 
+            {/* Stage — inline in card, always visible */}
+            <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-2" style={{ color: "var(--muted)" }}>Etap</div>
+              <StageSelect leadId={id} currentStageId={stage?.id ?? null} stages={stages ?? []} currentStageName={stage?.name} />
+            </div>
+
             {/* Segmentation — only in general view */}
             {ctx === "general" && (
               <LeadSegmentationFields
@@ -222,24 +228,13 @@ export default async function LeadDetailPage({
 
         {/* Sidebar */}
         <div className="flex flex-col gap-3">
-          {/* Integration selector — replaces Etap at top */}
+          {/* Integration + campaign selector */}
           <IntegrationSidebar
             leadId={id}
             hasMetaAds={hasMetaAds}
-            metaCampaignName={leadCampaignName}
             emailCampaigns={emailCampaigns}
             smsCampaigns={smsCampaigns}
           />
-
-          {/* Etap — shown only in general view */}
-          {ctx === "general" && (
-            <div style={panelStyle} className="p-4">
-              <h3 className="text-[11.5px] font-semibold uppercase tracking-[0.09em] mb-3" style={{ color: "var(--muted)" }}>
-                Etap
-              </h3>
-              <StageSelect leadId={id} currentStageId={stage?.id ?? null} stages={stages ?? []} currentStageName={stage?.name} />
-            </div>
-          )}
 
           <div style={panelStyle} className="p-4">
             <h3 className="text-[11.5px] font-semibold uppercase tracking-[0.09em] mb-3" style={{ color: "var(--muted)" }}>
