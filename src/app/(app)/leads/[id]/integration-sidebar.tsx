@@ -13,12 +13,12 @@ const sel: React.CSSProperties = {
 
 export function IntegrationSidebar({
   leadId,
-  hasMetaAds,
+  metaCampaigns,
   emailCampaigns,
   smsCampaigns,
 }: {
   leadId: string;
-  hasMetaAds: boolean;
+  metaCampaigns: CampaignRef[];
   emailCampaigns: CampaignRef[];
   smsCampaigns: CampaignRef[];
 }) {
@@ -30,7 +30,7 @@ export function IntegrationSidebar({
   const [intType, setIntType] = useState(initCtx);
   const [campaignId, setCampaignId] = useState(initCid);
 
-  const hasAny = hasMetaAds || emailCampaigns.length > 0 || smsCampaigns.length > 0;
+  const hasAny = metaCampaigns.length > 0 || emailCampaigns.length > 0 || smsCampaigns.length > 0;
   if (!hasAny) return null;
 
   function navigate(ctx: string, cid?: string) {
@@ -45,9 +45,7 @@ export function IntegrationSidebar({
     setIntType(val);
     setCampaignId("");
     if (!val) { navigate(""); return; }
-    // Meta Ads has no sub-campaign picker — navigate immediately
-    if (val === "meta_ads") { navigate("meta_ads"); return; }
-    // email / sms — wait for campaign selection
+    // All integration types wait for campaign selection
   }
 
   function handleCampaignChange(val: string) {
@@ -55,11 +53,13 @@ export function IntegrationSidebar({
     if (val) navigate(intType, val);
   }
 
-  const showCampaignPicker = (intType === "email" || intType === "sms") && (
-    (intType === "email" && emailCampaigns.length > 0) ||
-    (intType === "sms" && smsCampaigns.length > 0)
-  );
-  const campaignOptions = intType === "email" ? emailCampaigns : intType === "sms" ? smsCampaigns : [];
+  const campaignOptions =
+    intType === "meta_ads" ? metaCampaigns :
+    intType === "email"    ? emailCampaigns :
+    intType === "sms"      ? smsCampaigns :
+    [];
+
+  const showCampaignPicker = campaignOptions.length > 0 && !!intType;
 
   return (
     <div
@@ -69,20 +69,18 @@ export function IntegrationSidebar({
         display: "flex", flexDirection: "column", gap: "10px",
       }}
     >
-      {/* Integration type picker */}
       <div>
         <label style={{ fontSize: "10.5px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: "6px" }}>
           Integracja
         </label>
         <select value={intType} onChange={(e) => handleIntChange(e.target.value)} style={sel}>
           <option value="">— Ogólny (bez integracji) —</option>
-          {hasMetaAds && <option value="meta_ads">Meta Ads</option>}
+          {metaCampaigns.length > 0  && <option value="meta_ads">Meta Ads</option>}
           {emailCampaigns.length > 0 && <option value="email">E-mail</option>}
-          {smsCampaigns.length > 0 && <option value="sms">SMS</option>}
+          {smsCampaigns.length > 0   && <option value="sms">SMS</option>}
         </select>
       </div>
 
-      {/* Campaign picker — shown for email/sms */}
       {showCampaignPicker && (
         <div>
           <label style={{ fontSize: "10.5px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", display: "block", marginBottom: "6px" }}>

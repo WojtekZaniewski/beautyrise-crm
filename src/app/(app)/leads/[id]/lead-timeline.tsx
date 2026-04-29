@@ -136,7 +136,7 @@ export function LeadTimeline({
                   <div className="font-medium">{EVENT_LABELS[ev.type] ?? ev.type}</div>
                   {isCampaignNote && ct && (
                     <span style={{ fontSize: "10px", fontWeight: 600, color: badgeColor, padding: "1px 5px", borderRadius: "4px", background: `${badgeColor}12`, border: `1px solid ${badgeColor}30`, flexShrink: 0 }}>
-                      {ct === "meta_ads" ? "f Meta Ads" : ct === "email" ? "📧" : "✉"}{p?.campaign_name ? ` ${p.campaign_name}` : ""}
+                      {ct === "meta_ads" ? "Meta Ads" : ct === "email" ? "📧" : "✉"}{p?.campaign_name ? ` ${p.campaign_name}` : ""}
                     </span>
                   )}
                   {ev.type === "note" && (
