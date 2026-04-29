@@ -2,11 +2,11 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { StageSelect } from "./stage-select";
-import { AddNote } from "./add-note";
+import { LeadTimeline } from "./lead-timeline";
 import { LeadTags } from "./tags";
 import { ValueEdit } from "./value-edit";
 import { LeadNipField, LeadSegmentationFields } from "./lead-extra-fields";
-import { sourceLabel, eventLabel } from "@/lib/constants";
+import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForWorkspace } from "@/lib/pipeline";
 
@@ -199,46 +199,19 @@ export default async function LeadDetailPage({
           {/* Timeline */}
           <div style={panelStyle} className="p-6">
             <h2 className="text-[13.5px] font-semibold tracking-tight mb-4">Timeline</h2>
-            <AddNote leadId={id} emailCampaigns={emailCampaigns} smsCampaigns={smsCampaigns} />
-
-            <div className="mt-5 flex flex-col gap-4">
-              {(events ?? []).map((ev) => {
-                const p = ev.payload as Record<string, string> | null;
-                const isCampaignNote = ev.type === "note" && p?.context_type && p.context_type !== "general";
-                const campaignColor = p?.context_type === "email" ? "#8b5cf6" : "#22c55e";
-                return (
-                  <div key={ev.id} className="flex gap-3 text-[13px]">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                      style={{ background: "var(--accent)", opacity: 0.7 }}
-                    />
-                    <div>
-                      <div className="font-medium">{eventLabel[ev.type] ?? ev.type}</div>
-                      {isCampaignNote && p?.campaign_name && (
-                        <div className="text-[10.5px] font-semibold mt-0.5" style={{ color: campaignColor }}>
-                          {p.context_type === "email" ? "📧" : "✉"} {p.campaign_name}
-                        </div>
-                      )}
-                      {p && Object.keys(p).length > 0 && (
-                        <div className="text-[12px] mt-0.5" style={{ color: "var(--muted)" }}>
-                          {ev.type === "note" && p.text}
-                          {ev.type === "stage_change" &&
-                            `${p.from ?? "?"} → ${p.to ?? "?"}`}
-                        </div>
-                      )}
-                      <div className="text-[11.5px] mt-0.5" style={{ color: "var(--muted)", opacity: 0.7 }}>
-                        {new Date(ev.created_at).toLocaleString("pl-PL")}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {(events ?? []).length === 0 && (
-                <div className="text-[13px]" style={{ color: "var(--muted)" }}>
-                  Brak zdarzeń.
-                </div>
-              )}
-            </div>
+            <LeadTimeline
+              leadId={id}
+              initialEvents={(events ?? []).map((ev) => ({
+                id: ev.id,
+                type: ev.type,
+                payload: ev.payload as Record<string, string> | null,
+                created_at: ev.created_at,
+              }))}
+              emailCampaigns={emailCampaigns}
+              smsCampaigns={smsCampaigns}
+              leadSource={lead.source as string}
+              leadCampaignName={(lead as Record<string, unknown>).campaign_name as string | null}
+            />
           </div>
         </div>
 
