@@ -159,6 +159,7 @@ export function LeadSegmentationFields({
           options={[
             { value: "bur", label: "Dofinansowanie z BUR" },
             { value: "zwykle", label: "Zwykłe dofinansowanie" },
+            { value: "oba", label: "BUR + zwykłe (oba)" },
           ]}
         />
       </div>
