@@ -8,6 +8,7 @@ import { ValueEdit } from "./value-edit";
 import { LeadNipField, LeadSegmentationFields } from "./lead-extra-fields";
 import { IntegrationSidebar } from "./integration-sidebar";
 import { PotentialScore } from "./potential-score";
+import { SendGrantFormButton } from "./send-grant-form-button";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForPipeline, getCurrentPipelineId } from "@/lib/pipeline";
@@ -210,13 +211,23 @@ export default async function LeadDetailPage({
               />
             </div>
 
-            {/* Segmentation — only for dofinansowania leads in general view */}
+            {/* Segmentation + grant form button — only for dofinansowania leads in general view */}
             {ctx === "general" && isDofinansowaniaLead && (
-              <LeadSegmentationFields
-                leadId={id}
-                typ={(lead as Record<string, unknown>).dofinansowanie_typ as string | null}
-                obsluga={(lead as Record<string, unknown>)["dofinansowanie_obsluga"] as string | null}
-              />
+              <>
+                <LeadSegmentationFields
+                  leadId={id}
+                  typ={(lead as Record<string, unknown>).dofinansowanie_typ as string | null}
+                  obsluga={(lead as Record<string, unknown>)["dofinansowanie_obsluga"] as string | null}
+                />
+                <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
+                  <SendGrantFormButton leadId={id} hasEmail={!!lead.email} />
+                  {!lead.email && (
+                    <p className="text-[12px] mt-1" style={{ color: "var(--muted)" }}>
+                      Lead nie ma adresu e-mail - uzupelnij go aby wyslac formularz.
+                    </p>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
