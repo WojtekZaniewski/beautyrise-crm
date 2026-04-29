@@ -100,6 +100,13 @@ export default async function LeadDetailPage({
   const stage = lead.pipeline_stages as { id: string; name: string; color: string } | null;
   const assignedIds = ((lead.lead_tags as Array<{ tag_id: string }>) ?? []).map((lt) => lt.tag_id);
 
+  const dof = /dofinansow/i;
+  const isDofinansowaniaLead =
+    !!((lead as Record<string, unknown>).dofinansowanie_typ) ||
+    emailCampaigns.some((c) => dof.test(c.name)) ||
+    smsCampaigns.some((c) => dof.test(c.name)) ||
+    metaCampaigns.some((c) => dof.test(c.name));
+
   const activeCampaignName =
     ctx === "email"    ? (emailCampaigns.find((c) => c.id === cid)?.name ?? "") :
     ctx === "sms"      ? (smsCampaigns.find((c) => c.id === cid)?.name ?? "") :
@@ -203,8 +210,8 @@ export default async function LeadDetailPage({
               />
             </div>
 
-            {/* Segmentation — only in general view */}
-            {ctx === "general" && (
+            {/* Segmentation — only for dofinansowania leads in general view */}
+            {ctx === "general" && isDofinansowaniaLead && (
               <LeadSegmentationFields
                 leadId={id}
                 typ={(lead as Record<string, unknown>).dofinansowanie_typ as string | null}
