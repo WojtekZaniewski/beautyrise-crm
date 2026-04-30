@@ -3,6 +3,18 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { sendMail } from "@/lib/email/smtp";
 import { decryptPassword } from "@/lib/email/crypto";
+import fs from "fs";
+import path from "path";
+
+function loadLogoBase64(filename: string): string {
+  try {
+    const filePath = path.join(process.cwd(), "public", filename);
+    const data = fs.readFileSync(filePath);
+    return `data:image/png;base64,${data.toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
 
 function detectGender(firstName: string): "female" | "male" {
   return firstName.toLowerCase().endsWith("a") ? "female" : "male";
@@ -34,7 +46,7 @@ function toVocative(name: string, gender: "female" | "male"): string {
   return name;
 }
 
-function buildHtml(leadName: string, appUrl: string): string {
+function buildHtml(leadName: string, logoBeautyRise: string, logoConpro: string): string {
   const firstName = leadName.trim().split(/\s+/)[0] ?? leadName;
   const gender = detectGender(firstName);
   const firstNameVoc = toVocative(firstName, gender);
@@ -60,11 +72,11 @@ function buildHtml(leadName: string, appUrl: string): string {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="width:55%;" align="left" valign="middle">
-                    <img src="${appUrl}/logo-beautyrise.png" alt="Beauty Rise" height="44" style="display:block;height:44px;max-width:200px;object-fit:contain;" />
+                    <img src="${logoBeautyRise}" alt="Beauty Rise" height="44" style="display:block;height:44px;max-width:200px;object-fit:contain;" />
                   </td>
                   <td style="width:10%;text-align:center;color:#d1d5db;font-size:20px;" valign="middle">×</td>
                   <td style="width:35%;" align="right" valign="middle">
-                    <img src="${appUrl}/logo-conpro.png" alt="Con.pro" height="36" style="display:block;height:36px;max-width:130px;object-fit:contain;margin-left:auto;" />
+                    <img src="${logoConpro}" alt="Con.pro" height="36" style="display:block;height:36px;max-width:130px;object-fit:contain;margin-left:auto;" />
                   </td>
                 </tr>
               </table>
@@ -164,8 +176,7 @@ export async function POST(
       if (!fallback) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
       const password = decryptPassword(fallback.password_enc);
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
-      const html = buildHtml(lead.full_name, appUrl);
+      const html = buildHtml(lead.full_name, loadLogoBase64("logo-beautyrise.png"), loadLogoBase64("logo-conpro.png"));
 
       await sendMail({
         account: { email: fallback.email, displayName: fallback.display_name, password },
@@ -179,8 +190,7 @@ export async function POST(
     }
 
     const password = decryptPassword(account.password_enc);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
-    const html = buildHtml(lead.full_name, appUrl);
+    const html = buildHtml(lead.full_name, loadLogoBase64("logo-beautyrise.png"), loadLogoBase64("logo-conpro.png"));
 
     await sendMail({
       account: { email: account.email, displayName: account.display_name, password },
