@@ -66,15 +66,15 @@ function buildHtml(leadName: string, trackingUrl: string): string {
 
           <!-- Header z logami -->
           <tr>
-            <td style="background:#ffffff;padding:32px 40px 24px;border-bottom:3px solid #ff6b00;">
+            <td style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="width:55%;" align="left" valign="middle">
-                    <img src="cid:logo-beautyrise" alt="Beauty Rise" height="44" style="display:block;height:44px;max-width:200px;object-fit:contain;" />
+                  <td style="width:50%;" align="left" valign="middle">
+                    <img src="cid:logo-beautyrise" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
                   </td>
                   <td style="width:10%;text-align:center;color:#d1d5db;font-size:20px;" valign="middle">×</td>
-                  <td style="width:35%;" align="right" valign="middle">
-                    <img src="cid:logo-conpro" alt="Con.pro" height="36" style="display:block;height:36px;max-width:130px;object-fit:contain;margin-left:auto;" />
+                  <td style="width:40%;" align="right" valign="middle">
+                    <img src="cid:logo-conpro" alt="Con.pro" width="140" height="140" style="display:block;width:140px;height:140px;object-fit:contain;margin-left:auto;" />
                   </td>
                 </tr>
               </table>

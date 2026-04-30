@@ -20,6 +20,7 @@ export interface InlineAttachment {
   filename: string;
   content: Buffer;
   contentType: string;
+  contentDisposition?: "inline" | "attachment";
 }
 
 export interface SendMailOptions {
@@ -53,6 +54,7 @@ export async function sendMail(opts: SendMailOptions) {
       filename: a.filename,
       content: a.content,
       contentType: a.contentType,
+      contentDisposition: (a.contentDisposition ?? "inline") as "inline" | "attachment",
     })),
   });
   return info.messageId as string;
