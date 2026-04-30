@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 type Stage = { id: string; name: string; pipeline_id: string };
@@ -24,7 +23,6 @@ export function NewLeadForm({
   workspaceId: string;
 }) {
   const router = useRouter();
-  const supabase = createClient();
 
   const [pipelineId, setPipelineId] = useState(pipelines[0]?.id ?? "");
   const pipelineStages = stages.filter((s) => s.pipeline_id === pipelineId);
@@ -50,10 +48,10 @@ export function NewLeadForm({
     setLoading(true);
     setError("");
 
-    const { data, error: err } = await supabase
-      .from("leads")
-      .insert({
-        workspace_id: workspaceId,
+    const res = await fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         full_name: form.full_name,
         phone: form.phone || null,
         email: form.email || null,
@@ -61,24 +59,18 @@ export function NewLeadForm({
         source: form.source,
         stage_id: form.stage_id || null,
         notes: form.notes || null,
-      })
-      .select("id")
-      .single();
+      }),
+    });
 
-    if (err) {
-      setError(err.message);
+    const result = await res.json();
+
+    if (!res.ok) {
+      setError(result.error ?? "Wystąpił błąd");
       setLoading(false);
       return;
     }
 
-    // log created event
-    await supabase.from("lead_events").insert({
-      lead_id: data.id,
-      type: "created",
-      payload: { source: form.source },
-    });
-
-    router.push(`/leads/${data.id}`);
+    router.push(`/leads/${result.id}`);
     router.refresh();
   }
 
