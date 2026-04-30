@@ -4,16 +4,42 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { sendMail } from "@/lib/email/smtp";
 import { decryptPassword } from "@/lib/email/crypto";
 
-function detectGender(fullName: string): "female" | "male" {
-  const firstName = fullName.trim().split(/\s+/)[0] ?? "";
+function detectGender(firstName: string): "female" | "male" {
   return firstName.toLowerCase().endsWith("a") ? "female" : "male";
 }
 
+function toVocative(name: string, gender: "female" | "male"): string {
+  if (gender === "female") {
+    // Replace final 'a' with 'o': Marzena->Marzeno, Anna->Anno, Monika->Moniko
+    if (/a$/i.test(name)) return name.slice(0, -1) + "o";
+    return name;
+  }
+  const l = name.toLowerCase();
+  // Male vocative by suffix
+  if (l.endsWith("sz")) return name + "u";          // Tomasz->Tomaszu, Lukasz->Lukaszu
+  if (l.endsWith("cz")) return name + "u";          // Lech... edge case
+  if (l.endsWith("ek")) return name.slice(0, -2) + "ku"; // Marek->Marku, Darek->Darku
+  if (l.endsWith("al")) return name.slice(0, -2) + "ale"; // Michal->Michale
+  if (l.endsWith("el") || l.endsWith("el")) return name + "u"; // Daniel->Danielu
+  if (l.endsWith("j"))  return name + "u";          // Maciej->Macieju
+  if (l.endsWith("k"))  return name + "u";          // Patryk->Patryku, Dominik->Dominiku
+  if (l.endsWith("b"))  return name + "ie";         // Jakub->Jakubie
+  if (l.endsWith("p"))  return name + "ie";         // Filip->Filipie
+  if (l.endsWith("n"))  return name + "ie";         // Marcin->Marcinie, Jan->Janie
+  if (l.endsWith("m"))  return name + "ie";         // Adam->Adamie
+  if (l.endsWith("r"))  return name + "ze";         // Piotr->Piotrze, Igor->Igorze
+  if (l.endsWith("t"))  return name.slice(0, -1) + "cie"; // Robert->Robercie
+  if (l.endsWith("d"))  return name.slice(0, -1) + "dzie"; // Edward->Edwardzie
+  if (l.endsWith("s"))  return name + "ie";         // Tadeusz->Tadeuszie (approx)
+  return name;
+}
+
 function buildHtml(leadName: string, appUrl: string): string {
-  const gender = detectGender(leadName);
+  const firstName = leadName.trim().split(/\s+/)[0] ?? leadName;
+  const gender = detectGender(firstName);
+  const firstNameVoc = toVocative(firstName, gender);
   const salutation = gender === "female" ? "Szanowna Pani" : "Szanowny Panie";
   const pronoun = gender === "female" ? "Pani" : "Panu";
-  const firstName = leadName.trim().split(/\s+/)[0] ?? leadName;
 
   return `<!DOCTYPE html>
 <html lang="pl">
@@ -49,7 +75,7 @@ function buildHtml(leadName: string, appUrl: string): string {
           <tr>
             <td style="padding:36px 40px 28px;">
               <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
-                ${salutation} <strong>${firstName}</strong>,
+                ${salutation} <strong>${firstNameVoc}</strong>,
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
                 dziękujemy za zainteresowanie naszą ofertą dofinansowań. Cieszymy się, że mogliśmy porozmawiać i chcielibyśmy pomoc ${pronoun} w skorzystaniu z dostępnych środków.
