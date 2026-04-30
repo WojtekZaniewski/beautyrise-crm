@@ -6,13 +6,11 @@ import { decryptPassword } from "@/lib/email/crypto";
 import fs from "fs";
 import path from "path";
 
-function loadLogoBase64(filename: string): string {
+function loadLogo(filename: string): Buffer | null {
   try {
-    const filePath = path.join(process.cwd(), "public", filename);
-    const data = fs.readFileSync(filePath);
-    return `data:image/png;base64,${data.toString("base64")}`;
+    return fs.readFileSync(path.join(process.cwd(), "public", filename));
   } catch {
-    return "";
+    return null;
   }
 }
 
@@ -46,7 +44,7 @@ function toVocative(name: string, gender: "female" | "male"): string {
   return name;
 }
 
-function buildHtml(leadName: string, logoBeautyRise: string, logoConpro: string): string {
+function buildHtml(leadName: string, trackingUrl: string): string {
   const firstName = leadName.trim().split(/\s+/)[0] ?? leadName;
   const gender = detectGender(firstName);
   const firstNameVoc = toVocative(firstName, gender);
@@ -72,11 +70,11 @@ function buildHtml(leadName: string, logoBeautyRise: string, logoConpro: string)
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="width:55%;" align="left" valign="middle">
-                    <img src="${logoBeautyRise}" alt="Beauty Rise" height="44" style="display:block;height:44px;max-width:200px;object-fit:contain;" />
+                    <img src="cid:logo-beautyrise" alt="Beauty Rise" height="44" style="display:block;height:44px;max-width:200px;object-fit:contain;" />
                   </td>
                   <td style="width:10%;text-align:center;color:#d1d5db;font-size:20px;" valign="middle">×</td>
                   <td style="width:35%;" align="right" valign="middle">
-                    <img src="${logoConpro}" alt="Con.pro" height="36" style="display:block;height:36px;max-width:130px;object-fit:contain;margin-left:auto;" />
+                    <img src="cid:logo-conpro" alt="Con.pro" height="36" style="display:block;height:36px;max-width:130px;object-fit:contain;margin-left:auto;" />
                   </td>
                 </tr>
               </table>
@@ -100,7 +98,7 @@ function buildHtml(leadName: string, logoBeautyRise: string, logoConpro: string)
               <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
                 <tr>
                   <td style="border-radius:8px;background:#ff6b00;">
-                    <a href="https://conpro.pl/formularz/dotacje/" target="_blank"
+                    <a href="${trackingUrl}" target="_blank"
                       style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;letter-spacing:0.02em;">
                       Wypelnij formularz dotacyjny
                     </a>
@@ -112,7 +110,7 @@ function buildHtml(leadName: string, logoBeautyRise: string, logoConpro: string)
                 Jesli przycisk nie dziala, skopiuj ponizszy link do przegladarki:
               </p>
               <p style="margin:0;font-size:12px;color:#6b7280;">
-                <a href="https://conpro.pl/formularz/dotacje/" style="color:#ff6b00;text-decoration:none;">
+                <a href="${trackingUrl}" style="color:#ff6b00;text-decoration:none;">
                   https://conpro.pl/formularz/dotacje/
                 </a>
               </p>
@@ -165,39 +163,42 @@ export async function POST(
       .eq("email", "kontakt@beautyrise.pl")
       .maybeSingle();
 
-    if (!account) {
-      // Fallback: use any active account
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+    const trackingUrl = `${appUrl}/api/leads/${id}/track-grant-click`;
+
+    const inlineAttachments = [
+      { cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: loadLogo("logo-beautyrise.png") ?? Buffer.alloc(0), contentType: "image/png" },
+      { cid: "logo-conpro",     filename: "logo-conpro.png",     content: loadLogo("logo-conpro.png")     ?? Buffer.alloc(0), contentType: "image/png" },
+    ];
+
+    const sendAccount = account ?? await (async () => {
       const { data: fallback } = await supabase
         .from("email_accounts")
         .select("email, display_name, password_enc")
         .eq("workspace_id", workspaceId)
         .limit(1)
         .maybeSingle();
-      if (!fallback) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
+      return fallback;
+    })();
 
-      const password = decryptPassword(fallback.password_enc);
-      const html = buildHtml(lead.full_name, loadLogoBase64("logo-beautyrise.png"), loadLogoBase64("logo-conpro.png"));
+    if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
-      await sendMail({
-        account: { email: fallback.email, displayName: fallback.display_name, password },
-        to: lead.email,
-        toName: lead.full_name,
-        subject: "Formularz dotacyjny - Beauty Rise",
-        html,
-      });
-
-      return NextResponse.json({ ok: true });
-    }
-
-    const password = decryptPassword(account.password_enc);
-    const html = buildHtml(lead.full_name, loadLogoBase64("logo-beautyrise.png"), loadLogoBase64("logo-conpro.png"));
+    const password = decryptPassword(sendAccount.password_enc);
+    const html = buildHtml(lead.full_name, trackingUrl);
 
     await sendMail({
-      account: { email: account.email, displayName: account.display_name, password },
+      account: { email: sendAccount.email, displayName: sendAccount.display_name, password },
       to: lead.email,
       toName: lead.full_name,
       subject: "Formularz dotacyjny - Beauty Rise",
       html,
+      inlineAttachments,
+    });
+
+    await supabase.from("lead_events").insert({
+      lead_id: id,
+      type: "grant_form_sent",
+      payload: { email: lead.email, sent_at: new Date().toISOString() },
     });
 
     return NextResponse.json({ ok: true });

@@ -15,6 +15,13 @@ export function createTransport(account: SmtpAccount) {
   });
 }
 
+export interface InlineAttachment {
+  cid: string;
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
 export interface SendMailOptions {
   account: SmtpAccount;
   to: string;
@@ -26,6 +33,7 @@ export interface SendMailOptions {
   inReplyTo?: string;
   references?: string;
   headers?: Record<string, string>;
+  inlineAttachments?: InlineAttachment[];
 }
 
 export async function sendMail(opts: SendMailOptions) {
@@ -40,6 +48,12 @@ export async function sendMail(opts: SendMailOptions) {
     inReplyTo: opts.inReplyTo,
     references: opts.references,
     headers: opts.headers,
+    attachments: opts.inlineAttachments?.map((a) => ({
+      cid: a.cid,
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType,
+    })),
   });
   return info.messageId as string;
 }

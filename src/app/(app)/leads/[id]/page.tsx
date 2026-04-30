@@ -224,13 +224,35 @@ export default async function LeadDetailPage({
                   typ={(lead as Record<string, unknown>).dofinansowanie_typ as string | null}
                   obsluga={(lead as Record<string, unknown>)["dofinansowanie_obsluga"] as string | null}
                 />
-                <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
+                <div className="mt-5 pt-5 flex flex-col gap-3" style={{ borderTop: "1px solid var(--border)" }}>
                   <SendGrantFormButton leadId={id} hasEmail={!!lead.email} />
                   {!lead.email && (
-                    <p className="text-[12px] mt-1" style={{ color: "var(--muted)" }}>
+                    <p className="text-[12px]" style={{ color: "var(--muted)" }}>
                       Lead nie ma adresu e-mail - uzupelnij go aby wyslac formularz.
                     </p>
                   )}
+                  {/* Grant form tracking status */}
+                  {(() => {
+                    const sentEvent = (events ?? []).find((ev) => ev.type === "grant_form_sent");
+                    const clickedEvent = (events ?? []).find((ev) => ev.type === "grant_form_clicked");
+                    if (!sentEvent) return null;
+                    const sentAt = new Date(sentEvent.created_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+                    const clickedAt = clickedEvent ? new Date(clickedEvent.created_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
+                    return (
+                      <div className="flex flex-col gap-1.5 text-[12.5px]" style={{ color: "var(--muted)" }}>
+                        <div>Formularz wysłany: <span style={{ color: "var(--text)" }}>{sentAt}</span></div>
+                        <div className="flex items-center gap-1.5">
+                          Kliknął link:
+                          {clickedAt ? (
+                            <span style={{ color: "#16a34a", fontWeight: 600 }}>✓ Tak</span>
+                          ) : (
+                            <span style={{ color: "#dc2626", fontWeight: 600 }}>✗ Nie</span>
+                          )}
+                          {clickedAt && <span style={{ color: "var(--muted)" }}>— {clickedAt}</span>}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </>
             )}
