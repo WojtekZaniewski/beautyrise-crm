@@ -235,20 +235,33 @@ export default async function LeadDetailPage({
                   {(() => {
                     const sentEvent = (events ?? []).find((ev) => ev.type === "grant_form_sent");
                     const clickedEvent = (events ?? []).find((ev) => ev.type === "grant_form_clicked");
-                    if (!sentEvent) return null;
-                    const sentAt = new Date(sentEvent.created_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-                    const clickedAt = clickedEvent ? new Date(clickedEvent.created_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
+                    const fmt = (iso: string) => new Date(iso).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
                     return (
-                      <div className="flex flex-col gap-1.5 text-[12.5px]" style={{ color: "var(--muted)" }}>
-                        <div>Formularz wysłany: <span style={{ color: "var(--text)" }}>{sentAt}</span></div>
-                        <div className="flex items-center gap-1.5">
-                          Kliknął link:
-                          {clickedAt ? (
-                            <span style={{ color: "#16a34a", fontWeight: 600 }}>✓ Tak</span>
+                      <div
+                        className="flex flex-col gap-2 rounded-lg px-3 py-2.5 text-[12.5px]"
+                        style={{ background: "var(--ba-4)", border: "1px solid var(--border-strong)" }}
+                      >
+                        <div className="font-semibold text-[10.5px] uppercase tracking-[0.09em]" style={{ color: "var(--muted)" }}>
+                          Formularz dotacyjny
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span style={{ color: "var(--muted)" }}>Wysłany:</span>
+                          {sentEvent ? (
+                            <span style={{ color: "var(--text)" }}>{fmt(sentEvent.created_at)}</span>
                           ) : (
-                            <span style={{ color: "#dc2626", fontWeight: 600 }}>✗ Nie</span>
+                            <span style={{ color: "var(--muted)", fontStyle: "italic" }}>nie wysłano</span>
                           )}
-                          {clickedAt && <span style={{ color: "var(--muted)" }}>— {clickedAt}</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span style={{ color: "var(--muted)" }}>Kliknął link:</span>
+                          {clickedEvent ? (
+                            <>
+                              <span style={{ color: "#16a34a", fontWeight: 700 }}>✓ Tak</span>
+                              <span style={{ color: "var(--muted)" }}>— {fmt(clickedEvent.created_at)}</span>
+                            </>
+                          ) : (
+                            <span style={{ color: "#dc2626", fontWeight: 700 }}>✗ Nie</span>
+                          )}
                         </div>
                       </div>
                     );

@@ -120,11 +120,16 @@ function buildHtml(leadName: string, trackingUrl: string): string {
           <!-- Stopka -->
           <tr>
             <td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
-              <p style="margin:0 0 4px;font-size:12px;color:#9ca3af;line-height:1.5;">
-                Beauty Rise &amp; Con.pro - wspólnie dla Twojego biznesu
+              <p style="margin:0 0 6px;font-size:12px;color:#6b7280;line-height:1.6;">
+                Con.pro jest oficjalnym partnerem Beauty Rise w zakresie dofinansowań.
+                Warunki współpracy oraz zasady przetwarzania danych osobowych określone są w
+                <a href="https://beautyrise.pl/polityka-prywatnosci" style="color:#ff6b00;text-decoration:none;"> Polityce Prywatności Beauty Rise</a>.
+              </p>
+              <p style="margin:0 0 4px;font-size:11.5px;color:#9ca3af;line-height:1.5;">
+                Beauty Rise &amp; Con.pro — wspólnie dla Twojego biznesu
               </p>
               <p style="margin:0;font-size:11px;color:#d1d5db;">
-                Ta wiadomosc zostala wyslana automatycznie z systemu CRM Beauty Rise.
+                Ta wiadomość została wysłana automatycznie z systemu CRM Beauty Rise.
               </p>
             </td>
           </tr>
