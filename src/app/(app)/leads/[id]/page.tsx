@@ -11,7 +11,7 @@ import { PotentialScore } from "./potential-score";
 import { SendGrantFormButton } from "./send-grant-form-button";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getStagesForPipeline, getCurrentPipelineId } from "@/lib/pipeline";
+import { getStagesForPipeline, getCurrentPipelineId, getPipelines } from "@/lib/pipeline";
 
 const panelStyle = {
   background: "var(--panel-solid)",
@@ -63,7 +63,11 @@ export default async function LeadDetailPage({
   const leadPipelineId =
     (lead.pipeline_stages as { pipeline_id: string } | null)?.pipeline_id ??
     await getCurrentPipelineId(WORKSPACE_ID);
-  const stages = leadPipelineId ? await getStagesForPipeline(leadPipelineId) : [];
+  const [stages, allPipelines] = await Promise.all([
+    leadPipelineId ? getStagesForPipeline(leadPipelineId) : Promise.resolve([]),
+    getPipelines(WORKSPACE_ID),
+  ]);
+  const leadPipelineName = allPipelines.find((p) => p.id === leadPipelineId)?.name ?? "";
 
   type CampaignRef = { id: string; name: string };
   const phone = lead.phone as string | null;
@@ -103,6 +107,7 @@ export default async function LeadDetailPage({
 
   const dof = /dofinansow/i;
   const isDofinansowaniaLead =
+    dof.test(leadPipelineName) ||
     !!((lead as Record<string, unknown>).dofinansowanie_typ) ||
     emailCampaigns.some((c) => dof.test(c.name)) ||
     smsCampaigns.some((c) => dof.test(c.name)) ||
