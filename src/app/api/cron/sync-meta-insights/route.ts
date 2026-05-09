@@ -86,10 +86,26 @@ export async function POST(request: Request) {
           leads,
         };
       } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        const isTokenExpired =
+          msg.includes("Error validating access token") ||
+          msg.includes("session has been invalidated") ||
+          msg.includes("OAuthException") ||
+          msg.includes("Invalid OAuth access token");
+
+        if (isTokenExpired) {
+          await supabase
+            .from("integrations")
+            .update({ status: "disconnected" })
+            .eq("workspace_id", integ.workspace_id)
+            .eq("type", "meta_ads");
+        }
+
         return {
           workspace_id: integ.workspace_id,
           ok: false,
-          error: e instanceof Error ? e.message : String(e),
+          tokenExpired: isTokenExpired,
+          error: msg,
         };
       }
     }),

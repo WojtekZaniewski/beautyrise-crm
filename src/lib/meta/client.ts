@@ -1,6 +1,6 @@
 const API_VERSION = "v21.0";
 const BASE = `https://graph.facebook.com/${API_VERSION}`;
-const FETCH_TIMEOUT_MS = 15_000;
+const FETCH_TIMEOUT_MS = 8_000;
 const RETRY_DELAY_MS = 500;
 
 export class MetaApiError extends Error {

@@ -8,6 +8,22 @@ import {
 
 export const maxDuration = 60;
 
+function withDeadline<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+function isTokenExpiredError(msg: string): boolean {
+  return (
+    msg.includes("Error validating access token") ||
+    msg.includes("session has been invalidated") ||
+    msg.includes("OAuthException") ||
+    msg.includes("Invalid OAuth access token")
+  );
+}
+
 export async function POST() {
   try {
   const supabase = createServiceClient();
@@ -68,45 +84,58 @@ export async function POST() {
   let totalMessages = 0;
   const errors: string[] = [];
 
-  await Promise.allSettled(
-    pages.map(async (page) => {
-      // Messenger
-      try {
-        const r = await syncMessengerConversations(
-          supabase,
-          page.id,
-          page.access_token,
-          WORKSPACE_ID,
-        );
-        totalConversations += r.conversations;
-        totalMessages += r.messages;
-      } catch (e) {
-        errors.push(
-          `Messenger [${page.name}]: ${e instanceof Error ? e.message : String(e)}`,
-        );
-      }
+  await withDeadline(
+    Promise.allSettled(
+      pages.map(async (page) => {
+        // Messenger
+        try {
+          const r = await syncMessengerConversations(
+            supabase,
+            page.id,
+            page.access_token,
+            WORKSPACE_ID,
+          );
+          totalConversations += r.conversations;
+          totalMessages += r.messages;
+        } catch (e) {
+          errors.push(
+            `Messenger [${page.name}]: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
 
-      // Instagram DM
-      try {
-        const r = await syncInstagramConversations(
-          supabase,
-          page.id,
-          page.access_token,
-          WORKSPACE_ID,
-          page.instagram_account_id,
-        );
-        totalConversations += r.conversations;
-        totalMessages += r.messages;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        // Suppress known "app not configured for Instagram" error — not actionable at runtime
-        if (msg.includes("does not have the capability") || msg.includes("(#3)")) return;
-        errors.push(
-          `Instagram [${page.name}]: ${msg}`,
-        );
-      }
-    }),
+        // Instagram DM
+        try {
+          const r = await syncInstagramConversations(
+            supabase,
+            page.id,
+            page.access_token,
+            WORKSPACE_ID,
+            page.instagram_account_id,
+          );
+          totalConversations += r.conversations;
+          totalMessages += r.messages;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          // Suppress known "app not configured for Instagram" error — not actionable at runtime
+          if (msg.includes("does not have the capability") || msg.includes("(#3)")) return;
+          errors.push(
+            `Instagram [${page.name}]: ${msg}`,
+          );
+        }
+      }),
+    ),
+    50_000,
+    [],
   );
+
+  const tokenExpired = errors.length > 0 && errors.every((e) => isTokenExpiredError(e));
+  if (tokenExpired) {
+    await supabase
+      .from("integrations")
+      .update({ status: "disconnected" })
+      .eq("workspace_id", WORKSPACE_ID)
+      .eq("type", "meta_ads");
+  }
 
   return NextResponse.json({
     ok: true,
@@ -114,6 +143,7 @@ export async function POST() {
     messages: totalMessages,
     cleaned,
     errors,
+    tokenExpired,
   });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

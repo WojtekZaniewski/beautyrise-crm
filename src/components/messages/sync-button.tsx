@@ -2,21 +2,34 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function MessagesSyncButton() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
   const [hasError, setHasError] = useState(false);
+  const [tokenExpired, setTokenExpired] = useState(false);
   const router = useRouter();
 
   async function sync() {
     setLoading(true);
     setMsg("");
     setHasError(false);
+    setTokenExpired(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55_000);
     try {
       const res = await fetch("/api/integrations/meta/sync-messages", {
         method: "POST",
+        signal: controller.signal,
       });
+      clearTimeout(timer);
+
+      if (res.status === 504) {
+        setTokenExpired(true);
+        setLoading(false);
+        return;
+      }
 
       let data: {
         ok?: boolean;
@@ -25,6 +38,7 @@ export function MessagesSyncButton() {
         cleaned?: number;
         errors?: string[];
         error?: string;
+        tokenExpired?: boolean;
       } = {};
       try {
         data = await res.json();
@@ -38,6 +52,9 @@ export function MessagesSyncButton() {
       if (!res.ok) {
         setMsg(data.error ?? "Błąd synchronizacji");
         setHasError(true);
+      } else if (data.tokenExpired) {
+        setTokenExpired(true);
+        router.refresh();
       } else {
         const parts: string[] = [];
         if ((data.cleaned ?? 0) > 0)
@@ -61,22 +78,43 @@ export function MessagesSyncButton() {
         router.refresh();
       }
     } catch (e) {
-      setMsg(`Błąd połączenia: ${e instanceof Error ? e.message : String(e)}`);
-      setHasError(true);
+      clearTimeout(timer);
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setTokenExpired(true);
+      } else {
+        setMsg(`Błąd połączenia: ${e instanceof Error ? e.message : String(e)}`);
+        setHasError(true);
+      }
     }
     setLoading(false);
   }
 
   return (
     <div className="flex items-center gap-3">
-      {msg && (
+      {tokenExpired ? (
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[12px] leading-snug"
+            style={{ color: "var(--warning, #f59e0b)" }}
+          >
+            Token wygasł — wymagane ponowne połączenie
+          </span>
+          <Link
+            href="/integrations/meta"
+            className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-opacity hover:opacity-80"
+            style={{ background: "#1877f2", color: "#fff" }}
+          >
+            Połącz ponownie
+          </Link>
+        </div>
+      ) : msg ? (
         <span
           className="text-[12px] max-w-[340px] text-right leading-snug"
           style={{ color: hasError ? "var(--warning, #f59e0b)" : "var(--muted)" }}
         >
           {msg}
         </span>
-      )}
+      ) : null}
       <button
         onClick={sync}
         disabled={loading}

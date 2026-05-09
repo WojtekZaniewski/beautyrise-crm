@@ -3,6 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { ConversationsLive } from "@/components/messages/conversations-live";
 import { type Conversation } from "@/components/messages/conversations-list";
 import { MessagesSyncButton } from "@/components/messages/sync-button";
+import Link from "next/link";
 
 export default async function MessagesPage() {
   const supabase = createServiceClient();
@@ -11,7 +12,7 @@ export default async function MessagesPage() {
   // Get selected_page_id to filter conversations
   const { data: integration } = await supabase
     .from("integrations")
-    .select("credentials")
+    .select("credentials, status")
     .eq("workspace_id", WORKSPACE_ID)
     .eq("type", "meta_ads")
     .maybeSingle();
@@ -56,7 +57,8 @@ export default async function MessagesPage() {
   const hoursAgo = lastMsg
     ? Math.floor((Date.now() - new Date(lastMsg.created_at).getTime()) / 3_600_000)
     : null;
-  const isStale = integration !== null && (hoursAgo === null || hoursAgo > 24);
+  const isDisconnected = integration?.status === "disconnected";
+  const isStale = !isDisconnected && integration !== null && (hoursAgo === null || hoursAgo > 24);
 
   return (
     <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-4xl mx-auto anim-page">
@@ -85,6 +87,32 @@ export default async function MessagesPage() {
           <MessagesSyncButton />
         </div>
       </div>
+
+      {isDisconnected && (
+        <div
+          className="mb-5 flex items-center justify-between gap-4 rounded-xl px-5 py-4 text-[13px]"
+          style={{
+            background: "rgba(239,68,68,0.06)",
+            border: "1px solid rgba(239,68,68,0.2)",
+          }}
+        >
+          <div>
+            <span className="font-semibold" style={{ color: "var(--danger, #ef4444)" }}>
+              Integracja Meta rozłączona.
+            </span>{" "}
+            <span style={{ color: "var(--muted)" }}>
+              Token wygasł — połącz konto ponownie, aby synchronizować wiadomości.
+            </span>
+          </div>
+          <Link
+            href="/integrations/meta"
+            className="shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold transition-opacity hover:opacity-80"
+            style={{ background: "#1877f2", color: "#fff" }}
+          >
+            Połącz ponownie
+          </Link>
+        </div>
+      )}
 
       <ConversationsLive
         initialConversations={conversations}
