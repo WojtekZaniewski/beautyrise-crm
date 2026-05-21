@@ -1,0 +1,234 @@
+"use client";
+
+import { useRef, useState } from "react";
+
+export function SendPostsaleEmailButton({ leadId, hasEmail }: { leadId: string; hasEmail: boolean }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function openModal() {
+    if (!hasEmail || state === "sending" || state === "sent") return;
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setFileName(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleSend() {
+    setState("sending");
+    try {
+      const formData = new FormData();
+      const file = fileRef.current?.files?.[0];
+      if (file) formData.append("attachment", file);
+
+      const res = await fetch(`/api/leads/${leadId}/send-postsale-email`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        setState("sent");
+        closeModal();
+        setTimeout(() => setState("idle"), 5000);
+      } else {
+        const data = await res.json();
+        alert(data.error ?? "Błąd wysyłania");
+        setState("error");
+        setTimeout(() => setState("idle"), 3000);
+      }
+    } catch {
+      setState("error");
+      setTimeout(() => setState("idle"), 3000);
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={openModal}
+        disabled={!hasEmail || state === "sending" || state === "sent"}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "7px",
+          padding: "9px 18px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: 600,
+          cursor: !hasEmail || state === "sending" || state === "sent" ? "default" : "pointer",
+          border: state === "sent" ? "1px solid #16a34a40" : "1px solid #ff6b0040",
+          background: !hasEmail ? "var(--ba-4)" : state === "sent" ? "#f0fdf4" : "#fff7f0",
+          color: !hasEmail ? "var(--muted)" : state === "sent" ? "#16a34a" : "#ff6b00",
+          transition: "all 0.15s",
+          opacity: state === "sending" ? 0.7 : 1,
+          flex: 1,
+          justifyContent: "center",
+        }}
+        title={!hasEmail ? "Uzupełnij e-mail leada aby wysłać" : undefined}
+      >
+        {state === "sent" ? (
+          <>
+            <CheckIcon />
+            Wysłano!
+          </>
+        ) : (
+          <>
+            <DocumentIcon />
+            Po-sprzedażowy
+          </>
+        )}
+      </button>
+
+      {/* Modal */}
+      {modalOpen && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div
+            style={{
+              background: "var(--panel-solid, #fff)",
+              border: "1px solid var(--border)",
+              borderRadius: "12px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
+              padding: "28px 32px",
+              width: "420px",
+              maxWidth: "calc(100vw - 32px)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>Mail po-sprzedażowy</h3>
+              <button onClick={closeModal} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "18px", padding: "0 4px" }}>✕</button>
+            </div>
+
+            <p style={{ margin: "0 0 20px", fontSize: "13px", color: "var(--muted)", lineHeight: 1.6 }}>
+              Zostanie wysłany spersonalizowany mail powitalny z linkiem do strefy klienta.
+              Możesz opcjonalnie dołączyć umowę lub inne dokumenty.
+            </p>
+
+            {/* Upload załącznika */}
+            <div
+              style={{
+                border: "1.5px dashed var(--border-strong, #d1d5db)",
+                borderRadius: "8px",
+                padding: "16px",
+                marginBottom: "24px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: fileName ? "#f0fdf4" : "var(--ba-4, #fafafa)",
+              }}
+              onClick={() => fileRef.current?.click()}
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                style={{ display: "none" }}
+                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+              />
+              {fileName ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "13px", color: "#16a34a", fontWeight: 600 }}>
+                  <PaperclipIcon />
+                  {fileName}
+                </div>
+              ) : (
+                <div style={{ fontSize: "13px", color: "var(--muted)" }}>
+                  <PaperclipIcon />
+                  <span style={{ marginLeft: "6px" }}>Kliknij aby wybrać plik (PDF, DOCX, JPG)</span>
+                  <div style={{ fontSize: "11px", marginTop: "4px" }}>Pole nieobowiązkowe</div>
+                </div>
+              )}
+            </div>
+
+            {fileName && (
+              <button
+                onClick={() => { setFileName(null); if (fileRef.current) fileRef.current.value = ""; }}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", color: "var(--muted)", marginBottom: "16px", padding: 0 }}
+              >
+                ✕ Usuń załącznik
+              </button>
+            )}
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={closeModal}
+                style={{
+                  flex: 1, padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                  border: "1px solid var(--border)", background: "transparent", cursor: "pointer",
+                  color: "var(--text)",
+                }}
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleSend}
+                disabled={state === "sending"}
+                style={{
+                  flex: 2, padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 700,
+                  border: "none", background: "#ff6b00", color: "#fff", cursor: state === "sending" ? "default" : "pointer",
+                  opacity: state === "sending" ? 0.7 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                }}
+              >
+                {state === "sending" ? (
+                  <>
+                    <SpinIcon />
+                    Wysyłam...
+                  </>
+                ) : (
+                  "Wyślij mail"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </>
+  );
+}
+
+function SpinIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: "spin 1s linear infinite" }}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function DocumentIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  );
+}
+
+function PaperclipIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "inline" }}>
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}

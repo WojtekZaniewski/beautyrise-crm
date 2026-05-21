@@ -23,6 +23,12 @@ export interface InlineAttachment {
   contentDisposition?: "inline" | "attachment";
 }
 
+export interface FileAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export interface SendMailOptions {
   account: SmtpAccount;
   to: string;
@@ -35,10 +41,24 @@ export interface SendMailOptions {
   references?: string;
   headers?: Record<string, string>;
   inlineAttachments?: InlineAttachment[];
+  attachments?: FileAttachment[];
 }
 
 export async function sendMail(opts: SendMailOptions) {
   const transport = createTransport(opts.account);
+  const inlineList = opts.inlineAttachments?.map((a) => ({
+    cid: a.cid,
+    filename: a.filename,
+    content: a.content,
+    contentType: a.contentType,
+    contentDisposition: (a.contentDisposition ?? "inline") as "inline" | "attachment",
+  })) ?? [];
+  const fileList = opts.attachments?.map((a) => ({
+    filename: a.filename,
+    content: a.content,
+    contentType: a.contentType,
+    contentDisposition: "attachment" as const,
+  })) ?? [];
   const info = await transport.sendMail({
     from: `"${opts.account.displayName}" <${opts.account.email}>`,
     to: opts.toName ? `"${opts.toName}" <${opts.to}>` : opts.to,
@@ -49,13 +69,7 @@ export async function sendMail(opts: SendMailOptions) {
     inReplyTo: opts.inReplyTo,
     references: opts.references,
     headers: opts.headers,
-    attachments: opts.inlineAttachments?.map((a) => ({
-      cid: a.cid,
-      filename: a.filename,
-      content: a.content,
-      contentType: a.contentType,
-      contentDisposition: (a.contentDisposition ?? "inline") as "inline" | "attachment",
-    })),
+    attachments: [...inlineList, ...fileList],
   });
   return info.messageId as string;
 }

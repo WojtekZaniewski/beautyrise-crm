@@ -9,6 +9,8 @@ import { LeadNipField, LeadSegmentationFields } from "./lead-extra-fields";
 import { IntegrationSidebar } from "./integration-sidebar";
 import { PotentialScore } from "./potential-score";
 import { SendGrantFormButton } from "./send-grant-form-button";
+import { SendPresaleEmailButton } from "./send-presale-email-button";
+import { SendPostsaleEmailButton } from "./send-postsale-email-button";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForPipeline, getCurrentPipelineId, getPipelines } from "@/lib/pipeline";
@@ -215,6 +217,24 @@ export default async function LeadDetailPage({
                 initialScore={(lead as Record<string, unknown>).potential_score as number | null}
               />
             </div>
+
+            {/* Email buttons — visible for every lead with email, in general view */}
+            {ctx === "general" && (
+              <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-3" style={{ color: "var(--muted)" }}>
+                  Wyślij mail
+                </div>
+                <div className="flex gap-2">
+                  <SendPresaleEmailButton leadId={id} hasEmail={!!lead.email} />
+                  <SendPostsaleEmailButton leadId={id} hasEmail={!!lead.email} />
+                </div>
+                {!lead.email && (
+                  <p className="text-[12px] mt-2" style={{ color: "var(--muted)" }}>
+                    Uzupełnij adres e-mail leada aby wysyłać maile.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Segmentation + grant form button — only for dofinansowania leads in general view */}
             {ctx === "general" && isDofinansowaniaLead && (
