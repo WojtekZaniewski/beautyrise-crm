@@ -56,7 +56,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oferta Beauty Rise</title>
+  <title>Nasze spotkanie — Beauty Rise</title>
 </head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
@@ -75,7 +75,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
           <tr>
             <td style="padding:0;">
               <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;">
-                <img src="cid:presale-video-gif" alt="Zobacz naszą ofertę ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
+                <img src="cid:presale-video-gif" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
               </a>
             </td>
           </tr>
@@ -83,14 +83,59 @@ function buildHtml(leadName: string, landingUrl: string): string {
           <!-- Treść -->
           <tr>
             <td style="padding:36px 40px 28px;">
-              <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
+              <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
                 ${salutation} <strong>${firstNameVoc}</strong>,
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-                dziękujemy za zainteresowanie ofertą Beauty Rise. Przygotowałyśmy dla ${pronoun} specjalną prezentację, która pokaże jak możemy pomóc rozwinąć ${pronoun} salon.
+                cieszę się, że ${pronoun} tu jesteśmy! Chciałem w skrócie powiedzieć ${pronoun}, czego może się ${pronoun} spodziewać podczas naszego spotkania i co warto mieć ze sobą — a właściwie to jest bardzo dobra wiadomość.
               </p>
+
+              <!-- Co się dzieje na spotkaniu -->
+              <p style="margin:0 0 8px;font-size:15px;color:#374151;line-height:1.6;font-weight:700;">
+                Co zrobimy razem podczas spotkania?
+              </p>
+              <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+                Przeanalizujemy razem potrzeby ${pronoun} salonu i dobierzemy usługi skrojone dokładnie pod ${pronoun} sytuację. Na koniec ustalimy konkretny plan działania — co, kiedy i jak.
+              </p>
+
+              <!-- Separator -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                <tr><td style="height:1px;background:#f3f4f6;"></td></tr>
+              </table>
+
+              <!-- Co przygotować -->
+              <p style="margin:0 0 8px;font-size:15px;color:#374151;line-height:1.6;font-weight:700;">
+                Co ${pronoun} potrzeba przygotować?
+              </p>
+              <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
+                Żadnych raportów, liczb ani statystyk — absolutnie nic z tych rzeczy. Potrzebuję od ${pronoun} tylko dwóch rzeczy:
+              </p>
+
+              <!-- Lista 2 rzeczy -->
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;width:100%;">
+                <tr>
+                  <td style="padding:14px 20px;background:#fff7f0;border-radius:10px;border-left:4px solid #ff6b00;">
+                    <p style="margin:0 0 10px;font-size:15px;color:#374151;line-height:1.6;">
+                      <strong style="color:#ff6b00;">1.</strong> &nbsp;<strong>Marzenie</strong> — jak ma wyglądać ${pronoun} salon? Jak chce się ${pronoun} tam czuć? Jak mają czuć się ${pronoun} klientki?
+                    </p>
+                    <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;">
+                      <strong style="color:#ff6b00;">2.</strong> &nbsp;<strong>Wizja</strong> — co ${pronoun} zrobi, gdy ten problem zostanie rozwiązany? Co się wtedy zmieni w ${pronoun} życiu i biznesie?
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
               <p style="margin:0 0 28px;font-size:15px;color:#374151;line-height:1.6;">
-                Kliknij w filmik powyżej lub w przycisk poniżej, aby poznać szczegóły naszej oferty.
+                To wszystko. Resztą zajmiemy się razem. 🙂
+              </p>
+
+              <!-- Separator -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr><td style="height:1px;background:#f3f4f6;"></td></tr>
+              </table>
+
+              <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+                Kliknij w filmik powyżej lub w przycisk poniżej — tam wybierze ${pronoun} termin naszego spotkania i znajdzie wszystkie szczegóły, jak się przygotować.
               </p>
 
               <!-- Przycisk CTA -->
@@ -99,7 +144,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                   <td style="border-radius:8px;background:#ff6b00;">
                     <a href="${landingUrl}" target="_blank"
                       style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;letter-spacing:0.02em;">
-                      Poznaj ofertę Beauty Rise
+                      Umów termin spotkania →
                     </a>
                   </td>
                 </tr>
@@ -187,7 +232,7 @@ export async function POST(
       account: { email: sendAccount.email, displayName: sendAccount.display_name, password },
       to: lead.email,
       toName: lead.full_name,
-      subject: "Oferta Beauty Rise — przygotowałyśmy coś dla Ciebie",
+      subject: "Oferta Beauty Rise — przygotowaliśmy coś dla Ciebie",
       html,
       inlineAttachments,
     });
