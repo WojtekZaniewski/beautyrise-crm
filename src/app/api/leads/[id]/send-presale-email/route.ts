@@ -58,7 +58,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nasze spotkanie — Beauty Rise</title>
+  <title>Nasze spotkanie - Beauty Rise</title>
 </head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
@@ -89,7 +89,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 ${salutation} <strong>${firstNameVoc}</strong>,
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-                chcieliśmy w skrócie powiedzieć ${pronounDat}, czego może się ${pronounNom} spodziewać podczas naszego spotkania i co warto mieć ze sobą — a właściwie to jest bardzo dobra wiadomość.
+                chcieliśmy w skrócie powiedzieć ${pronounDat}, czego może się ${pronounNom} spodziewać podczas naszego spotkania i co warto mieć ze sobą - a właściwie to jest bardzo dobra wiadomość.
               </p>
 
               <!-- Co się dzieje na spotkaniu -->
@@ -97,7 +97,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 Co zrobimy razem podczas spotkania?
               </p>
               <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
-                Przeanalizujemy razem potrzeby ${pronounGen} salonu i dobierzemy usługi skrojone dokładnie pod ${pronounGen} sytuację. Na koniec ustalimy konkretny plan działania — co, kiedy i jak.
+                Przeanalizujemy razem potrzeby ${pronounGen} salonu i dobierzemy usługi skrojone dokładnie pod ${pronounGen} sytuację. Na koniec ustalimy konkretny plan działania - co, kiedy i jak.
               </p>
 
               <!-- Separator -->
@@ -110,7 +110,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 Co ${pronounNom} musi przygotować?
               </p>
               <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
-                Żadnych raportów, liczb ani statystyk — absolutnie nic z tych rzeczy. Potrzebuję od ${pronounGen} tylko dwóch rzeczy:
+                Żadnych raportów, liczb ani statystyk - absolutnie nic z tych rzeczy. Potrzebuję od ${pronounGen} tylko dwóch rzeczy:
               </p>
 
               <!-- Lista 2 rzeczy -->
@@ -118,10 +118,10 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 <tr>
                   <td style="padding:14px 20px;background:#fff7f0;border-radius:10px;border-left:4px solid #ff6b00;">
                     <p style="margin:0 0 10px;font-size:15px;color:#374151;line-height:1.6;">
-                      <strong style="color:#ff6b00;">1.</strong> &nbsp;<strong>Marzenie</strong> — jak ma wyglądać ${pronounGen} salon? Jak chce się ${pronounNom} tam czuć? Jak mają czuć się ${pronounGen} klientki?
+                      <strong style="color:#ff6b00;">1.</strong> &nbsp;<strong>Marzenie</strong> - jak ma wyglądać ${pronounGen} salon? Jak chce się ${pronounNom} tam czuć? Jak mają czuć się ${pronounGen} klientki?
                     </p>
                     <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;">
-                      <strong style="color:#ff6b00;">2.</strong> &nbsp;<strong>Wizja</strong> — co ${pronounNom} zrobi, gdy ten problem zostanie rozwiązany? Co się wtedy zmieni w ${pronounGen} życiu i biznesie?
+                      <strong style="color:#ff6b00;">2.</strong> &nbsp;<strong>Wizja</strong> - co ${pronounNom} zrobi, gdy ten problem zostanie rozwiązany? Co się wtedy zmieni w ${pronounGen} życiu i biznesie?
                     </p>
                   </td>
                 </tr>
@@ -137,7 +137,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
               </table>
 
               <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
-                Kliknij w filmik powyżej lub w przycisk poniżej — tam ${pronounNom} wybierze termin naszego spotkania i znajdzie wszystkie szczegóły, jak się przygotować.
+                Kliknij w filmik powyżej lub w przycisk poniżej - tam ${pronounNom} wybierze termin naszego spotkania i znajdzie wszystkie szczegóły, jak się przygotować.
               </p>
 
               <!-- Przycisk CTA -->
@@ -165,7 +165,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
           <tr>
             <td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
               <p style="margin:0 0 4px;font-size:11.5px;color:#9ca3af;line-height:1.5;">
-                Beauty Rise — dla Twojego biznesu
+                Beauty Rise - dla Twojego biznesu
               </p>
               <p style="margin:0;font-size:11px;color:#d1d5db;">
                 Ta wiadomość została wysłana automatycznie z systemu CRM Beauty Rise.
@@ -234,7 +234,7 @@ export async function POST(
       account: { email: sendAccount.email, displayName: sendAccount.display_name, password },
       to: lead.email,
       toName: lead.full_name,
-      subject: "Oferta Beauty Rise — przygotowaliśmy coś dla Ciebie",
+      subject: "Oferta Beauty Rise - przygotowaliśmy coś dla Ciebie",
       html,
       inlineAttachments,
     });

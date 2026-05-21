@@ -122,7 +122,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 <a href="https://beautyrise.pl/polityka-prywatnosci" style="color:#ff6b00;text-decoration:none;">Polityce Prywatności Beauty Rise</a>.
               </p>
               <p style="margin:0 0 4px;font-size:11.5px;color:#9ca3af;line-height:1.5;">
-                Beauty Rise — dla Twojego biznesu
+                Beauty Rise - dla Twojego biznesu
               </p>
               <p style="margin:0;font-size:11px;color:#d1d5db;">
                 Ta wiadomość została wysłana automatycznie z systemu CRM Beauty Rise.
@@ -198,7 +198,7 @@ export async function POST(
       account: { email: sendAccount.email, displayName: sendAccount.display_name, password },
       to: lead.email,
       toName: lead.full_name,
-      subject: "Witamy w Beauty Rise — dokumenty i strefa klienta",
+      subject: "Witamy w Beauty Rise - dokumenty i strefa klienta",
       html,
       inlineAttachments,
       attachments: fileAttachments,
