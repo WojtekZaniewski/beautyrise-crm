@@ -961,15 +961,15 @@ function AccountsTab({ onChanged }: { onChanged: () => void }) {
 
       <div className="mt-4 rounded-xl p-4 text-sm" style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}>
         <p className="font-medium mb-1">Dane serwera LH.pl</p>
-        <p className="text-[var(--muted)]">SMTP: mail-serwer359077.lh.pl · port 465 SSL</p>
-        <p className="text-[var(--muted)]">IMAP: mail-serwer359077.lh.pl · port 993 SSL</p>
+        <p className="text-[var(--muted)]">SMTP: mail-serwer440067.lh.pl · port 465 SSL</p>
+        <p className="text-[var(--muted)]">IMAP: mail-serwer440067.lh.pl · port 993 SSL</p>
       </div>
 
       {showAdd && (
         <Modal onClose={() => setShowAdd(false)}>
           <h3 className="text-base font-semibold">Dodaj konto email</h3>
           <div className="rounded-lg p-3 text-xs text-[var(--muted)]" style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}>
-            Serwer: mail-serwer359077.lh.pl · SMTP 465 SSL · IMAP 993 SSL
+            Serwer: mail-serwer440067.lh.pl · SMTP 465 SSL · IMAP 993 SSL
           </div>
           <Input label="Adres email" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} type="email" placeholder="jakub@beautyrise.pl" />
           <Input label="Hasło" value={form.password} onChange={v => setForm(f => ({ ...f, password: v }))} type="password" />

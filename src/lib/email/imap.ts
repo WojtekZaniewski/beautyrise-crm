@@ -23,7 +23,7 @@ export async function fetchInbox(
   opts: { limit?: number; folder?: string } = {},
 ): Promise<FetchedMessage[]> {
   const client = new ImapFlow({
-    host: process.env.EMAIL_IMAP_HOST ?? "mail-serwer359077.lh.pl",
+    host: process.env.EMAIL_IMAP_HOST ?? "mail-serwer440067.lh.pl",
     port: Number(process.env.EMAIL_IMAP_PORT ?? 993),
     secure: true,
     auth: { user: account.email, pass: account.password },
@@ -91,7 +91,7 @@ export async function fetchInbox(
 
 export async function fetchFolders(account: ImapAccount): Promise<string[]> {
   const client = new ImapFlow({
-    host: process.env.EMAIL_IMAP_HOST ?? "mail-serwer359077.lh.pl",
+    host: process.env.EMAIL_IMAP_HOST ?? "mail-serwer440067.lh.pl",
     port: Number(process.env.EMAIL_IMAP_PORT ?? 993),
     secure: true,
     auth: { user: account.email, pass: account.password },

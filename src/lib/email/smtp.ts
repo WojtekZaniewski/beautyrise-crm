@@ -8,7 +8,7 @@ export interface SmtpAccount {
 
 export function createTransport(account: SmtpAccount) {
   return nodemailer.createTransport({
-    host: process.env.EMAIL_SMTP_HOST ?? "mail-serwer359077.lh.pl",
+    host: process.env.EMAIL_SMTP_HOST ?? "mail-serwer440067.lh.pl",
     port: Number(process.env.EMAIL_SMTP_PORT ?? 465),
     secure: true,
     auth: { user: account.email, pass: account.password },
