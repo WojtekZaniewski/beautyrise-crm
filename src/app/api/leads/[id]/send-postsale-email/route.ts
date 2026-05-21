@@ -56,17 +56,29 @@ function buildHtml(leadName: string, landingUrl: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
   <title>Witamy w Beauty Rise</title>
+  <style>
+    :root { color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      body, .em-bg { background-color: #f4f4f5 !important; }
+      .em-card { background-color: #ffffff !important; }
+      .em-header { background-color: #ffffff !important; }
+      .em-content td { color: #374151 !important; }
+      .em-footer td { background-color: #f9fafb !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;">
+<body class="em-bg" style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color-scheme:light;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <table class="em-card" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
 
           <!-- Header z logo -->
           <tr>
-            <td style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
+            <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
               <img src="cid:logo-beautyrise" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
             </td>
           </tr>
@@ -82,7 +94,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
 
           <!-- Treść -->
           <tr>
-            <td style="padding:36px 40px 28px;">
+            <td class="em-content" style="padding:36px 40px 28px;background:#ffffff;">
               <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
                 ${salutation} <strong>${firstNameVoc}</strong>,
               </p>
@@ -116,7 +128,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
 
           <!-- Stopka -->
           <tr>
-            <td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
+            <td class="em-footer" style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
               <p style="margin:0 0 6px;font-size:12px;color:#6b7280;line-height:1.6;">
                 Warunki współpracy oraz zasady przetwarzania danych osobowych określone są w
                 <a href="https://beautyrise.pl/polityka-prywatnosci" style="color:#ff6b00;text-decoration:none;">Polityce Prywatności Beauty Rise</a>.
