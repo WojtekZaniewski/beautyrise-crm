@@ -49,7 +49,9 @@ function buildHtml(leadName: string, landingUrl: string): string {
   const gender = detectGender(firstName);
   const firstNameVoc = toVocative(firstName, gender);
   const salutation = gender === "female" ? "Szanowna Pani" : "Szanowny Panie";
-  const pronoun = gender === "female" ? "Pani" : "Panu";
+  const pronounNom = gender === "female" ? "Pani" : "Pan";    // mianownik: Pani/Pan zrobi
+  const pronounGen = gender === "female" ? "Pani" : "Pana";   // dopełniacz: salon Pani/Pana
+  const pronounDat = gender === "female" ? "Pani" : "Panu";   // celownik: powiedzieć Pani/Panu
 
   return `<!DOCTYPE html>
 <html lang="pl">
@@ -87,7 +89,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 ${salutation} <strong>${firstNameVoc}</strong>,
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-                cieszę się, że ${pronoun} tu jesteśmy! Chciałem w skrócie powiedzieć ${pronoun}, czego może się ${pronoun} spodziewać podczas naszego spotkania i co warto mieć ze sobą — a właściwie to jest bardzo dobra wiadomość.
+                chcieliśmy w skrócie powiedzieć ${pronounDat}, czego może się ${pronounNom} spodziewać podczas naszego spotkania i co warto mieć ze sobą — a właściwie to jest bardzo dobra wiadomość.
               </p>
 
               <!-- Co się dzieje na spotkaniu -->
@@ -95,7 +97,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 Co zrobimy razem podczas spotkania?
               </p>
               <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
-                Przeanalizujemy razem potrzeby ${pronoun} salonu i dobierzemy usługi skrojone dokładnie pod ${pronoun} sytuację. Na koniec ustalimy konkretny plan działania — co, kiedy i jak.
+                Przeanalizujemy razem potrzeby ${pronounGen} salonu i dobierzemy usługi skrojone dokładnie pod ${pronounGen} sytuację. Na koniec ustalimy konkretny plan działania — co, kiedy i jak.
               </p>
 
               <!-- Separator -->
@@ -105,10 +107,10 @@ function buildHtml(leadName: string, landingUrl: string): string {
 
               <!-- Co przygotować -->
               <p style="margin:0 0 8px;font-size:15px;color:#374151;line-height:1.6;font-weight:700;">
-                Co ${pronoun} potrzeba przygotować?
+                Co ${pronounNom} musi przygotować?
               </p>
               <p style="margin:0 0 12px;font-size:15px;color:#374151;line-height:1.6;">
-                Żadnych raportów, liczb ani statystyk — absolutnie nic z tych rzeczy. Potrzebuję od ${pronoun} tylko dwóch rzeczy:
+                Żadnych raportów, liczb ani statystyk — absolutnie nic z tych rzeczy. Potrzebuję od ${pronounGen} tylko dwóch rzeczy:
               </p>
 
               <!-- Lista 2 rzeczy -->
@@ -116,10 +118,10 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 <tr>
                   <td style="padding:14px 20px;background:#fff7f0;border-radius:10px;border-left:4px solid #ff6b00;">
                     <p style="margin:0 0 10px;font-size:15px;color:#374151;line-height:1.6;">
-                      <strong style="color:#ff6b00;">1.</strong> &nbsp;<strong>Marzenie</strong> — jak ma wyglądać ${pronoun} salon? Jak chce się ${pronoun} tam czuć? Jak mają czuć się ${pronoun} klientki?
+                      <strong style="color:#ff6b00;">1.</strong> &nbsp;<strong>Marzenie</strong> — jak ma wyglądać ${pronounGen} salon? Jak chce się ${pronounNom} tam czuć? Jak mają czuć się ${pronounGen} klientki?
                     </p>
                     <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;">
-                      <strong style="color:#ff6b00;">2.</strong> &nbsp;<strong>Wizja</strong> — co ${pronoun} zrobi, gdy ten problem zostanie rozwiązany? Co się wtedy zmieni w ${pronoun} życiu i biznesie?
+                      <strong style="color:#ff6b00;">2.</strong> &nbsp;<strong>Wizja</strong> — co ${pronounNom} zrobi, gdy ten problem zostanie rozwiązany? Co się wtedy zmieni w ${pronounGen} życiu i biznesie?
                     </p>
                   </td>
                 </tr>
@@ -135,7 +137,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
               </table>
 
               <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
-                Kliknij w filmik powyżej lub w przycisk poniżej — tam wybierze ${pronoun} termin naszego spotkania i znajdzie wszystkie szczegóły, jak się przygotować.
+                Kliknij w filmik powyżej lub w przycisk poniżej — tam ${pronounNom} wybierze termin naszego spotkania i znajdzie wszystkie szczegóły, jak się przygotować.
               </p>
 
               <!-- Przycisk CTA -->
