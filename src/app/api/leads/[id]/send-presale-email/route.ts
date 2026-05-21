@@ -192,15 +192,17 @@ export async function POST(
       inlineAttachments,
     });
 
-    await supabase.from("lead_events").insert({
+    const { error: eventError } = await supabase.from("lead_events").insert({
       lead_id: id,
       type: "presale_email_sent",
       payload: { email: lead.email, sent_at: new Date().toISOString() },
     });
+    if (eventError) console.error("send-presale-email event insert error:", eventError);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("send-presale-email error:", err);
-    return NextResponse.json({ error: "Błąd wysyłania maila" }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("send-presale-email error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

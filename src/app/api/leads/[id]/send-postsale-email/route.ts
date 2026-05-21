@@ -204,7 +204,7 @@ export async function POST(
       attachments: fileAttachments,
     });
 
-    await supabase.from("lead_events").insert({
+    const { error: eventError } = await supabase.from("lead_events").insert({
       lead_id: id,
       type: "postsale_email_sent",
       payload: {
@@ -213,10 +213,12 @@ export async function POST(
         ...(file && file.size > 0 ? { attachment_name: file.name } : {}),
       },
     });
+    if (eventError) console.error("send-postsale-email event insert error:", eventError);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("send-postsale-email error:", err);
-    return NextResponse.json({ error: "Błąd wysyłania maila" }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("send-postsale-email error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
