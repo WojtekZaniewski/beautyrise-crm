@@ -24,7 +24,7 @@ export function NewLeadForm({
 }) {
   const router = useRouter();
 
-  const [pipelineId, setPipelineId] = useState(pipelines[0]?.id ?? "");
+  const [pipelineId, setPipelineId] = useState("");
   const pipelineStages = stages.filter((s) => s.pipeline_id === pipelineId);
 
   const [form, setForm] = useState({
@@ -33,7 +33,7 @@ export function NewLeadForm({
     email: "",
     nip: "",
     source: "manual",
-    stage_id: pipelineStages[0]?.id ?? "",
+    stage_id: "",
     notes: "",
   });
   const [loading, setLoading] = useState(false);
@@ -132,6 +132,7 @@ export function NewLeadForm({
           className={fieldClass}
           style={fieldStyle}
         >
+          <option value="">— Brak pipeline&apos;u —</option>
           {pipelines.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -140,21 +141,23 @@ export function NewLeadForm({
         </select>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm text-[var(--muted)]">Etap</label>
-        <select
-          value={form.stage_id}
-          onChange={(e) => set("stage_id", e.target.value)}
-          className={fieldClass}
-          style={fieldStyle}
-        >
-          {pipelineStages.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {pipelineId && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm text-[var(--muted)]">Etap</label>
+          <select
+            value={form.stage_id}
+            onChange={(e) => set("stage_id", e.target.value)}
+            className={fieldClass}
+            style={fieldStyle}
+          >
+            {pipelineStages.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm text-[var(--muted)]">Źródło</label>
