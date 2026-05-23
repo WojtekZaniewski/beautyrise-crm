@@ -110,10 +110,7 @@ export default async function LeadDetailPage({
   const dof = /dofinansow/i;
   const isDofinansowaniaLead =
     dof.test(leadPipelineName) ||
-    !!((lead as Record<string, unknown>).dofinansowanie_typ) ||
-    emailCampaigns.some((c) => dof.test(c.name)) ||
-    smsCampaigns.some((c) => dof.test(c.name)) ||
-    metaCampaigns.some((c) => dof.test(c.name));
+    !!((lead as Record<string, unknown>).dofinansowanie_typ);
 
   const activeCampaignName =
     ctx === "email"    ? (emailCampaigns.find((c) => c.id === cid)?.name ?? "") :
