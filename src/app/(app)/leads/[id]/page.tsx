@@ -62,14 +62,14 @@ export default async function LeadDetailPage({
   const allTags = tagsRes.data;
 
   // Fetch stages only from the lead's own pipeline to avoid duplicates across pipelines
+  const leadOwnPipelineId = (lead.pipeline_stages as { pipeline_id: string } | null)?.pipeline_id ?? null;
   const leadPipelineId =
-    (lead.pipeline_stages as { pipeline_id: string } | null)?.pipeline_id ??
-    await getCurrentPipelineId(WORKSPACE_ID);
+    leadOwnPipelineId ?? await getCurrentPipelineId(WORKSPACE_ID);
   const [stages, allPipelines] = await Promise.all([
     leadPipelineId ? getStagesForPipeline(leadPipelineId) : Promise.resolve([]),
     getPipelines(WORKSPACE_ID),
   ]);
-  const leadPipelineName = allPipelines.find((p) => p.id === leadPipelineId)?.name ?? "";
+  const leadPipelineName = allPipelines.find((p) => p.id === leadOwnPipelineId)?.name ?? "";
 
   type CampaignRef = { id: string; name: string };
   const phone = lead.phone as string | null;
