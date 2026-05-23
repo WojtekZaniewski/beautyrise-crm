@@ -33,10 +33,10 @@ export default async function LeadDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ctx?: string; cid?: string }>;
+  searchParams: Promise<{ ctx?: string; cid?: string; dof?: string }>;
 }) {
   const { id } = await params;
-  const { ctx = "general", cid = "" } = await searchParams;
+  const { ctx = "general", cid = "", dof = "" } = await searchParams;
 
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
@@ -69,8 +69,6 @@ export default async function LeadDetailPage({
     leadPipelineId ? getStagesForPipeline(leadPipelineId) : Promise.resolve([]),
     getPipelines(WORKSPACE_ID),
   ]);
-  const leadPipelineName = allPipelines.find((p) => p.id === leadOwnPipelineId)?.name ?? "";
-
   type CampaignRef = { id: string; name: string };
   const phone = lead.phone as string | null;
   const email = lead.email as string | null;
@@ -107,9 +105,8 @@ export default async function LeadDetailPage({
   const stage = lead.pipeline_stages as { id: string; name: string; color: string } | null;
   const assignedIds = ((lead.lead_tags as Array<{ tag_id: string }>) ?? []).map((lt) => lt.tag_id);
 
-  const dof = /dofinansow/i;
   const isDofinansowaniaLead =
-    dof.test(leadPipelineName) ||
+    dof === "1" ||
     !!((lead as Record<string, unknown>).dofinansowanie_typ);
 
   const activeCampaignName =
@@ -230,6 +227,19 @@ export default async function LeadDetailPage({
                 </p>
               )}
             </div>
+
+            {/* Link to enable dofinansowania section */}
+            {ctx === "general" && !isDofinansowaniaLead && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+                <Link
+                  href={`/leads/${id}?dof=1`}
+                  className="text-[12px] transition-colors hover:opacity-80"
+                  style={{ color: "var(--muted)" }}
+                >
+                  + Dofinansowanie
+                </Link>
+              </div>
+            )}
 
             {/* Segmentation + grant form button — only for dofinansowania leads in general view */}
             {ctx === "general" && isDofinansowaniaLead && (
