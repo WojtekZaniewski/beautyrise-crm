@@ -50,6 +50,8 @@ function buildHtml(leadName: string, landingUrl: string): string {
   const firstNameVoc = toVocative(firstName, gender);
   const salutation = gender === "female" ? "Szanowna Pani" : "Szanowny Panie";
   const pronoun = gender === "female" ? "Pani" : "Panu";
+  const accusative = gender === "female" ? "Panią" : "Pana";
+  const verbForm = gender === "female" ? "zdecydowała Pani" : "zdecydował Pan";
 
   return `<!DOCTYPE html>
 <html lang="pl">
@@ -87,7 +89,7 @@ function buildHtml(leadName: string, landingUrl: string): string {
           <tr>
             <td style="padding:0;">
               <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;">
-                <img src="cid:postsale-video-gif" alt="Strefa klienta Beauty Rise ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
+                <img src="cid:postsale-video-gif" alt="Strefa klienta Beauty Rise - kliknij, aby obejrzec filmik" width="600" style="display:block;width:100%;max-width:600px;border:0;cursor:pointer;" />
               </a>
             </td>
           </tr>
@@ -99,10 +101,13 @@ function buildHtml(leadName: string, landingUrl: string): string {
                 ${salutation} <strong>${firstNameVoc}</strong>,
               </p>
               <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-                serdecznie witamy ${pronoun} w rodzinie Beauty Rise! Cieszymy się, że zdecydował${gender === "female" ? "a" : "eś"} się na współpracę z nami.
+                serdecznie witamy ${accusative} w rodzinie Beauty Rise! Cieszymy się, że ${verbForm} się na współpracę z nami - to dla nas ogromna radość.
+              </p>
+              <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+                Zanim zaczniemy, zachęcamy do obejrzenia krótkiego filmiku - wystarczy kliknąć w obrazek powyżej. Znajdzie ${pronoun} tam wszystko, co warto wiedzieć przed startem: jak wygląda nasza współpraca, co robimy i jak działamy krok po kroku.
               </p>
               <p style="margin:0 0 28px;font-size:15px;color:#374151;line-height:1.6;">
-                W załączniku znajdzie ${pronoun} wszystkie niezbędne dokumenty. W razie pytań jesteśmy do ${pronoun} dyspozycji.
+                Przycisk poniżej prowadzi do Strefy Klienta Beauty Rise - to ${pronoun} panel, w którym będzie się toczyła cała nasza współpraca. Znajdzie ${pronoun} tam bieżące postępy, wszystkie niezbędne dokumenty oraz możliwość przesyłania materiałów i komunikacji z nami. W razie jakichkolwiek pytań jesteśmy do ${pronoun} dyspozycji.
               </p>
 
               <!-- Przycisk CTA -->
