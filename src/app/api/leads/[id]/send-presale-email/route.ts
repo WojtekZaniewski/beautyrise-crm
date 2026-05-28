@@ -233,6 +233,12 @@ export async function POST(
 
     if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
+    const logoBuffer = loadAsset("logo-beautyrise.png");
+
+    const inlineAttachments = [
+      ...(logoBuffer ? [{ cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: logoBuffer, contentType: "image/png" }] : []),
+    ];
+
     const password = decryptPassword(sendAccount.password_enc);
     const html = buildHtml(lead.full_name, PRESALE_LANDING_URL, APP_URL);
 
@@ -242,6 +248,7 @@ export async function POST(
       toName: lead.full_name,
       subject: "Oferta Beauty Rise - przygotowaliśmy coś dla Ciebie",
       html,
+      inlineAttachments,
     });
 
     const { error: eventError } = await supabase.from("lead_events").insert({
