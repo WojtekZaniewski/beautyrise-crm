@@ -6,7 +6,7 @@ import { decryptPassword } from "@/lib/email/crypto";
 import fs from "fs";
 import path from "path";
 
-const PRESALE_LANDING_URL = "https://beautyrise.pl/oferta";
+const PRESALE_LANDING_URL = "https://rozmowa.beautyrise.pl";
 
 function loadAsset(filename: string): Buffer | null {
   try {
