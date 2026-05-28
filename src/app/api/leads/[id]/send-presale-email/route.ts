@@ -82,16 +82,19 @@ function buildHtml(leadName: string, landingUrl: string, appUrl: string): string
 
           <!-- Header z logo -->
           <tr>
-            <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
+            <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;">
               <img src="cid:logo-beautyrise" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
             </td>
           </tr>
 
-          <!-- Klikalna miniaturka wideo -->
+          <!-- Klikalna miniaturka wideo z ikoną play -->
           <tr>
-            <td style="padding:0;">
-              <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;">
-                <img src="cid:presale-thumb" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
+            <td style="padding:0;line-height:0;">
+              <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;position:relative;">
+                <img src="cid:presale-thumb" alt="Kliknij aby umówić spotkanie" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+                  <span style="color:#ffffff;font-size:30px;line-height:1;margin-left:6px;">&#9654;</span>
+                </div>
               </a>
             </td>
           </tr>
