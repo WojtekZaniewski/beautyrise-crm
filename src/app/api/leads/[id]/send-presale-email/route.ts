@@ -91,7 +91,7 @@ function buildHtml(leadName: string, landingUrl: string, appUrl: string): string
           <tr>
             <td style="padding:0;">
               <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;">
-                <img src="${appUrl}/presale-video.png" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
+                <img src="cid:presale-thumb" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
               </a>
             </td>
           </tr>
@@ -234,9 +234,11 @@ export async function POST(
     if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
     const logoBuffer = loadAsset("logo-beautyrise.png");
+    const thumbBuffer = loadAsset("presale-video.png");
 
     const inlineAttachments = [
       ...(logoBuffer ? [{ cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: logoBuffer, contentType: "image/png" }] : []),
+      ...(thumbBuffer ? [{ cid: "presale-thumb", filename: "presale-video.png", content: thumbBuffer, contentType: "image/png" }] : []),
     ];
 
     const password = decryptPassword(sendAccount.password_enc);
