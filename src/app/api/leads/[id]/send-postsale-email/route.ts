@@ -85,7 +85,7 @@ function buildHtml(leadName: string, landingUrl: string, appUrl: string): string
 
           <!-- Header z logo -->
           <tr>
-            <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
+            <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;">
               <img src="cid:logo-beautyrise" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
             </td>
           </tr>
