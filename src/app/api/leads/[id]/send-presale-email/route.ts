@@ -3,9 +3,19 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { sendMail } from "@/lib/email/smtp";
 import { decryptPassword } from "@/lib/email/crypto";
+import fs from "fs";
+import path from "path";
 
 const PRESALE_LANDING_URL = "https://rozmowa.beautyrise.pl";
 const APP_URL = "https://crm.beautyrise.pl";
+
+function loadAsset(filename: string): Buffer | null {
+  try {
+    return fs.readFileSync(path.join(process.cwd(), "public", filename));
+  } catch {
+    return null;
+  }
+}
 
 function detectGender(firstName: string): "female" | "male" {
   return firstName.toLowerCase().endsWith("a") ? "female" : "male";
@@ -73,7 +83,7 @@ function buildHtml(leadName: string, landingUrl: string, appUrl: string): string
           <!-- Header z logo -->
           <tr>
             <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
-              <img src="${appUrl}/logo-beautyrise.png" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
+              <img src="cid:logo-beautyrise" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
             </td>
           </tr>
 
