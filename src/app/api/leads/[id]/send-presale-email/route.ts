@@ -3,18 +3,9 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { sendMail } from "@/lib/email/smtp";
 import { decryptPassword } from "@/lib/email/crypto";
-import fs from "fs";
-import path from "path";
 
 const PRESALE_LANDING_URL = "https://rozmowa.beautyrise.pl";
-
-function loadAsset(filename: string): Buffer | null {
-  try {
-    return fs.readFileSync(path.join(process.cwd(), "public", filename));
-  } catch {
-    return null;
-  }
-}
+const APP_URL = "https://crm.beautyrise.pl";
 
 function detectGender(firstName: string): "female" | "male" {
   return firstName.toLowerCase().endsWith("a") ? "female" : "male";
@@ -44,7 +35,7 @@ function toVocative(name: string, gender: "female" | "male"): string {
   return name;
 }
 
-function buildHtml(leadName: string, landingUrl: string): string {
+function buildHtml(leadName: string, landingUrl: string, appUrl: string): string {
   const firstName = leadName.trim().split(/\s+/)[0] ?? leadName;
   const gender = detectGender(firstName);
   const firstNameVoc = toVocative(firstName, gender);
@@ -82,15 +73,15 @@ function buildHtml(leadName: string, landingUrl: string): string {
           <!-- Header z logo -->
           <tr>
             <td class="em-header" style="background:#ffffff;padding:16px 40px 12px;border-bottom:3px solid #ff6b00;">
-              <img src="cid:logo-beautyrise" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
+              <img src="${appUrl}/logo-beautyrise.png" alt="Beauty Rise" width="160" height="160" style="display:block;width:160px;height:160px;object-fit:contain;" />
             </td>
           </tr>
 
-          <!-- Klikalny GIF z wideo -->
+          <!-- Klikalna miniaturka wideo -->
           <tr>
             <td style="padding:0;">
               <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;">
-                <img src="cid:presale-video-gif" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
+                <img src="${appUrl}/presale-video.png" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
               </a>
             </td>
           </tr>
@@ -232,16 +223,8 @@ export async function POST(
 
     if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
-    const logoBuffer = loadAsset("logo-beautyrise.png");
-    const gifBuffer = loadAsset("presale-video.png");
-
-    const inlineAttachments = [
-      ...(logoBuffer ? [{ cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: logoBuffer, contentType: "image/png" }] : []),
-      ...(gifBuffer ? [{ cid: "presale-video-gif", filename: "presale-video.png", content: gifBuffer, contentType: "image/png" }] : []),
-    ];
-
     const password = decryptPassword(sendAccount.password_enc);
-    const html = buildHtml(lead.full_name, PRESALE_LANDING_URL);
+    const html = buildHtml(lead.full_name, PRESALE_LANDING_URL, APP_URL);
 
     await sendMail({
       account: { email: sendAccount.email, displayName: sendAccount.display_name, password },
@@ -249,7 +232,6 @@ export async function POST(
       toName: lead.full_name,
       subject: "Oferta Beauty Rise - przygotowaliśmy coś dla Ciebie",
       html,
-      inlineAttachments,
     });
 
     const { error: eventError } = await supabase.from("lead_events").insert({
