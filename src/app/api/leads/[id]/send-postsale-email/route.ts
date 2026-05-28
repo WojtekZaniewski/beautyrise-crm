@@ -206,10 +206,10 @@ export async function POST(
     if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
     const logoBuffer = loadAsset("logo-beautyrise.png");
-    const thumbBuffer = loadAsset("postsale-video.png");
+    const thumbBuffer = loadAsset("postsale-video.gif");
     const inlineAttachments = [
       ...(logoBuffer ? [{ cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: logoBuffer, contentType: "image/png" }] : []),
-      ...(thumbBuffer ? [{ cid: "postsale-thumb", filename: "postsale-video.png", content: thumbBuffer, contentType: "image/png" }] : []),
+      ...(thumbBuffer ? [{ cid: "postsale-thumb", filename: "postsale-video.gif", content: thumbBuffer, contentType: "image/gif" }] : []),
     ];
 
     const password = decryptPassword(sendAccount.password_enc);

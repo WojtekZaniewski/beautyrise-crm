@@ -87,14 +87,11 @@ function buildHtml(leadName: string, landingUrl: string, appUrl: string): string
             </td>
           </tr>
 
-          <!-- Klikalna miniaturka wideo z ikoną play -->
+          <!-- Klikalna miniaturka wideo -->
           <tr>
             <td style="padding:0;line-height:0;">
-              <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;position:relative;">
-                <img src="cid:presale-thumb" alt="Kliknij aby umówić spotkanie" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
-                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;">
-                  <span style="color:#ffffff;font-size:30px;line-height:1;margin-left:6px;">&#9654;</span>
-                </div>
+              <a href="${landingUrl}" target="_blank" style="display:block;line-height:0;">
+                <img src="cid:presale-thumb" alt="Kliknij aby umówić spotkanie ▶" width="600" style="display:block;width:100%;max-width:600px;border:0;" />
               </a>
             </td>
           </tr>
@@ -237,11 +234,11 @@ export async function POST(
     if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
     const logoBuffer = loadAsset("logo-beautyrise.png");
-    const thumbBuffer = loadAsset("presale-video.png");
+    const thumbBuffer = loadAsset("presale-video.gif");
 
     const inlineAttachments = [
       ...(logoBuffer ? [{ cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: logoBuffer, contentType: "image/png" }] : []),
-      ...(thumbBuffer ? [{ cid: "presale-thumb", filename: "presale-video.png", content: thumbBuffer, contentType: "image/png" }] : []),
+      ...(thumbBuffer ? [{ cid: "presale-thumb", filename: "presale-video.gif", content: thumbBuffer, contentType: "image/gif" }] : []),
     ];
 
     const password = decryptPassword(sendAccount.password_enc);
