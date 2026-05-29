@@ -21,18 +21,21 @@ async function handleInbound(req: NextRequest) {
 
   if (req.method === "GET") {
     const { searchParams } = new URL(req.url);
+    console.log("[SMS webhook] GET params:", Object.fromEntries(searchParams.entries()));
     apikey = searchParams.get("watoken") ?? searchParams.get("apikey");
     phone = searchParams.get("number") ?? searchParams.get("from");
     messageText = searchParams.get("message");
     externalId = searchParams.get("message_id");
   } else if (contentType.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
+    console.log("[SMS webhook] POST JSON body:", JSON.stringify(body));
     apikey = body.watoken ?? body.apikey;
     phone = body.number ?? body.from;
     messageText = body.message;
     externalId = body.message_id;
   } else {
     const text = await req.text();
+    console.log("[SMS webhook] POST form body:", text, "| content-type:", contentType);
     const p = new URLSearchParams(text);
     apikey = p.get("watoken") ?? p.get("apikey");
     phone = p.get("number") ?? p.get("from");
@@ -40,7 +43,10 @@ async function handleInbound(req: NextRequest) {
     externalId = p.get("message_id");
   }
 
+  console.log("[SMS webhook] parsed: phone=", phone, "message=", messageText, "apikey=", apikey);
+
   if (!phone || !messageText) {
+    console.log("[SMS webhook] REJECTED - missing phone or message");
     return NextResponse.json({ ok: false, error: "Missing params" }, { status: 400 });
   }
 
