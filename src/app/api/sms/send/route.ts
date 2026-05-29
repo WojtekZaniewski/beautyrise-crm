@@ -94,6 +94,22 @@ export async function POST(req: NextRequest) {
     .select("id")
     .single();
 
+  if (campaign_id && status === "sent") {
+    await supabase
+      .from("sms_campaign_recipients")
+      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .eq("campaign_id", campaign_id)
+      .eq("phone", to.trim());
+  }
+
+  if (campaign_id && status === "failed") {
+    await supabase
+      .from("sms_campaign_recipients")
+      .update({ status: "failed" })
+      .eq("campaign_id", campaign_id)
+      .eq("phone", to.trim());
+  }
+
   if (lead_id && status === "sent") {
     await supabase.from("lead_events").insert({
       lead_id,
