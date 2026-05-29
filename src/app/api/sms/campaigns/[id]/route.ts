@@ -29,6 +29,21 @@ export async function GET(
   return NextResponse.json({ ...campaign, recipients: recipients ?? [] });
 }
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const supabase = createServiceClient();
+  const workspaceId = await getCurrentWorkspaceId();
+
+  await supabase.from("sms_campaign_recipients").delete().eq("campaign_id", id).eq("workspace_id", workspaceId);
+  await supabase.from("sms_messages").update({ campaign_id: null }).eq("campaign_id", id).eq("workspace_id", workspaceId);
+  await supabase.from("sms_campaigns").delete().eq("id", id).eq("workspace_id", workspaceId);
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

@@ -103,14 +103,27 @@ export async function GET() {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
 
-  const { data } = await supabase
+  const { data: campaigns } = await supabase
     .from("sms_campaigns")
     .select("*")
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
     .limit(50);
 
-  return NextResponse.json(data ?? []);
+  const ids = (campaigns ?? []).map((c) => c.id);
+  const replyCounts: Record<string, number> = {};
+  if (ids.length > 0) {
+    const { data: replied } = await supabase
+      .from("sms_campaign_recipients")
+      .select("campaign_id")
+      .in("campaign_id", ids)
+      .not("replied_at", "is", null);
+    for (const r of replied ?? []) {
+      replyCounts[r.campaign_id] = (replyCounts[r.campaign_id] ?? 0) + 1;
+    }
+  }
+
+  return NextResponse.json((campaigns ?? []).map((c) => ({ ...c, replied: replyCounts[c.id] ?? 0 })));
 }
 
 export async function POST(req: NextRequest) {
