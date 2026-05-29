@@ -38,7 +38,8 @@ export async function DELETE(
   const workspaceId = await getCurrentWorkspaceId();
 
   await supabase.from("sms_campaign_recipients").delete().eq("campaign_id", id).eq("workspace_id", workspaceId);
-  await supabase.from("sms_messages").update({ campaign_id: null }).eq("campaign_id", id).eq("workspace_id", workspaceId);
+  await supabase.from("sms_messages").delete().eq("campaign_id", id).eq("workspace_id", workspaceId);
+  await supabase.from("sms_conversations").delete().eq("campaign_id", id).eq("workspace_id", workspaceId);
   await supabase.from("sms_campaigns").delete().eq("id", id).eq("workspace_id", workspaceId);
 
   return NextResponse.json({ ok: true });
