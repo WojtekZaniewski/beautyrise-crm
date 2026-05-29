@@ -140,6 +140,7 @@ const integrationsNav = [
   { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
   { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
   { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
+  { href: "/sms-inbox", label: "SMS Inbox", icon: Icons.sms, isSmsInbox: true },
 ];
 
 const settingsNav = [
@@ -211,6 +212,7 @@ export function Sidebar({
   useEffect(() => { setOpen(false); }, [path, setOpen]);
 
   const [totalUnread, setTotalUnread] = useState(0);
+  const [smsUnread, setSmsUnread] = useState(0);
   const supabase = createClient();
 
   useEffect(() => {
@@ -241,6 +243,44 @@ export function Sidebar({
         },
         () => {
           fetchCount();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [currentWorkspaceId, supabase]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchSmsUnread() {
+      try {
+        const res = await fetch("/api/sms/conversations/unread-count");
+        if (!res.ok || cancelled) return;
+        const data = await res.json() as { total: number };
+        setSmsUnread(data.total ?? 0);
+      } catch {
+        // silently ignore
+      }
+    }
+
+    fetchSmsUnread();
+
+    const channel = supabase
+      .channel(`sidebar-sms:${currentWorkspaceId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "sms_conversations",
+          filter: `workspace_id=eq.${currentWorkspaceId}`,
+        },
+        () => {
+          fetchSmsUnread();
         },
       )
       .subscribe();
@@ -303,7 +343,14 @@ export function Sidebar({
 
         <Section label="Integracje" />
         {integrationsNav.map((item) => (
-          <NavLink key={item.href} {...item} active={isActive(item.href)} />
+          <NavLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={isActive(item.href)}
+            badge={"isSmsInbox" in item && item.isSmsInbox ? smsUnread : undefined}
+          />
         ))}
 
         <Section label="Ustawienia" />
