@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { sendMail } from "@/lib/email/smtp";
 import { decryptPassword } from "@/lib/email/crypto";
+import { optimizeGif } from "@/lib/email/optimize-gif";
 import fs from "fs";
 import path from "path";
 
@@ -206,7 +207,9 @@ export async function POST(
     if (!sendAccount) return NextResponse.json({ error: "Brak skonfigurowanego konta e-mail" }, { status: 500 });
 
     const logoBuffer = loadAsset("logo-beautyrise.png");
-    const thumbBuffer = loadAsset("postsale-video.gif");
+    const thumbRaw = loadAsset("postsale-video.gif");
+    const thumbBuffer = thumbRaw ? await optimizeGif(thumbRaw) : null;
+
     const inlineAttachments = [
       ...(logoBuffer ? [{ cid: "logo-beautyrise", filename: "logo-beautyrise.png", content: logoBuffer, contentType: "image/png" }] : []),
       ...(thumbBuffer ? [{ cid: "postsale-thumb", filename: "postsale-video.gif", content: thumbBuffer, contentType: "image/gif" }] : []),
