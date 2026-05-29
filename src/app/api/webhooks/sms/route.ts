@@ -40,22 +40,24 @@ async function handleInbound(req: NextRequest) {
     externalId = p.get("message_id");
   }
 
-  if (!apikey || !phone || !messageText) {
+  if (!phone || !messageText) {
     return NextResponse.json({ ok: false, error: "Missing params" }, { status: 400 });
   }
 
   const normalizedPhone = phone.replace(/\s+/g, "");
 
-  // Find workspace by API key
+  // Find workspace: by API key if provided, otherwise use the first connected SMS gateway
   const { data: integrations } = await supabase
     .from("integrations")
     .select("workspace_id, credentials")
     .eq("type", "sms_gateway")
     .eq("status", "connected");
 
-  const integration = (integrations ?? []).find(
-    (i) => (i.credentials as Record<string, string>)?.apikey === apikey,
-  );
+  const integration = apikey
+    ? (integrations ?? []).find(
+        (i) => (i.credentials as Record<string, string>)?.apikey === apikey,
+      )
+    : (integrations ?? [])[0];
 
   if (!integration) {
     return NextResponse.json({ ok: false, error: "Unknown workspace" }, { status: 401 });
