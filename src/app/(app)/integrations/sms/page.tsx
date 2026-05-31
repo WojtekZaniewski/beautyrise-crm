@@ -374,28 +374,29 @@ function CampaignTab({ configured }: { configured: boolean }) {
       es.onmessage = (e) => {
         try {
           const event = JSON.parse(e.data) as {
-            type: string;
+            type: "start" | "confirming" | "progress" | "done";
             total?: number;
             done?: number;
             sent?: number;
             failed?: number;
             phone?: string;
             status?: string;
-            guid?: string;
+            reason?: string;
           };
 
           if (event.type === "start") {
             setProgress({ done: 0, total: event.total ?? dedupedRecipients.length, failed: 0 });
             setSendingLabel("Wysyłanie…");
-          } else if (event.type === "polling") {
-            setSendingLabel(`Potwierdzam ${event.phone ?? ""}…`);
+          } else if (event.type === "confirming") {
+            // Waiting for real confirmation from SMSMobileAPI that the phone sent the SMS
+            setSendingLabel(`Czekam na potwierdzenie z telefonu…`);
           } else if (event.type === "progress") {
             setProgress({
               done: event.done ?? 0,
               total: event.total ?? dedupedRecipients.length,
               failed: event.failed ?? 0,
             });
-            setSendingLabel(`Wysyłanie…`);
+            setSendingLabel("Wysyłanie…");
           } else if (event.type === "done") {
             setSendingLabel("");
             cleanup();

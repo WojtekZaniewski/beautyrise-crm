@@ -5,47 +5,66 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 // Allow long-running streaming responses (Vercel Pro: up to 300s)
 export const maxDuration = 300;
 
+const POLL_INTERVAL_MS = 3_000;
+const POLL_MAX_ATTEMPTS = 30; // 30 × 3s = 90 seconds max wait per SMS
+
 function sseEvent(data: object): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`);
 }
 
-async function sleep(ms: number) {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Poll SMSMobileAPI until the message is confirmed sent (or timeout).
-// Returns true if confirmed, false if failed/timeout.
-async function pollUntilSent(apikey: string, guid: string): Promise<"sent" | "failed" | "timeout"> {
-  const MAX_ATTEMPTS = 20;
-  const INTERVAL_MS = 3000;
+type ConfirmResult = "sent" | "failed" | "timeout";
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    await sleep(INTERVAL_MS);
+/**
+ * Polls SMSMobileAPI getsms until the message is confirmed sent or failed.
+ * Returns "timeout" if no conclusive status after POLL_MAX_ATTEMPTS.
+ * Never returns "sent" without an explicit confirmation from SMSMobileAPI.
+ */
+async function pollGetsmsUntilConfirmed(apikey: string, guid: string): Promise<ConfirmResult> {
+  for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+    await sleep(POLL_INTERVAL_MS);
+
+    let raw: unknown = null;
     try {
       const url = `https://api.smsmobileapi.com/getsms/?apikey=${encodeURIComponent(apikey)}&guid=${encodeURIComponent(guid)}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (!res.ok) continue;
-
-      const data = await res.json().catch(() => null);
-      if (!data) continue;
-
-      // SMSMobileAPI may return status in several shapes — normalise
-      const msg = Array.isArray(data.messages) ? data.messages[0] : null;
-      const rawStatus = (
-        msg?.status ??
-        msg?.Status ??
-        data.status ??
-        data.Status ??
-        ""
-      ).toString().toLowerCase();
-
-      if (rawStatus === "sent" || rawStatus === "delivered" || rawStatus === "1") return "sent";
-      if (rawStatus === "failed" || rawStatus === "error" || rawStatus === "-1") return "failed";
-      // "pending" / "sending" / "" → keep polling
+      const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (res.ok) {
+        raw = await res.json().catch(() => null);
+      }
     } catch {
-      // network error on status check — keep polling
+      // network error — keep polling
+      continue;
     }
+
+    if (!raw || typeof raw !== "object") continue;
+
+    const data = raw as Record<string, unknown>;
+
+    // SMSMobileAPI may nest status inside a messages array
+    const msg = Array.isArray(data.messages) && data.messages.length > 0
+      ? (data.messages[0] as Record<string, unknown>)
+      : null;
+
+    const rawStatus = String(
+      msg?.status ?? msg?.Status ?? data.status ?? data.Status ?? data.result ?? "",
+    ).toLowerCase().trim();
+
+    console.log(`[SMS execute] getsms attempt ${attempt + 1}/${POLL_MAX_ATTEMPTS} guid=${guid} rawStatus="${rawStatus}" fullResponse=${JSON.stringify(raw)}`);
+
+    if (rawStatus === "sent" || rawStatus === "delivered" || rawStatus === "1") {
+      return "sent";
+    }
+    if (rawStatus === "failed" || rawStatus === "error" || rawStatus === "-1" || rawStatus === "nok") {
+      return "failed";
+    }
+    // "pending" / "sending" / "queued" / "" / unrecognised → keep polling
   }
+
+  // No confirmation after 90 seconds — this is a failure, not a silent success
+  console.warn(`[SMS execute] getsms timeout after ${POLL_MAX_ATTEMPTS} attempts for guid=${guid}`);
   return "timeout";
 }
 
@@ -83,13 +102,13 @@ export async function GET(
     return NextResponse.json({ error: "SMS not configured" }, { status: 400 });
   }
 
-  // Fetch pending recipients only — safe to reconnect (resumes where it left off)
+  // Only fetch recipients still pending or sending (safe reconnect — resumes where left off)
   const { data: recipients } = await supabase
     .from("sms_campaign_recipients")
     .select("id, phone, name, message_body, lead_id")
     .eq("campaign_id", id)
     .eq("workspace_id", workspaceId)
-    .eq("status", "pending")
+    .in("status", ["pending", "sending"])
     .order("created_at", { ascending: true });
 
   const pending = recipients ?? [];
@@ -104,14 +123,14 @@ export async function GET(
         try {
           controller.enqueue(sseEvent(data));
         } catch {
-          // client disconnected
+          // client disconnected — continue processing in background
         }
       };
 
       emit({ type: "start", total });
 
       for (const r of pending) {
-        // ── 1. Send via SMSMobileAPI ──────────────────────────────────────────
+        // ── Step 1: Call sendsms — just queues it, does NOT confirm delivery ──
         const smsParams = new URLSearchParams({
           apikey,
           recipients: r.phone,
@@ -119,41 +138,70 @@ export async function GET(
           sendsms: "1",
         });
 
-        let sendStatus: "sent" | "failed" = "failed";
         let externalId: string | null = null;
+        let apiAccepted = false;
 
         try {
           const res = await fetch(`https://api.smsmobileapi.com/sendsms/?${smsParams}`, {
             method: "GET",
-            signal: AbortSignal.timeout(15000),
+            signal: AbortSignal.timeout(15_000),
           });
           const data = await res.json().catch(() => ({}));
 
           if (res.ok && data?.status !== "ERROR" && data?.result !== "NOK") {
             externalId = data?.message_id ?? data?.guid ?? data?.id ?? null;
-            sendStatus = "sent"; // API accepted — will confirm below
+            apiAccepted = true;
           }
-        } catch {
-          sendStatus = "failed";
+          console.log(`[SMS execute] sendsms phone=${r.phone} accepted=${apiAccepted} guid=${externalId} response=${JSON.stringify(data)}`);
+        } catch (err) {
+          console.error(`[SMS execute] sendsms network error phone=${r.phone}`, err);
         }
 
-        // ── 2. Poll until actually confirmed sent from phone ──────────────────
-        if (sendStatus === "sent" && externalId) {
-          emit({ type: "polling", phone: r.phone, guid: externalId });
-
-          const pollResult = await pollUntilSent(apikey, externalId);
-
-          if (pollResult === "failed") {
-            sendStatus = "failed";
-          }
-          // "timeout" → we proceed treating as sent (API accepted, phone queued)
+        if (!apiAccepted) {
+          // API rejected the request outright — mark failed immediately
+          await supabase
+            .from("sms_campaign_recipients")
+            .update({ status: "failed" })
+            .eq("id", r.id);
+          failedCount++;
+          emit({ type: "progress", done: sentCount + failedCount, total, sent: sentCount, failed: failedCount, phone: r.phone, status: "failed", reason: "api_rejected" });
+          continue;
         }
 
-        // ── 3. Update database ────────────────────────────────────────────────
+        // ── Step 2: Mark as "sending" — waiting for real confirmation ─────────
+        await supabase
+          .from("sms_campaign_recipients")
+          .update({ status: "sending" })
+          .eq("id", r.id);
+
+        emit({ type: "confirming", phone: r.phone, total, done: sentCount + failedCount });
+
+        // ── Step 3: Poll getsms until phone confirms, fails, or times out ─────
+        let finalStatus: "sent" | "failed";
+
+        if (externalId) {
+          const pollResult = await pollGetsmsUntilConfirmed(apikey, externalId);
+
+          if (pollResult === "sent") {
+            finalStatus = "sent";
+          } else if (pollResult === "failed") {
+            finalStatus = "failed";
+          } else {
+            // timeout — no confirmation from phone after 90s — treat as FAILED
+            // Do NOT fake "sent" status. The user will see this as a failure to retry.
+            finalStatus = "failed";
+            console.warn(`[SMS execute] No delivery confirmation from SMSMobileAPI for guid=${externalId} phone=${r.phone} — marking as failed`);
+          }
+        } else {
+          // API accepted but returned no GUID — cannot poll, cannot confirm → failed
+          finalStatus = "failed";
+          console.warn(`[SMS execute] sendsms returned no GUID for phone=${r.phone} — cannot confirm delivery, marking failed`);
+        }
+
+        // ── Step 4: Persist final status to DB ────────────────────────────────
         const now = new Date().toISOString();
 
-        if (sendStatus === "sent") {
-          // Upsert conversation
+        if (finalStatus === "sent") {
           const { data: conv } = await supabase
             .from("sms_conversations")
             .upsert(
@@ -215,11 +263,11 @@ export async function GET(
           sent: sentCount,
           failed: failedCount,
           phone: r.phone,
-          status: sendStatus,
+          status: finalStatus,
         });
       }
 
-      // ── 4. Finalise campaign ──────────────────────────────────────────────
+      // ── Finalise campaign ────────────────────────────────────────────────────
       await supabase
         .from("sms_campaigns")
         .update({ status: "sent", total_sent: sentCount })
