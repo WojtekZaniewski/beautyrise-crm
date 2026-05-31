@@ -264,7 +264,9 @@ function CampaignTab({ configured }: { configured: boolean }) {
   const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
   const [done, setDone] = useState(false);
   const [sentCampaignId, setSentCampaignId] = useState<string | null>(null);
+  const [sendingLabel, setSendingLabel] = useState("");
   const stopRef = useRef(false);
+  const sendingRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const recipients = useMemo((): Recipient[] => {
@@ -320,11 +322,21 @@ function CampaignTab({ configured }: { configured: boolean }) {
   const smsCount = Math.ceil(charCount / 160) || 1;
 
   const startSend = async () => {
-    if (!recipients.length || !template.trim()) return;
+    if (sendingRef.current || !recipients.length || !template.trim()) return;
+    sendingRef.current = true;
     setSending(true); setDone(false); stopRef.current = false;
-    setProgress({ done: 0, total: recipients.length, failed: 0 });
 
-    // Create campaign record with recipients upfront
+    // Deduplicate by phone number — keep first occurrence
+    const seen = new Set<string>();
+    const dedupedRecipients = recipients.filter(r => {
+      if (seen.has(r.phone)) return false;
+      seen.add(r.phone);
+      return true;
+    });
+
+    setProgress({ done: 0, total: dedupedRecipients.length, failed: 0 });
+
+    // 1. Create campaign record with all recipients as "pending" in DB
     const autoName = campaignName.trim() || `Kampania SMS ${new Date().toLocaleDateString("pl-PL")}`;
     const fullName = `[${campaignType}] ${autoName}`;
     const campaignRes = await fetch("/api/sms/campaigns", {
@@ -333,33 +345,80 @@ function CampaignTab({ configured }: { configured: boolean }) {
       body: JSON.stringify({
         name: fullName,
         template,
-        recipients: recipients.map(r => ({ phone: r.phone, name: r.name, lead_id: r.lead_id, message_body: applyTemplate(template, r) })),
+        recipients: dedupedRecipients.map(r => ({ phone: r.phone, name: r.name, lead_id: r.lead_id, message_body: applyTemplate(template, r) })),
       }),
     });
     const campaignData = campaignRes.ok ? await campaignRes.json() : {};
     const campaignId: string | null = campaignData.id ?? null;
 
-    let failed = 0;
-    for (let i = 0; i < recipients.length; i++) {
-      if (stopRef.current) break;
-      const r = recipients[i];
-      const message = applyTemplate(template, r);
-      try {
-        const res = await fetch("/api/sms/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: r.phone, message, lead_id: r.lead_id, campaign_id: campaignId }) });
-        if (!res.ok) failed++;
-      } catch { failed++; }
-      setProgress({ done: i + 1, total: recipients.length, failed });
+    if (!campaignId) {
+      sendingRef.current = false;
+      setSending(false);
+      return;
     }
 
-    if (campaignId) {
-      await fetch(`/api/sms/campaigns/${campaignId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "sent", total_sent: recipients.length - failed }),
-      });
-    }
+    setSentCampaignId(campaignId);
 
-    setSending(false); setDone(true); setSentCampaignId(campaignId);
+    // 2. Stream execution via SSE — server sends one SMS at a time and confirms each
+    await new Promise<void>((resolve) => {
+      const es = new EventSource(`/api/sms/campaigns/${campaignId}/execute`);
+
+      const cleanup = () => {
+        es.close();
+        sendingRef.current = false;
+        setSending(false);
+        setDone(true);
+        resolve();
+      };
+
+      es.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data) as {
+            type: string;
+            total?: number;
+            done?: number;
+            sent?: number;
+            failed?: number;
+            phone?: string;
+            status?: string;
+            guid?: string;
+          };
+
+          if (event.type === "start") {
+            setProgress({ done: 0, total: event.total ?? dedupedRecipients.length, failed: 0 });
+            setSendingLabel("Wysyłanie…");
+          } else if (event.type === "polling") {
+            setSendingLabel(`Potwierdzam ${event.phone ?? ""}…`);
+          } else if (event.type === "progress") {
+            setProgress({
+              done: event.done ?? 0,
+              total: event.total ?? dedupedRecipients.length,
+              failed: event.failed ?? 0,
+            });
+            setSendingLabel(`Wysyłanie…`);
+          } else if (event.type === "done") {
+            setSendingLabel("");
+            cleanup();
+          }
+        } catch {
+          // ignore malformed events
+        }
+      };
+
+      es.onerror = () => {
+        // Connection closed or error — treat as done
+        cleanup();
+      };
+
+      // Allow user to stop: close SSE and let server finish current SMS gracefully
+      stopRef.current = false;
+      const checkStop = setInterval(() => {
+        if (stopRef.current) {
+          clearInterval(checkStop);
+          cleanup();
+        }
+      }, 500);
+    });
   };
 
   if (!configured) return (
@@ -595,7 +654,9 @@ function CampaignTab({ configured }: { configured: boolean }) {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: "var(--muted)" }}>
-                  {sending ? `Wysyłanie… ${progress.done} / ${progress.total}` : `Zakończono: ${progress.done - progress.failed} wysłanych, ${progress.failed} błędów`}
+                  {sending
+                    ? `${sendingLabel || "Wysyłanie…"} ${progress.done} / ${progress.total}`
+                    : `Zakończono: ${progress.done - progress.failed} wysłanych, ${progress.failed} błędów`}
                 </span>
                 {sending && (
                   <button onClick={() => { stopRef.current = true; }} className="text-xs px-2.5 py-1 rounded-lg" style={{ background: "#ef44441a", color: "#dc2626", border: "1px solid #ef444430" }}>
