@@ -261,7 +261,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
   const [csvRecipients, setCsvRecipients] = useState<Recipient[]>([]);
   const [csvFileName, setCsvFileName] = useState("");
   const [sending, setSending] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number; failed: number; queued?: number } | null>(null);
   const [done, setDone] = useState(false);
   const [sentCampaignId, setSentCampaignId] = useState<string | null>(null);
   const [sendingLabel, setSendingLabel] = useState("");
@@ -359,67 +359,104 @@ function CampaignTab({ configured }: { configured: boolean }) {
 
     setSentCampaignId(campaignId);
 
-    // 2. Stream execution via SSE — server sends one SMS at a time and confirms each
-    await new Promise<void>((resolve) => {
-      const es = new EventSource(`/api/sms/campaigns/${campaignId}/execute`);
+    // 2. Fetch the recipients the server just created (with their DB IDs)
+    const recipientsRes = await fetch(`/api/sms/campaigns/${campaignId}`);
+    const campaignDetail = recipientsRes.ok ? await recipientsRes.json() : {};
+    const dbRecipients: Array<{ id: string; phone: string; message_body: string; lead_id: string | null }> =
+      campaignDetail.recipients ?? [];
 
-      const cleanup = () => {
-        es.close();
-        sendingRef.current = false;
-        setSending(false);
-        setDone(true);
-        resolve();
-      };
+    const total = dbRecipients.length;
+    let sentCount = 0;
+    let failedCount = 0;
+    let queuedCount = 0;
 
-      es.onmessage = (e) => {
-        try {
-          const event = JSON.parse(e.data) as {
-            type: "start" | "confirming" | "progress" | "done";
-            total?: number;
-            done?: number;
-            sent?: number;
-            failed?: number;
-            phone?: string;
-            status?: string;
-            reason?: string;
-          };
+    setProgress({ done: 0, total, failed: 0 });
 
-          if (event.type === "start") {
-            setProgress({ done: 0, total: event.total ?? dedupedRecipients.length, failed: 0 });
-            setSendingLabel("Wysyłanie…");
-          } else if (event.type === "confirming") {
-            // Waiting for real confirmation from SMSMobileAPI that the phone sent the SMS
-            setSendingLabel(`Czekam na potwierdzenie z telefonu…`);
-          } else if (event.type === "progress") {
-            setProgress({
-              done: event.done ?? 0,
-              total: event.total ?? dedupedRecipients.length,
-              failed: event.failed ?? 0,
-            });
-            setSendingLabel("Wysyłanie…");
-          } else if (event.type === "done") {
-            setSendingLabel("");
-            cleanup();
-          }
-        } catch {
-          // ignore malformed events
+    // 3. Sequential loop — runs entirely in the browser, no serverless timeout issues
+    for (const r of dbRecipients) {
+      if (stopRef.current) break;
+
+      // ── Step A: send this one SMS ─────────────────────────────────────────
+      setSendingLabel(`Wysyłanie do ${r.phone}…`);
+
+      const sendRes = await fetch(`/api/sms/campaigns/${campaignId}/send-one`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipient_id: r.id, phone: r.phone, message: r.message_body }),
+      });
+      const sendData = sendRes.ok ? await sendRes.json() : { ok: false };
+
+      if (!sendData.ok || sendData.status === "failed") {
+        failedCount++;
+        setProgress({ done: sentCount + failedCount + queuedCount, total, failed: failedCount, queued: queuedCount });
+        continue;
+      }
+
+      const guid: string | null = sendData.guid ?? null;
+
+      // ── Step B: poll delivery-status until phone confirms ─────────────────
+      setSendingLabel(`Czekam na potwierdzenie… (${r.phone})`);
+
+      const POLL_ATTEMPTS = 30;   // 30 × 3s = 90 sekund max
+      const POLL_DELAY_MS = 3000;
+      let finalStatus: "sent" | "failed" | "queued" = "queued";
+
+      if (guid) {
+        for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+          if (stopRef.current) break;
+          await new Promise<void>(res => setTimeout(res, POLL_DELAY_MS));
+
+          const statusUrl =
+            `/api/sms/campaigns/${campaignId}/delivery-status` +
+            `?guid=${encodeURIComponent(guid)}` +
+            `&recipient_id=${encodeURIComponent(r.id)}` +
+            `&phone=${encodeURIComponent(r.phone)}` +
+            `&lead_id=${encodeURIComponent(r.lead_id ?? "")}` +
+            `&message_body=${encodeURIComponent(r.message_body)}`;
+
+          const statusRes = await fetch(statusUrl);
+          const statusData = statusRes.ok ? await statusRes.json() : {};
+          const s: string = statusData.status ?? "pending";
+
+          if (s === "sent") { finalStatus = "sent"; break; }
+          if (s === "failed") { finalStatus = "failed"; break; }
+          // "pending" → keep polling
         }
-      };
+      }
 
-      es.onerror = () => {
-        // Connection closed or error — treat as done
-        cleanup();
-      };
+      // ── Step C: update local counters ─────────────────────────────────────
+      if (finalStatus === "sent") {
+        sentCount++;
+      } else if (finalStatus === "failed") {
+        failedCount++;
+      } else {
+        // queued: SMSMobileAPI accepted + GUID stored, phone didn't confirm in 90s
+        queuedCount++;
+        // Mark as "queued" in DB via delivery-status timeout flag
+        await fetch(
+          `/api/sms/campaigns/${campaignId}/delivery-status` +
+          `?guid=${encodeURIComponent(guid ?? "")}` +
+          `&recipient_id=${encodeURIComponent(r.id)}` +
+          `&phone=${encodeURIComponent(r.phone)}` +
+          `&message_body=${encodeURIComponent(r.message_body)}` +
+          `&timeout=true`,
+        ).catch(() => {});
+      }
 
-      // Allow user to stop: close SSE and let server finish current SMS gracefully
-      stopRef.current = false;
-      const checkStop = setInterval(() => {
-        if (stopRef.current) {
-          clearInterval(checkStop);
-          cleanup();
-        }
-      }, 500);
+      setProgress({ done: sentCount + failedCount + queuedCount, total, failed: failedCount, queued: queuedCount });
+    }
+
+    // 4. Finalise campaign status
+    await fetch(`/api/sms/campaigns/${campaignId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "sent", total_sent: sentCount + queuedCount }),
     });
+
+    setSendingLabel("");
+    sendingRef.current = false;
+    setSending(false);
+    setDone(true);
   };
 
   if (!configured) return (
@@ -657,7 +694,16 @@ function CampaignTab({ configured }: { configured: boolean }) {
                 <span style={{ color: "var(--muted)" }}>
                   {sending
                     ? `${sendingLabel || "Wysyłanie…"} ${progress.done} / ${progress.total}`
-                    : `Zakończono: ${progress.done - progress.failed} wysłanych, ${progress.failed} błędów`}
+                    : (() => {
+                        const sent = progress.done - progress.failed - (progress.queued ?? 0);
+                        const queued = progress.queued ?? 0;
+                        const failed = progress.failed;
+                        const parts = [];
+                        if (sent > 0) parts.push(`${sent} wysłanych`);
+                        if (queued > 0) parts.push(`${queued} w kolejce (telefon offline)`);
+                        if (failed > 0) parts.push(`${failed} błędów`);
+                        return `Zakończono: ${parts.join(", ")}`;
+                      })()}
                 </span>
                 {sending && (
                   <button onClick={() => { stopRef.current = true; }} className="text-xs px-2.5 py-1 rounded-lg" style={{ background: "#ef44441a", color: "#dc2626", border: "1px solid #ef444430" }}>

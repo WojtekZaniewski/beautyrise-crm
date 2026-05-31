@@ -22,6 +22,8 @@ const SMS_STATUS: Record<string, { bg: string; color: string; label: string }> =
 const RECIPIENT_STATUS: Record<string, { bg: string; color: string; label: string }> = {
   sent:    { bg: "#22c55e1a", color: "#16a34a", label: "Wysłany" },
   pending: { bg: "rgba(0,0,0,0.05)", color: "#78716C", label: "Oczekuje" },
+  sending: { bg: "#f59e0b1a", color: "#d97706", label: "Wysyłanie…" },
+  queued:  { bg: "#3b82f61a", color: "#2563eb", label: "W kolejce" },
   failed:  { bg: "#ef44441a", color: "#dc2626", label: "Błąd" },
 };
 
@@ -67,7 +69,9 @@ export default async function SmsCampaignDetailPage({
   if (!campaign) notFound();
 
   const recipients = recipientsRaw ?? [];
-  const totalSent = campaign.total_sent ?? recipients.filter((r) => r.status === "sent").length;
+  // "queued" = accepted by SMSMobileAPI gateway, phone confirmation pending
+  const totalSent = campaign.total_sent ?? recipients.filter((r) => r.status === "sent" || r.status === "queued").length;
+  const totalQueued = recipients.filter((r) => r.status === "queued").length;
   const totalReplied = recipients.filter((r) => r.replied_at !== null).length;
   const replyRate = totalSent > 0 ? Math.round((totalReplied / totalSent) * 100) : 0;
   const totalFailed = recipients.filter((r) => r.status === "failed").length;
@@ -148,7 +152,7 @@ export default async function SmsCampaignDetailPage({
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <KpiCard label="Wysłane SMS" value={String(totalSent)} />
+        <KpiCard label="Wysłane SMS" value={String(totalSent)} sub={totalQueued > 0 ? `w tym ${totalQueued} w kolejce` : undefined} />
         <KpiCard label="Odpowiedzi" value={String(totalReplied)} />
         <KpiCard label="Odpowiedź %" value={totalSent > 0 ? `${replyRate}%` : "—"} />
         <KpiCard label="Błędy" value={String(totalFailed)} />
