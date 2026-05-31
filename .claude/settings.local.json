@@ -29,7 +29,11 @@
       "Bash(git stash *)",
       "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")",
       "Bash(grep -E \"\\\\.sql$\")",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "Bash(mkdir -p /Users/jakubjakub/Documents/GitHub/beautyrise-crm-main2/src/app/api/campaigns/\\\\[id\\\\])"
+    ],
+    "additionalDirectories": [
+      "/Users/jakubjakub/Documents/GitHub/beautyrise-crm-main2/src/app/api/campaigns"
     ]
   }
 }

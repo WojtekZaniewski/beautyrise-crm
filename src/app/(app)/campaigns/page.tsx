@@ -2,6 +2,7 @@
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import Link from "next/link";
 import { SyncButton } from "./sync-button";
+import { DeleteCampaignButton } from "./delete-campaign-button";
 
 export default async function CampaignsPage() {
   const supabase = createServiceClient();
@@ -115,6 +116,7 @@ export default async function CampaignsPage() {
                   { label: "Spend (7d)", align: "right" },
                   { label: "Leady (7d)", align: "right" },
                   { label: "CPL", align: "right" },
+                  { label: "", align: "right" },
                 ].map((h) => (
                   <th
                     key={h.label}
@@ -133,7 +135,7 @@ export default async function CampaignsPage() {
                 return (
                   <tr
                     key={c.id}
-                    className="table-row-hover transition-colors"
+                    className="group table-row-hover transition-colors"
                     style={{ borderBottom: "1px solid var(--border)" }}
                   >
                     <td className="px-4 py-3">
@@ -175,6 +177,9 @@ export default async function CampaignsPage() {
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
                       {cpl ? `${cpl.toFixed(2)} zł` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <DeleteCampaignButton id={c.id} name={c.name} />
                     </td>
                   </tr>
                 );
