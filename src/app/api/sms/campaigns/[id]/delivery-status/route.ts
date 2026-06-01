@@ -52,37 +52,33 @@ export async function GET(
     return NextResponse.json({ error: "SMS nie skonfigurowany" }, { status: 400 });
   }
 
-  // One getsms check
-  let rawStatus = "";
+  // Check via /log/sent/sms/ — correct endpoint for outbound delivery tracking
+  let sentFromMobile = "";
+  let mobileError = "";
+  let apiError = "";
   try {
-    const url = `https://api.smsmobileapi.com/getsms/?apikey=${encodeURIComponent(apikey)}&guid=${encodeURIComponent(guid)}`;
+    const url = `https://api.smsmobileapi.com/log/sent/sms/?apikey=${encodeURIComponent(apikey)}&guid_message=${encodeURIComponent(guid)}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     if (res.ok) {
       const data = await res.json().catch(() => null);
       if (data && typeof data === "object") {
         const d = data as Record<string, unknown>;
-        const msg = Array.isArray(d.messages) && d.messages.length > 0
-          ? (d.messages[0] as Record<string, unknown>)
-          : null;
-        rawStatus = String(
-          msg?.status ?? msg?.Status ?? d.status ?? d.Status ?? d.result ?? "",
-        ).toLowerCase().trim();
-        console.log(`[delivery-status] guid=${guid} rawStatus="${rawStatus}" raw=${JSON.stringify(data)}`);
+        const result = d.result as Record<string, unknown> | null;
+        const smsList = Array.isArray(result?.sms) ? result!.sms as Record<string, unknown>[] : [];
+        const msg = smsList.length > 0 ? smsList[0] : null;
+        sentFromMobile = String(msg?.send_from_mobile ?? "").trim();
+        mobileError    = String(msg?.send_from_mobile_erreur ?? "").trim();
+        apiError       = String(msg?.error_api ?? result?.error ?? "").trim();
+        console.log(`[delivery-status] guid=${guid} send_from_mobile="${sentFromMobile}" mobileError="${mobileError}" raw=${JSON.stringify(data)}`);
       }
     }
   } catch (err) {
-    console.error(`[delivery-status] getsms error guid=${guid}`, err);
-    return NextResponse.json({ status: "pending" }); // transient error, retry
+    console.error(`[delivery-status] log/sent/sms error guid=${guid}`, err);
+    return NextResponse.json({ status: "pending" });
   }
 
   // ── Confirmed sent ────────────────────────────────────────────────────────
-  if (
-    rawStatus === "success" ||
-    rawStatus === "sent"    ||
-    rawStatus === "delivered" ||
-    rawStatus === "ok"      ||
-    rawStatus === "1"
-  ) {
+  if (sentFromMobile === "1" && mobileError === "") {
     const now = new Date().toISOString();
 
     const { data: conv } = await supabase
@@ -133,12 +129,7 @@ export async function GET(
   }
 
   // ── Confirmed failed ──────────────────────────────────────────────────────
-  if (
-    rawStatus === "error"  ||
-    rawStatus === "failed" ||
-    rawStatus === "nok"    ||
-    rawStatus === "-1"
-  ) {
+  if (mobileError !== "" || apiError !== "") {
     await supabase
       .from("sms_campaign_recipients")
       .update({ status: "failed" })
@@ -147,7 +138,6 @@ export async function GET(
     return NextResponse.json({ status: "failed" });
   }
 
-  // ── Still pending / unrecognised ──────────────────────────────────────────
-  // "pending", "queued", "sending", "" → frontend will retry
-  return NextResponse.json({ status: "pending", rawStatus });
+  // ── Still pending / not yet in log ───────────────────────────────────────
+  return NextResponse.json({ status: "pending" });
 }

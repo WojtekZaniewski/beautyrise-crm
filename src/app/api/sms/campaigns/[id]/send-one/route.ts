@@ -48,8 +48,9 @@ export async function POST(
     const data = await res.json().catch(() => ({}));
     console.log(`[send-one] phone=${phone} response=${JSON.stringify(data)}`);
 
-    if (res.ok && data?.status !== "ERROR" && data?.result !== "NOK") {
-      guid = data?.message_id ?? data?.guid ?? data?.id ?? null;
+    if (res.ok && data?.result?.error === 0) {
+      guid = data?.result?.id ?? data?.result?.message_id ?? data?.result?.guid
+          ?? data?.message_id ?? data?.guid ?? data?.id ?? null;
       accepted = true;
     }
   } catch (err) {
