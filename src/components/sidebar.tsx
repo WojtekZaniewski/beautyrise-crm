@@ -140,7 +140,6 @@ const integrationsNav = [
   { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
   { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
   { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
-  { href: "/sms-inbox", label: "SMS Inbox", icon: Icons.sms, isSmsInbox: true },
 ];
 
 const settingsNav = [
@@ -212,7 +211,6 @@ export function Sidebar({
   useEffect(() => { setOpen(false); }, [path, setOpen]);
 
   const [totalUnread, setTotalUnread] = useState(0);
-  const [smsUnread, setSmsUnread] = useState(0);
   const supabase = createClient();
 
   useEffect(() => {
@@ -220,7 +218,7 @@ export function Sidebar({
 
     async function fetchCount() {
       try {
-        const res = await fetch("/api/messages/unread-count");
+        const res = await fetch("/api/messages/unread-summary");
         if (!res.ok || cancelled) return;
         const data = await res.json() as { total: number };
         setTotalUnread(data.total ?? 0);
@@ -230,8 +228,9 @@ export function Sidebar({
     }
 
     fetchCount();
+    const interval = setInterval(fetchCount, 30_000);
 
-    const channel = supabase
+    const convsChannel = supabase
       .channel(`sidebar-convs:${currentWorkspaceId}`)
       .on(
         "postgres_changes",
@@ -241,35 +240,11 @@ export function Sidebar({
           table: "conversations",
           filter: `workspace_id=eq.${currentWorkspaceId}`,
         },
-        () => {
-          fetchCount();
-        },
+        () => fetchCount(),
       )
       .subscribe();
 
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
-  }, [currentWorkspaceId, supabase]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchSmsUnread() {
-      try {
-        const res = await fetch("/api/sms/conversations/unread-count");
-        if (!res.ok || cancelled) return;
-        const data = await res.json() as { total: number };
-        setSmsUnread(data.total ?? 0);
-      } catch {
-        // silently ignore
-      }
-    }
-
-    fetchSmsUnread();
-
-    const channel = supabase
+    const smsChannel = supabase
       .channel(`sidebar-sms:${currentWorkspaceId}`)
       .on(
         "postgres_changes",
@@ -279,15 +254,30 @@ export function Sidebar({
           table: "sms_conversations",
           filter: `workspace_id=eq.${currentWorkspaceId}`,
         },
-        () => {
-          fetchSmsUnread();
+        () => fetchCount(),
+      )
+      .subscribe();
+
+    const emailChannel = supabase
+      .channel(`sidebar-email:${currentWorkspaceId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "email_threads",
+          filter: `workspace_id=eq.${currentWorkspaceId}`,
         },
+        () => fetchCount(),
       )
       .subscribe();
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      clearInterval(interval);
+      supabase.removeChannel(convsChannel);
+      supabase.removeChannel(smsChannel);
+      supabase.removeChannel(emailChannel);
     };
   }, [currentWorkspaceId, supabase]);
 
@@ -349,7 +339,6 @@ export function Sidebar({
             label={item.label}
             icon={item.icon}
             active={isActive(item.href)}
-            badge={"isSmsInbox" in item && item.isSmsInbox ? smsUnread : undefined}
           />
         ))}
 
