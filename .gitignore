@@ -34,3 +34,4 @@ supabase/create_user.sql
 next-env.d.ts
 
 .vercel
+.mcp.json

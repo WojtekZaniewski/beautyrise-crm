@@ -359,99 +359,102 @@ function CampaignTab({ configured }: { configured: boolean }) {
 
     setSentCampaignId(campaignId);
 
-    // 2. Fetch the recipients the server just created (with their DB IDs)
-    const recipientsRes = await fetch(`/api/sms/campaigns/${campaignId}`);
-    const campaignDetail = recipientsRes.ok ? await recipientsRes.json() : {};
-    const dbRecipients: Array<{ id: string; phone: string; message_body: string; lead_id: string | null }> =
-      campaignDetail.recipients ?? [];
-
-    const total = dbRecipients.length;
+    const total = dedupedRecipients.length;
     let sentCount = 0;
     let failedCount = 0;
     let queuedCount = 0;
 
     setProgress({ done: 0, total, failed: 0 });
 
-    // 3. Sequential loop — runs entirely in the browser, no serverless timeout issues
-    for (const r of dbRecipients) {
+    // Sequential loop — runs entirely in the browser, no serverless timeouts
+    for (const r of dedupedRecipients) {
       if (stopRef.current) break;
 
-      // ── Step A: send this one SMS ─────────────────────────────────────────
+      const msgBody = applyTemplate(template, r);
+
+      // ── Step 1: send this ONE SMS via the proven working endpoint ─────────
       setSendingLabel(`Wysyłanie do ${r.phone}…`);
 
-      const sendRes = await fetch(`/api/sms/campaigns/${campaignId}/send-one`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipient_id: r.id, phone: r.phone, message: r.message_body }),
-      });
-      const sendData = sendRes.ok ? await sendRes.json() : { ok: false };
-
-      if (!sendData.ok || sendData.status === "failed") {
+      let guid: string | null = null;
+      try {
+        const sendRes = await fetch("/api/sms/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: r.phone,
+            message: msgBody,
+            lead_id: r.lead_id ?? undefined,
+            campaign_id: campaignId,
+          }),
+        });
+        if (!sendRes.ok) {
+          failedCount++;
+          setProgress({ done: sentCount + failedCount + queuedCount, total, failed: failedCount, queued: queuedCount });
+          continue;
+        }
+        const d = await sendRes.json() as { guid?: string | null };
+        guid = d.guid ?? null;
+      } catch {
         failedCount++;
         setProgress({ done: sentCount + failedCount + queuedCount, total, failed: failedCount, queued: queuedCount });
         continue;
       }
 
-      const guid: string | null = sendData.guid ?? null;
+      // ── Step 2: poll getsms every 3s until phone confirms ─────────────────
+      // Waiting happens here in the browser — no serverless timeout
+      setSendingLabel(`Czekam na potwierdzenie wysyłki…`);
 
-      // ── Step B: poll delivery-status until phone confirms ─────────────────
-      setSendingLabel(`Czekam na potwierdzenie… (${r.phone})`);
-
-      const POLL_ATTEMPTS = 30;   // 30 × 3s = 90 sekund max
-      const POLL_DELAY_MS = 3000;
       let finalStatus: "sent" | "failed" | "queued" = "queued";
 
       if (guid) {
-        for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+        const checkUrl =
+          `/api/sms/check-status?guid=${encodeURIComponent(guid)}` +
+          `&campaign_id=${encodeURIComponent(campaignId)}` +
+          `&phone=${encodeURIComponent(r.phone)}` +
+          `&lead_id=${encodeURIComponent(r.lead_id ?? "")}` +
+          `&message_body=${encodeURIComponent(msgBody)}`;
+
+        for (let attempt = 0; attempt < 30; attempt++) {
           if (stopRef.current) break;
-          await new Promise<void>(res => setTimeout(res, POLL_DELAY_MS));
-
-          const statusUrl =
-            `/api/sms/campaigns/${campaignId}/delivery-status` +
-            `?guid=${encodeURIComponent(guid)}` +
-            `&recipient_id=${encodeURIComponent(r.id)}` +
-            `&phone=${encodeURIComponent(r.phone)}` +
-            `&lead_id=${encodeURIComponent(r.lead_id ?? "")}` +
-            `&message_body=${encodeURIComponent(r.message_body)}`;
-
-          const statusRes = await fetch(statusUrl);
-          const statusData = statusRes.ok ? await statusRes.json() : {};
-          const s: string = statusData.status ?? "pending";
-
-          if (s === "sent") { finalStatus = "sent"; break; }
-          if (s === "failed") { finalStatus = "failed"; break; }
-          // "pending" → keep polling
+          await new Promise<void>(resolve => setTimeout(resolve, 3_000));
+          try {
+            const sr = await fetch(checkUrl);
+            if (sr.ok) {
+              const { status } = await sr.json() as { status: string };
+              if (status === "sent")   { finalStatus = "sent";   break; }
+              if (status === "failed") { finalStatus = "failed"; break; }
+            }
+          } catch { /* transient error — keep polling */ }
         }
       }
 
-      // ── Step C: update local counters ─────────────────────────────────────
+      // ── Step 3: tally result ───────────────────────────────────────────────
       if (finalStatus === "sent") {
         sentCount++;
       } else if (finalStatus === "failed") {
         failedCount++;
       } else {
-        // queued: SMSMobileAPI accepted + GUID stored, phone didn't confirm in 90s
         queuedCount++;
-        // Mark as "queued" in DB via delivery-status timeout flag
-        await fetch(
-          `/api/sms/campaigns/${campaignId}/delivery-status` +
-          `?guid=${encodeURIComponent(guid ?? "")}` +
-          `&recipient_id=${encodeURIComponent(r.id)}` +
-          `&phone=${encodeURIComponent(r.phone)}` +
-          `&message_body=${encodeURIComponent(r.message_body)}` +
-          `&timeout=true`,
-        ).catch(() => {});
+        // Mark as "queued" in DB (recipient currently sits as "sending")
+        if (guid) {
+          fetch(
+            `/api/sms/check-status?guid=${encodeURIComponent(guid)}` +
+            `&campaign_id=${encodeURIComponent(campaignId)}` +
+            `&phone=${encodeURIComponent(r.phone)}` +
+            `&_mark_queued=true`,
+          ).catch(() => {});
+        }
       }
 
       setProgress({ done: sentCount + failedCount + queuedCount, total, failed: failedCount, queued: queuedCount });
     }
 
-    // 4. Finalise campaign status
+    // Finalise campaign
     await fetch(`/api/sms/campaigns/${campaignId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "sent", total_sent: sentCount + queuedCount }),
-    });
+    }).catch(() => {});
 
     setSendingLabel("");
     sendingRef.current = false;

@@ -32,95 +32,106 @@ export async function POST(req: NextRequest) {
 
   const params = new URLSearchParams({
     apikey,
-    recipients: to.trim(),
+    recipients: to,
     message: message.trim(),
     sendsms: "1",
   });
 
-  let externalId: string | null = null;
-  let status = "sent";
+  let guid: string | null = null;
+  let apiAccepted = false;
 
   try {
     const res = await fetch(`https://api.smsmobileapi.com/sendsms/?${params}`, {
       method: "GET",
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(15_000),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || data?.status === "ERROR" || data?.result === "NOK") {
-      status = "failed";
-    } else {
-      externalId = data?.message_id ?? data?.id ?? null;
+
+    console.log(`[sms/send] phone=${to} response=${JSON.stringify(data)}`);
+
+    if (res.ok && data?.result?.error === 0) {
+      // SMSMobileAPI wraps the response: { result: { id: "...", error: 0, ... } }
+      guid = data?.result?.id ?? data?.result?.message_id ?? data?.result?.guid
+          ?? data?.message_id ?? data?.guid ?? data?.id ?? null;
+      apiAccepted = true;
     }
-  } catch {
-    status = "failed";
+  } catch (err) {
+    console.error(`[sms/send] fetch error phone=${to}`, err);
   }
 
-  // Upsert conversation (only on success)
-  let conversationId: string | null = null;
-  if (status === "sent") {
-    const now = new Date().toISOString();
-    const { data: conv } = await supabase
-      .from("sms_conversations")
-      .upsert(
-        {
-          workspace_id: workspaceId,
-          phone: to.trim(),
-          lead_id: lead_id ?? null,
-          campaign_id: campaign_id ?? null,
-          last_message_at: now,
-          last_message_preview: message.trim().slice(0, 120),
-        },
-        { onConflict: "workspace_id,phone" },
-      )
-      .select("id")
-      .single();
-    conversationId = conv?.id ?? null;
+  if (!apiAccepted) {
+    if (campaign_id) {
+      await supabase
+        .from("sms_campaign_recipients")
+        .update({ status: "failed" })
+        .eq("campaign_id", campaign_id)
+        .eq("phone", to);
+    }
+    return NextResponse.json({ error: "Nie udało się wysłać SMS" }, { status: 500 });
   }
+
+  const now = new Date().toISOString();
+
+  // For campaign sends: mark as "sending" — the frontend will poll getsms to confirm.
+  // For single sends: mark as "sent" immediately (no delivery tracking needed).
+  const recipientStatus = campaign_id ? "sending" : "sent";
+
+  // Upsert conversation
+  let conversationId: string | null = null;
+  const { data: conv } = await supabase
+    .from("sms_conversations")
+    .upsert(
+      {
+        workspace_id: workspaceId,
+        phone: to,
+        lead_id: lead_id ?? null,
+        campaign_id: campaign_id ?? null,
+        last_message_at: now,
+        last_message_preview: message.trim().slice(0, 120),
+      },
+      { onConflict: "workspace_id,phone" },
+    )
+    .select("id")
+    .single();
+  conversationId = conv?.id ?? null;
 
   const { data: msg } = await supabase
     .from("sms_messages")
     .insert({
       workspace_id: workspaceId,
       lead_id: lead_id ?? null,
-      to: to.trim(),
+      to,
       body: message.trim(),
-      status,
+      status: recipientStatus,
       direction: "outbound",
       campaign_id: campaign_id ?? null,
       conversation_id: conversationId,
-      external_id: externalId,
-      sent_at: status === "sent" ? new Date().toISOString() : null,
+      external_id: guid,
+      sent_at: campaign_id ? null : now, // campaign: set only after getsms confirms
     })
     .select("id")
     .single();
 
-  if (campaign_id && status === "sent") {
+  if (campaign_id) {
     await supabase
       .from("sms_campaign_recipients")
-      .update({ status: "sent", sent_at: new Date().toISOString() })
+      .update({ status: "sending" })
       .eq("campaign_id", campaign_id)
-      .eq("phone", to.trim());
+      .eq("phone", to);
   }
 
-  if (campaign_id && status === "failed") {
-    await supabase
-      .from("sms_campaign_recipients")
-      .update({ status: "failed" })
-      .eq("campaign_id", campaign_id)
-      .eq("phone", to.trim());
-  }
-
-  if (lead_id && status === "sent") {
+  if (lead_id && !campaign_id) {
     await supabase.from("lead_events").insert({
       lead_id,
       type: "sms_sent",
-      payload: { to: to.trim(), body: message.trim() },
+      payload: { to, body: message.trim() },
     });
   }
 
-  if (status === "failed") {
-    return NextResponse.json({ error: "Nie udało się wysłać SMS" }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true, id: msg?.id, conversation_id: conversationId });
+  return NextResponse.json({
+    ok: true,
+    id: msg?.id,
+    guid,            // ← null if SMSMobileAPI didn't return one
+    conversation_id: conversationId,
+  });
 }
