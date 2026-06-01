@@ -231,7 +231,18 @@ export function ChannelsSidebar({
           </div>
         )}
 
-        <Item channel="tiktok" label="TikTok" disabled badgeLabel="Wkrótce" />
+        <a
+          href="https://business.tiktok.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all text-left"
+          style={{ color: "var(--muted)" }}
+          title="Oficjalne TikTok DM API nie jest dostępne w UE — otwórz TikTok Business Suite"
+        >
+          <span className="shrink-0">{CHANNEL_ICONS.tiktok}</span>
+          <span className="flex-1 truncate">TikTok</span>
+          <span className="text-[11px] shrink-0" style={{ color: "var(--muted)" }}>↗</span>
+        </a>
       </nav>
     </div>
   );
