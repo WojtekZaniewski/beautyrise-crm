@@ -58,8 +58,10 @@ export async function GET(req: NextRequest) {
         const msg = smsList.length > 0 ? smsList[0] : null;
         sentFromMobile = String(msg?.send_from_mobile ?? "").trim();
         mobileError    = String(msg?.send_from_mobile_erreur ?? "").trim();
-        apiError       = String(msg?.error_api ?? result?.error ?? "").trim();
-        console.log(`[check-status] guid=${guid} send_from_mobile="${sentFromMobile}" mobileError="${mobileError}" raw=${JSON.stringify(data)}`);
+        // Only read error_api from the message row itself — not from result.error
+        // (result.error is non-empty even when the log entry just doesn't exist yet)
+        apiError       = String(msg?.error_api ?? "").trim();
+        console.log(`[check-status] guid=${guid} send_from_mobile="${sentFromMobile}" mobileError="${mobileError}" apiError="${apiError}" raw=${JSON.stringify(data)}`);
       }
     }
   } catch (err) {

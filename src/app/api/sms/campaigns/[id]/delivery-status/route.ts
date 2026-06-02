@@ -68,8 +68,8 @@ export async function GET(
         const msg = smsList.length > 0 ? smsList[0] : null;
         sentFromMobile = String(msg?.send_from_mobile ?? "").trim();
         mobileError    = String(msg?.send_from_mobile_erreur ?? "").trim();
-        apiError       = String(msg?.error_api ?? result?.error ?? "").trim();
-        console.log(`[delivery-status] guid=${guid} send_from_mobile="${sentFromMobile}" mobileError="${mobileError}" raw=${JSON.stringify(data)}`);
+        apiError       = String(msg?.error_api ?? "").trim();
+        console.log(`[delivery-status] guid=${guid} send_from_mobile="${sentFromMobile}" mobileError="${mobileError}" apiError="${apiError}" raw=${JSON.stringify(data)}`);
       }
     }
   } catch (err) {

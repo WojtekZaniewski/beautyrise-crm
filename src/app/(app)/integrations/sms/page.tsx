@@ -400,10 +400,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
         continue;
       }
 
-      // ── Step 2: poll getsms every 3s until phone confirms ─────────────────
-      // Waiting happens here in the browser — no serverless timeout
-      setSendingLabel(`Czekam na potwierdzenie wysyłki…`);
-
+      // ── Step 2: poll until phone confirms — no timeout, runs until sent/failed/stopped ──
       let finalStatus: "sent" | "failed" | "queued" = "queued";
 
       if (guid) {
@@ -414,9 +411,12 @@ function CampaignTab({ configured }: { configured: boolean }) {
           `&lead_id=${encodeURIComponent(r.lead_id ?? "")}` +
           `&message_body=${encodeURIComponent(msgBody)}`;
 
-        for (let attempt = 0; attempt < 30; attempt++) {
+        let pollCount = 0;
+        while (!stopRef.current) {
+          await new Promise<void>(resolve => setTimeout(resolve, 5_000));
           if (stopRef.current) break;
-          await new Promise<void>(resolve => setTimeout(resolve, 3_000));
+          pollCount++;
+          setSendingLabel(`Czekam na wysyłkę przez telefon… (${Math.round(pollCount * 5)}s)`);
           try {
             const sr = await fetch(checkUrl);
             if (sr.ok) {
@@ -424,7 +424,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
               if (status === "sent")   { finalStatus = "sent";   break; }
               if (status === "failed") { finalStatus = "failed"; break; }
             }
-          } catch { /* transient error — keep polling */ }
+          } catch { /* transient network error — keep polling */ }
         }
       }
 
@@ -434,16 +434,8 @@ function CampaignTab({ configured }: { configured: boolean }) {
       } else if (finalStatus === "failed") {
         failedCount++;
       } else {
+        // User clicked "Zatrzymaj" — SMS was accepted by API but phone not yet confirmed
         queuedCount++;
-        // Mark as "queued" in DB (recipient currently sits as "sending")
-        if (guid) {
-          fetch(
-            `/api/sms/check-status?guid=${encodeURIComponent(guid)}` +
-            `&campaign_id=${encodeURIComponent(campaignId)}` +
-            `&phone=${encodeURIComponent(r.phone)}` +
-            `&_mark_queued=true`,
-          ).catch(() => {});
-        }
       }
 
       setProgress({ done: sentCount + failedCount + queuedCount, total, failed: failedCount, queued: queuedCount });
