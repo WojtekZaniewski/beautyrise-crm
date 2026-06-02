@@ -219,7 +219,7 @@ export function SendPresaleEmailButton({
               )}
             </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               <button
                 onClick={closeModal}
                 style={{
@@ -230,6 +230,19 @@ export function SendPresaleEmailButton({
               >
                 Anuluj
               </button>
+              <a
+                href={`/api/leads/${leadId}/presale-email-html`}
+                download
+                style={{
+                  flex: 1, padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+                  border: "1px solid var(--border)", background: "transparent", cursor: "pointer",
+                  color: "var(--text)", textDecoration: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                }}
+              >
+                <DownloadIcon />
+                Pobierz HTML
+              </a>
               <button
                 onClick={handleSend}
                 disabled={!canSend || state === "sending" || editingEmail}
@@ -280,6 +293,16 @@ function PlayIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
   );
 }
