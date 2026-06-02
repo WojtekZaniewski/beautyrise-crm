@@ -16,10 +16,8 @@ export async function POST(
   if (!rawPhone || !message) {
     return NextResponse.json({ error: "Brak phone lub message" }, { status: 400 });
   }
-  let phone = rawPhone.replace(/[\s\-().]/g, "");
-  if (/^\d{9}$/.test(phone))        phone = "+48" + phone;
-  else if (/^0\d{9}$/.test(phone))  phone = "+48" + phone.slice(1);
-  else if (/^48\d{9}$/.test(phone)) phone = "+" + phone;
+  const digits = rawPhone.replace(/\D/g, "");
+  const phone = "+48" + digits.slice(-9);
 
   const { data: integration } = await supabase
     .from("integrations")
