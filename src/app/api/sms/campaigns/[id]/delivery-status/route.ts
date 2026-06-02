@@ -78,7 +78,7 @@ export async function GET(
   }
 
   // ── Confirmed sent ────────────────────────────────────────────────────────
-  if (sentFromMobile === "1" && mobileError === "") {
+  if (sentFromMobile === "1") {
     const now = new Date().toISOString();
 
     const { data: conv } = await supabase
@@ -129,7 +129,7 @@ export async function GET(
   }
 
   // ── Confirmed failed ──────────────────────────────────────────────────────
-  if (mobileError !== "" || apiError !== "") {
+  if (sentFromMobile === "0" && (mobileError !== "" || apiError !== "")) {
     await supabase
       .from("sms_campaign_recipients")
       .update({ status: "failed" })

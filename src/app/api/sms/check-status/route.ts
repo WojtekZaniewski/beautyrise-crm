@@ -70,7 +70,8 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Confirmed sent ────────────────────────────────────────────────────────
-  if (sentFromMobile === "1" && mobileError === "") {
+  // send_from_mobile=1 is the authoritative success signal — ignore any transient error fields
+  if (sentFromMobile === "1") {
     const now = new Date().toISOString();
 
     await supabase
@@ -98,7 +99,8 @@ export async function GET(req: NextRequest) {
   }
 
   // ── Confirmed failed ──────────────────────────────────────────────────────
-  if (mobileError !== "" || apiError !== "") {
+  // Only fail when send_from_mobile=0 AND there's an explicit error — not on transient states
+  if (sentFromMobile === "0" && (mobileError !== "" || apiError !== "")) {
     await supabase
       .from("sms_campaign_recipients")
       .update({ status: "failed" })
