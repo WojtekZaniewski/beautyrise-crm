@@ -12,10 +12,14 @@ export async function POST(
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
 
-  const { recipient_id, phone, message } = await req.json();
-  if (!phone || !message) {
+  const { recipient_id, phone: rawPhone, message } = await req.json();
+  if (!rawPhone || !message) {
     return NextResponse.json({ error: "Brak phone lub message" }, { status: 400 });
   }
+  let phone = rawPhone.replace(/[\s\-().]/g, "");
+  if (/^\d{9}$/.test(phone))        phone = "+48" + phone;
+  else if (/^0\d{9}$/.test(phone))  phone = "+48" + phone.slice(1);
+  else if (/^48\d{9}$/.test(phone)) phone = "+" + phone;
 
   const { data: integration } = await supabase
     .from("integrations")

@@ -3,7 +3,11 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 
 function normalizePhone(raw: string): string {
-  return raw.replace(/\s+/g, "");
+  let phone = raw.replace(/[\s\-().]/g, "");
+  if (/^\d{9}$/.test(phone))        phone = "+48" + phone;  // 602200511 → +48602200511
+  else if (/^0\d{9}$/.test(phone))  phone = "+48" + phone.slice(1); // 0602200511 → +48602200511
+  else if (/^48\d{9}$/.test(phone)) phone = "+" + phone;   // 48602200511 → +48602200511
+  return phone;
 }
 
 export async function POST(req: NextRequest) {
