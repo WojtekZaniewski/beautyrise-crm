@@ -724,11 +724,13 @@ function CampaignTab({ configured }: { configured: boolean }) {
             </div>
           )}
 
-          <button onClick={startSend} disabled={sending || !recipients.length || !template.trim()}
-            className="rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-            style={{ background: "var(--accent)" }}>
-            {sending ? `Wysyłanie ${progress?.done ?? 0} / ${recipients.length}…` : `Wyślij kampanię do ${recipients.length} ${recipients.length === 1 ? "osoby" : "osób"} →`}
-          </button>
+          {!done && (
+            <button onClick={startSend} disabled={sending || !recipients.length || !template.trim()}
+              className="rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              style={{ background: "var(--accent)" }}>
+              {sending ? `Wysyłanie ${progress?.done ?? 0} / ${recipients.length}…` : `Wyślij kampanię do ${recipients.length} ${recipients.length === 1 ? "osoby" : "osób"} →`}
+            </button>
+          )}
         </Panel>
       )}
     </div>
