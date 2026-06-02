@@ -39,6 +39,20 @@ export async function POST(req: NextRequest) {
     sendsms: "1",
   });
 
+  // Idempotency: if this campaign already sent to this number, return existing record
+  if (campaign_id) {
+    const { data: existing } = await supabase
+      .from("sms_messages")
+      .select("id, external_id")
+      .eq("campaign_id", campaign_id)
+      .eq("to", to)
+      .maybeSingle();
+    if (existing) {
+      console.log(`[sms/send] duplicate blocked phone=${to} campaign=${campaign_id}`);
+      return NextResponse.json({ ok: true, id: existing.id, guid: existing.external_id, duplicate: true });
+    }
+  }
+
   let guid: string | null = null;
   let apiAccepted = false;
 

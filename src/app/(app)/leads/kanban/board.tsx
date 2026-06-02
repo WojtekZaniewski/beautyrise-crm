@@ -134,6 +134,134 @@ function MetaStatsBar({
   );
 }
 
+function KanbanContactModal({
+  leadId,
+  phone,
+  email,
+  onUpdate,
+  onClose,
+}: {
+  leadId: string;
+  phone: string | null;
+  email: string | null;
+  onUpdate: (phone: string | null, email: string | null) => void;
+  onClose: () => void;
+}) {
+  const [phoneVal, setPhoneVal] = useState(phone ?? "");
+  const [emailVal, setEmailVal] = useState(email ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: phoneVal.trim() || null,
+        email: emailVal.trim() || null,
+      }),
+    });
+    setSaving(false);
+    onUpdate(phoneVal.trim() || null, emailVal.trim() || null);
+    onClose();
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.45)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        style={{
+          background: "var(--panel-solid, #fff)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
+          padding: "24px 28px",
+          width: "380px",
+          maxWidth: "calc(100vw - 32px)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
+          <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700 }}>Edytuj kontakt</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "18px", padding: "0 4px" }}>✕</button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "20px" }}>
+          <div>
+            <label style={{ fontSize: "10.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--muted)", display: "block", marginBottom: "6px" }}>
+              Telefon
+            </label>
+            <input
+              type="tel"
+              value={phoneVal}
+              onChange={(e) => setPhoneVal(e.target.value)}
+              placeholder="+48 000 000 000"
+              autoFocus
+              style={{
+                width: "100%", padding: "8px 10px", borderRadius: "7px",
+                fontSize: "13px", outline: "none",
+                background: "var(--ba-4)", border: "1.5px solid var(--border-strong)",
+                color: "var(--text)", boxSizing: "border-box",
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-strong)"; }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: "10.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--muted)", display: "block", marginBottom: "6px" }}>
+              E-mail
+            </label>
+            <input
+              type="email"
+              value={emailVal}
+              onChange={(e) => setEmailVal(e.target.value)}
+              placeholder="adres@email.com"
+              style={{
+                width: "100%", padding: "8px 10px", borderRadius: "7px",
+                fontSize: "13px", outline: "none",
+                background: "var(--ba-4)", border: "1.5px solid var(--border-strong)",
+                color: "var(--text)", boxSizing: "border-box",
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-strong)"; }}
+              onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") onClose(); }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1, padding: "9px", borderRadius: "7px", fontSize: "13px", fontWeight: 600,
+              border: "1px solid var(--border)", background: "transparent", cursor: "pointer",
+              color: "var(--text)",
+            }}
+          >
+            Anuluj
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            style={{
+              flex: 2, padding: "9px", borderRadius: "7px", fontSize: "13px", fontWeight: 700,
+              border: "none", background: "var(--accent)", color: "#fff",
+              cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? "Zapisuję…" : "Zapisz"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function KanbanDeleteButton({
   leadId,
   onDelete,
@@ -301,6 +429,7 @@ function LeadCard({
   onDragEnd,
   onValueUpdate,
   onDelete,
+  onContactUpdate,
 }: {
   lead: Lead;
   isClosedStage: boolean;
@@ -309,7 +438,9 @@ function LeadCard({
   onDragEnd: () => void;
   onValueUpdate: (leadId: string, value: string | null) => void;
   onDelete: (id: string) => void;
+  onContactUpdate: (leadId: string, phone: string | null, email: string | null) => void;
 }) {
+  const [contactModalOpen, setContactModalOpen] = useState(false);
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
 
@@ -349,10 +480,36 @@ function LeadCard({
         )}
       </div>
 
-      {lead.phone && (
-        <div className="text-xs mb-1" style={{ color: "var(--muted)" }}>
-          {lead.phone}
+      {(lead.phone || lead.email) && (
+        <div className="flex items-center gap-1 mb-1 group/contact">
+          <div className="text-xs" style={{ color: "var(--muted)" }}>
+            {lead.phone ?? lead.email}
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); setContactModalOpen(true); }}
+            draggable={false}
+            onDragStart={(e) => e.stopPropagation()}
+            title="Edytuj telefon / e-mail"
+            className="opacity-0 group-hover/contact:opacity-60 transition-opacity flex items-center justify-center rounded"
+            style={{ width: "14px", height: "14px", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 0, flexShrink: 0 }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
         </div>
+      )}
+      {!lead.phone && !lead.email && (
+        <button
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setContactModalOpen(true); }}
+          draggable={false}
+          onDragStart={(e) => e.stopPropagation()}
+          className="text-xs mb-1 transition-colors"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: 0, opacity: 0.5 }}
+        >
+          + dodaj kontakt
+        </button>
       )}
 
       {lead.campaign_name && (
@@ -394,6 +551,16 @@ function LeadCard({
           leadId={lead.id}
           value={lead.value_pln}
           onUpdate={(v) => onValueUpdate(lead.id, v)}
+        />
+      )}
+
+      {contactModalOpen && (
+        <KanbanContactModal
+          leadId={lead.id}
+          phone={lead.phone}
+          email={lead.email}
+          onUpdate={(p, e) => onContactUpdate(lead.id, p, e)}
+          onClose={() => setContactModalOpen(false)}
         />
       )}
     </div>
@@ -977,6 +1144,12 @@ export function KanbanBoard({
     );
   }
 
+  function handleContactUpdate(leadId: string, phone: string | null, email: string | null) {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, phone, email } : l)),
+    );
+  }
+
   async function handleDrop(targetStageId: string, leadId: string) {
     const prevLead = leads.find((l) => l.id === leadId);
     if (!prevLead || prevLead.stage_id === targetStageId) return;
@@ -1122,6 +1295,7 @@ export function KanbanBoard({
                     }}
                     onValueUpdate={handleValueUpdate}
                     onDelete={handleDeleteLead}
+                    onContactUpdate={handleContactUpdate}
                   />
                 ))}
                 {stageLeads.length === 0 && (

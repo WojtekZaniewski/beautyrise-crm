@@ -326,11 +326,14 @@ function CampaignTab({ configured }: { configured: boolean }) {
     sendingRef.current = true;
     setSending(true); setDone(false); stopRef.current = false;
 
-    // Deduplicate by phone number — keep first occurrence
+    // Deduplicate by normalized phone — prevents duplicates when same number is stored
+    // in different formats (e.g. "534187109" and "+48534187109")
+    const normalizeForDedup = (p: string) => "+48" + p.replace(/\D/g, "").slice(-9);
     const seen = new Set<string>();
     const dedupedRecipients = recipients.filter(r => {
-      if (seen.has(r.phone)) return false;
-      seen.add(r.phone);
+      const key = normalizeForDedup(r.phone);
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     });
 

@@ -12,6 +12,7 @@ import { SendGrantFormButton } from "./send-grant-form-button";
 import { SendPresaleEmailButton } from "./send-presale-email-button";
 import { SendPostsaleEmailButton } from "./send-postsale-email-button";
 import { SendLeadmagnetEmailButton } from "./send-leadmagnet-email-button";
+import { LeadContactEdit } from "./lead-contact-edit";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForPipeline, getCurrentPipelineId, getPipelines } from "@/lib/pipeline";
@@ -170,15 +171,14 @@ export default async function LeadDetailPage({
             </div>
 
             <div className="grid grid-cols-2 gap-5 text-[13px]">
-              {[
-                { label: "Telefon", value: lead.phone },
-                { label: "E-mail", value: lead.email },
-              ].map((f) => (
-                <div key={f.label}>
-                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-1" style={{ color: "var(--muted)" }}>{f.label}</div>
-                  <div>{f.value ?? "—"}</div>
-                </div>
-              ))}
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-1" style={{ color: "var(--muted)" }}>Telefon</div>
+                <LeadContactEdit leadId={id} field="phone" value={phone} />
+              </div>
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-1" style={{ color: "var(--muted)" }}>E-mail</div>
+                <LeadContactEdit leadId={id} field="email" value={email} />
+              </div>
               <div>
                 <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-1" style={{ color: "var(--muted)" }}>Wartość</div>
                 <ValueEdit leadId={id} value={lead.value_pln as number | null} />
@@ -219,9 +219,9 @@ export default async function LeadDetailPage({
                 Wyślij mail
               </div>
               <div className="flex gap-2">
-                <SendPresaleEmailButton leadId={id} hasEmail={!!lead.email} />
-                <SendPostsaleEmailButton leadId={id} hasEmail={!!lead.email} />
-                <SendLeadmagnetEmailButton leadId={id} hasEmail={!!lead.email} />
+                <SendPresaleEmailButton leadId={id} hasEmail={!!lead.email} leadEmail={email} />
+                <SendPostsaleEmailButton leadId={id} hasEmail={!!lead.email} leadEmail={email} />
+                <SendLeadmagnetEmailButton leadId={id} hasEmail={!!lead.email} leadEmail={email} />
               </div>
               {!lead.email && (
                 <p className="text-[12px] mt-2" style={{ color: "var(--muted)" }}>
