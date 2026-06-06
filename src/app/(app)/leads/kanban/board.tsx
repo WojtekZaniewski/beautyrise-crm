@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { LastContactBadge } from "@/components/last-contact-badge";
 import type { MetaStats, EmailStats, SmsStats, EmailDailyPoint, SmsDailyPoint } from "./page";
 import {
   AreaChart,
@@ -29,6 +30,7 @@ type Lead = {
   acquisition_cost?: number | null;
   campaign_name?: string | null;
   value_pln?: string | null;
+  last_contact_at?: string | null;
 };
 
 const sourceConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -540,6 +542,7 @@ function LeadCard({
               ~{pln(lead.acquisition_cost!)}
             </span>
           )}
+          <LastContactBadge lastContactAt={lead.last_contact_at ?? null} />
         </div>
         <div className="flex items-center gap-1" draggable={false} onDragStart={(e) => e.stopPropagation()}>
           <KanbanDeleteButton leadId={lead.id} onDelete={onDelete} />

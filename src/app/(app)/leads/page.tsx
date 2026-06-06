@@ -5,6 +5,9 @@ import { sourceLabel } from "@/lib/constants";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
 import { DeleteLeadButton } from "@/components/delete-lead-button";
+import { LastContactBadge } from "@/components/last-contact-badge";
+
+const CONTACT_EVENT_TYPES = ["note", "call", "sms_sent", "email_sent", "message_received", "message_sent"];
 
 type SearchParams = Promise<{
   q?: string;
@@ -56,6 +59,23 @@ export default async function LeadsPage({
         (lt) => lt.tags?.id === tag,
       ),
     );
+  }
+
+  // Fetch last contact events for all leads
+  const lastContactMap: Record<string, string> = {};
+  if (leads.length > 0) {
+    const leadIds = leads.map((l) => l.id);
+    const { data: contactEvents } = await supabase
+      .from("lead_events")
+      .select("lead_id, created_at")
+      .in("lead_id", leadIds)
+      .in("type", CONTACT_EVENT_TYPES)
+      .order("created_at", { ascending: false });
+    for (const e of contactEvents ?? []) {
+      if (!lastContactMap[e.lead_id as string]) {
+        lastContactMap[e.lead_id as string] = e.created_at as string;
+      }
+    }
   }
 
   const { data: tagsData } = await supabase
@@ -164,7 +184,7 @@ export default async function LeadsPage({
         <table className="w-full min-w-[640px] text-[13px]">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
-              {["Imię i nazwisko", "Telefon", "E-mail", "Etap", "Tagi", "Źródło", "Data", ""].map(
+              {["Imię i nazwisko", "Telefon", "E-mail", "Etap", "Tagi", "Źródło", "Data", "Kontakt", ""].map(
                 (h) => (
                   <th
                     key={h}
@@ -282,6 +302,9 @@ export default async function LeadsPage({
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <LastContactBadge lastContactAt={lastContactMap[lead.id] ?? null} />
                     </td>
                     <td className="px-4 py-3">
                       <DeleteLeadButton leadId={lead.id} />
