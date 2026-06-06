@@ -1,5 +1,6 @@
 "use client";
 
+// Pokazuje czas od ostatniego kontaktu z leadem
 function formatRelative(date: Date): string {
   const diff = Date.now() - date.getTime();
   const hours = diff / (1000 * 60 * 60);
