@@ -1,6 +1,5 @@
 "use client";
 
-// Pokazuje czas od ostatniego kontaktu z leadem
 function formatRelative(date: Date): string {
   const diff = Date.now() - date.getTime();
   const hours = diff / (1000 * 60 * 60);
@@ -24,7 +23,7 @@ export function LastContactBadge({
   const label = date ? formatRelative(date) : "Brak";
 
   const isUrgent = diffDays > 2;
-  const isWarning = diffDays > 1 && diffDays <= 2;
+  const isWarning = !isUrgent && diffDays > 1;
 
   const style: React.CSSProperties = isUrgent
     ? { background: "rgba(239,68,68,0.12)", color: "#ef4444" }
