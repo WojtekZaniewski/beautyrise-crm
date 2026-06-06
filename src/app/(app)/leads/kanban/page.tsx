@@ -326,6 +326,23 @@ export default async function KanbanPage({
     smsDailyMetrics.push({ date: lbl, ...(smsDMap[ds] ?? { sent: 0, replied: 0 }) });
   }
 
+  // Fetch last contact event per lead
+  const lastContactMap: Record<string, string> = {};
+  if (leadsRaw.length > 0) {
+    const leadIds = leadsRaw.map((l) => l.id);
+    const { data: contactEvents } = await supabase
+      .from("lead_events")
+      .select("lead_id, created_at")
+      .in("lead_id", leadIds)
+      .in("type", ["note", "call", "sms_sent", "email_sent", "message_received", "message_sent"])
+      .order("created_at", { ascending: false });
+    for (const e of contactEvents ?? []) {
+      if (!lastContactMap[e.lead_id as string]) {
+        lastContactMap[e.lead_id as string] = e.created_at as string;
+      }
+    }
+  }
+
   // Enrich leads with per-campaign acquisition cost
   const leads = leadsRaw.map((lead) => ({
     ...lead,
@@ -337,6 +354,7 @@ export default async function KanbanPage({
       lead.source_campaign_id && campaignMap[lead.source_campaign_id]
         ? campaignMap[lead.source_campaign_id].name
         : null,
+    last_contact_at: lastContactMap[lead.id] ?? null,
   }));
 
   const selectedEmailCampaignName = campaign !== "all"
