@@ -23,6 +23,7 @@ export function SendMessageButton({
   const [body, setBody] = useState("");
   const [phone, setPhone] = useState(leadPhone ?? "");
   const [smsText, setSmsText] = useState("");
+  const [bodyMode, setBodyMode] = useState<"text" | "html">("text");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -51,7 +52,8 @@ export function SendMessageButton({
         account_id: accountId,
         to,
         subject,
-        html: body.replace(/\n/g, "<br>"),
+        html: bodyMode === "html" ? body : body.replace(/\n/g, "<br>"),
+        text: bodyMode === "html" ? body.replace(/<[^>]+>/g, "") : body,
         lead_id: leadId,
       }),
     });
@@ -159,12 +161,35 @@ export function SendMessageButton({
                   />
                 </div>
                 <div>
-                  <label className="text-[10.5px] font-semibold uppercase tracking-[0.09em] block mb-1" style={{ color: "var(--muted)" }}>Treść</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10.5px] font-semibold uppercase tracking-[0.09em]" style={{ color: "var(--muted)" }}>Treść</label>
+                    <div className="flex items-center gap-0.5 rounded-md overflow-hidden text-[11px] font-medium" style={{ border: "1px solid var(--border)" }}>
+                      {(["text", "html"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setBodyMode(m)}
+                          style={{
+                            padding: "2px 8px",
+                            background: bodyMode === m ? "var(--accent)" : "transparent",
+                            color: bodyMode === m ? "#fff" : "var(--muted)",
+                            border: "none", cursor: "pointer",
+                          }}
+                        >
+                          {m === "text" ? "Tekst" : "HTML"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <textarea
                     value={body} onChange={(e) => setBody(e.target.value)}
-                    rows={5} placeholder="Treść wiadomości…"
+                    rows={6} placeholder={bodyMode === "html" ? "<p>Treść maila w HTML…</p>" : "Treść wiadomości…"}
                     className="w-full px-3 py-2 rounded-lg text-[13px] outline-none resize-none"
-                    style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
+                    style={{
+                      background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)",
+                      fontFamily: bodyMode === "html" ? "monospace" : undefined,
+                      fontSize: bodyMode === "html" ? 12 : undefined,
+                    }}
                   />
                 </div>
               </>
