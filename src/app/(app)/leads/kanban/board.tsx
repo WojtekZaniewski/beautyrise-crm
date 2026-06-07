@@ -497,11 +497,11 @@ function LeadQuickViewModal({
           {score != null && (
             <div className="flex items-center gap-2 text-[13px]">
               <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Potencjał</span>
-              <div className="flex items-center gap-1.5">
-                {[1,2,3,4,5].map((s) => (
-                  <div key={s} className="w-3 h-3 rounded-sm" style={{ background: s <= score ? "#f97316" : "var(--ba-6)" }} />
+              <div className="flex items-center gap-1">
+                {[1,2,3,4,5,6,7,8,9,10].map((s) => (
+                  <div key={s} className="w-2.5 h-2.5 rounded-sm" style={{ background: s <= score ? "#f97316" : "var(--ba-6)" }} />
                 ))}
-                <span className="text-[11px]" style={{ color: "var(--muted)" }}>{score}/5</span>
+                <span className="text-[11px] ml-1" style={{ color: "var(--muted)" }}>{score}/10</span>
               </div>
             </div>
           )}
