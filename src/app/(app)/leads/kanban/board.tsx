@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { LastContactBadge } from "@/components/last-contact-badge";
+import { SendMessageButton } from "@/components/send-message-button";
 import type { MetaStats, EmailStats, SmsStats, EmailDailyPoint, SmsDailyPoint } from "./page";
 import {
   AreaChart,
@@ -452,16 +454,18 @@ function LeadQuickViewModal({
 
   const score = lead.potential_score;
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         style={{
-          background: "var(--panel-solid, #fff)", border: "1px solid var(--border)",
-          borderRadius: "14px", boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+          background: "var(--panel-solid, #1a1a1a)", border: "1px solid var(--border)",
+          borderRadius: "12px", boxShadow: "0 16px 48px rgba(0,0,0,0.32)",
           padding: "24px 28px", width: "420px", maxWidth: "calc(100vw - 32px)",
+          position: "relative", zIndex: 10000,
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -530,6 +534,10 @@ function LeadQuickViewModal({
           {needsCall ? "✓ Call zaplanowany" : "📞 Umów call sprzedażowy"}
         </button>
 
+        <div className="mb-3">
+          <SendMessageButton leadId={lead.id} leadEmail={lead.email} leadPhone={lead.phone} />
+        </div>
+
         <div className="flex gap-2">
           <a
             href={`/leads/${lead.id}`}
@@ -547,7 +555,8 @@ function LeadQuickViewModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

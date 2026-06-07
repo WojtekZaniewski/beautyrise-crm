@@ -6,7 +6,7 @@ import { CampaignSelect } from "@/components/campaign-select";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { KanbanBoard } from "./board";
 
-type SearchParams = Promise<{ source?: string; campaign?: string; from?: string; to?: string }>;
+type SearchParams = Promise<{ source?: string; campaign?: string; from?: string; to?: string; minScore?: string; maxScore?: string; minDays?: string }>;
 
 export type MetaStats = {
   totalSpend: number;
@@ -44,7 +44,10 @@ export default async function KanbanPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { source = "all", campaign = "all", from: fromParam, to: toParam } = await searchParams;
+  const { source = "all", campaign = "all", from: fromParam, to: toParam, minScore: minScoreParam, maxScore: maxScoreParam, minDays: minDaysParam } = await searchParams;
+  const minScore = minScoreParam ? parseInt(minScoreParam) : null;
+  const maxScore = maxScoreParam ? parseInt(maxScoreParam) : null;
+  const minDays  = minDaysParam  ? parseInt(minDaysParam)  : null;
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
@@ -345,6 +348,18 @@ export default async function KanbanPage({
         lastContactMap[e.lead_id as string] = e.created_at as string;
       }
     }
+  }
+
+  // Apply potential score and last-contact filters
+  if (minScore !== null) leadsRaw = leadsRaw.filter((l) => (l.potential_score ?? 0) >= minScore);
+  if (maxScore !== null) leadsRaw = leadsRaw.filter((l) => (l.potential_score ?? 0) <= maxScore);
+  if (minDays !== null) {
+    const cutoff = Date.now() - minDays * 86400000;
+    leadsRaw = leadsRaw.filter((l) => {
+      const last = lastContactMap[l.id];
+      if (!last) return true;
+      return new Date(last).getTime() < cutoff;
+    });
   }
 
   // Enrich leads with per-campaign acquisition cost
