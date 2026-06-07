@@ -13,7 +13,7 @@ import { SendPresaleEmailButton } from "./send-presale-email-button";
 import { SendPostsaleEmailButton } from "./send-postsale-email-button";
 import { SendLeadmagnetEmailButton } from "./send-leadmagnet-email-button";
 import { LeadContactEdit } from "./lead-contact-edit";
-import { SendMessageButton } from "@/components/send-message-button";
+import { SendMessageButton } from "./send-message-button";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForPipeline, getCurrentPipelineId, getPipelines } from "@/lib/pipeline";

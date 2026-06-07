@@ -4,7 +4,6 @@ import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { sourceLabel } from "@/lib/constants";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
-import { DateRangePicker } from "@/components/date-range-picker";
 import { DeleteLeadButton } from "@/components/delete-lead-button";
 import { LastContactBadge } from "@/components/last-contact-badge";
 
@@ -13,11 +12,6 @@ type SearchParams = Promise<{
   stage?: string;
   source?: string;
   tag?: string;
-  from?: string;
-  to?: string;
-  minScore?: string;
-  maxScore?: string;
-  minDays?: string;
 }>;
 
 export default async function LeadsPage({
@@ -25,16 +19,9 @@ export default async function LeadsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { q, stage, tag, from: fromParam, to: toParam, minScore: minScoreParam, maxScore: maxScoreParam, minDays: minDaysParam } = await searchParams;
+  const { q, stage, tag } = await searchParams;
   const sourceParam = (await searchParams).source;
   const source = sourceParam === "all" ? undefined : (sourceParam ?? "meta_ads");
-
-  const todayStr    = new Date().toISOString().split("T")[0];
-  const fromDate    = fromParam ?? new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
-  const toDate      = toParam   ?? todayStr;
-  const minScore    = minScoreParam ? parseInt(minScoreParam) : null;
-  const maxScore    = maxScoreParam ? parseInt(maxScoreParam) : null;
-  const minDays     = minDaysParam  ? parseInt(minDaysParam)  : null;
   const supabase = createServiceClient();
   const WORKSPACE_ID = await getCurrentWorkspaceId();
 
@@ -71,8 +58,6 @@ export default async function LeadsPage({
       ),
     );
   }
-  if (minScore !== null) leads = leads.filter((l) => (l.potential_score ?? 0) >= minScore);
-  if (maxScore !== null) leads = leads.filter((l) => (l.potential_score ?? 0) <= maxScore);
 
   // Fetch last contact event per lead
   const lastContactMap: Record<string, string> = {};
@@ -89,15 +74,6 @@ export default async function LeadsPage({
         lastContactMap[e.lead_id as string] = e.created_at as string;
       }
     }
-  }
-
-  if (minDays !== null) {
-    const cutoff = Date.now() - minDays * 86400000;
-    leads = leads.filter((l) => {
-      const last = lastContactMap[l.id];
-      if (!last) return true;
-      return new Date(last).getTime() < cutoff;
-    });
   }
 
   const { data: tagsData } = await supabase
@@ -132,7 +108,6 @@ export default async function LeadsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <DateRangePicker from={fromDate} to={toDate} />
           <a
             href={exportUrl}
             className="hidden sm:inline-flex px-3.5 py-2 rounded-md text-[13px] font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors"
