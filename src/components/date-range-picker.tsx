@@ -17,6 +17,16 @@ function toStr(d: Date) {
   return d.toISOString().split("T")[0];
 }
 
+const DAYS_OPTIONS = [
+  { label: "Wszystkie", value: 0 },
+  { label: "> 1 dzień", value: 1 },
+  { label: "> 2 dni",   value: 2 },
+  { label: "> 3 dni",   value: 3 },
+  { label: "> 7 dni",   value: 7 },
+  { label: "> 14 dni",  value: 14 },
+  { label: "> 30 dni",  value: 30 },
+];
+
 export function DateRangePicker({ from, to }: { from: string; to: string }) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -26,9 +36,15 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
   const [pos,  setPos]  = useState<{ top: number; left: number } | null>(null);
   const [cf, setCf]     = useState(from);
   const [ct, setCt]     = useState(to);
+  const [cMinScore, setCMinScore] = useState(() => parseInt(params.get("minScore") ?? "1"));
+  const [cMaxScore, setCMaxScore] = useState(() => parseInt(params.get("maxScore") ?? "10"));
+  const [cMinDays,  setCMinDays]  = useState(() => parseInt(params.get("minDays")  ?? "0"));
 
   useEffect(() => { setCf(from); }, [from]);
   useEffect(() => { setCt(to); }, [to]);
+  useEffect(() => { setCMinScore(parseInt(params.get("minScore") ?? "1")); }, [params]);
+  useEffect(() => { setCMaxScore(parseInt(params.get("maxScore") ?? "10")); }, [params]);
+  useEffect(() => { setCMinDays(parseInt(params.get("minDays") ?? "0")); }, [params]);
 
   const btnRef  = useRef<HTMLButtonElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -56,12 +72,27 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  function go(f: string, t: string) {
+  function applyParams(overrides: Record<string, string | null>) {
     const p = new URLSearchParams(params.toString());
-    p.set("from", f);
-    p.set("to", t);
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === null) p.delete(k); else p.set(k, v);
+    }
     router.push(`${pathname}?${p.toString()}`);
     setOpen(false);
+  }
+
+  function go(f: string, t: string) {
+    applyParams({ from: f, to: t });
+  }
+
+  function applyAll() {
+    applyParams({
+      from: cf,
+      to: ct,
+      minScore: cMinScore > 1  ? String(cMinScore) : null,
+      maxScore: cMaxScore < 10 ? String(cMaxScore) : null,
+      minDays:  cMinDays  > 0  ? String(cMinDays)  : null,
+    });
   }
 
   const todayStr = toStr(new Date());
@@ -76,6 +107,11 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
     return `${day}.${m}.${y.slice(2)}`;
   };
   const label = matchedPreset ? matchedPreset.label : `${fmt(from)} – ${fmt(to)}`;
+
+  const activeMinScore = parseInt(params.get("minScore") ?? "1");
+  const activeMaxScore = parseInt(params.get("maxScore") ?? "10");
+  const activeMinDays  = parseInt(params.get("minDays")  ?? "0");
+  const hasExtraFilters = activeMinScore > 1 || activeMaxScore < 10 || activeMinDays > 0;
 
   const dropdown = open && pos ? (
     <div
@@ -128,13 +164,53 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
           className="w-full px-2 py-1.5 rounded-md text-[11px]"
           style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
         />
-        <button
-          onClick={() => cf && ct && go(cf, ct)}
-          className="w-full py-1.5 rounded-md text-[11px] font-semibold btn-primary mt-0.5"
-        >
-          Zastosuj
-        </button>
       </div>
+
+      <div className="h-px my-3" style={{ background: "var(--border)" }} />
+
+      {/* Potencjał filter */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Potencjał (1–10)</p>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex-1">
+          <p className="text-[10px] mb-1" style={{ color: "var(--muted)" }}>Od</p>
+          <input
+            type="number" min={1} max={cMaxScore} value={cMinScore}
+            onChange={(e) => setCMinScore(Math.min(cMaxScore, Math.max(1, parseInt(e.target.value) || 1)))}
+            className="w-full px-2 py-1.5 rounded-md text-[11px] text-center"
+            style={{ background: "var(--ba-3)", border: `1px solid ${cMinScore > 1 ? "rgba(255,76,0,0.4)" : "var(--border)"}`, color: "var(--text)" }}
+          />
+        </div>
+        <span className="text-[11px] mt-4" style={{ color: "var(--muted)" }}>–</span>
+        <div className="flex-1">
+          <p className="text-[10px] mb-1" style={{ color: "var(--muted)" }}>Do</p>
+          <input
+            type="number" min={cMinScore} max={10} value={cMaxScore}
+            onChange={(e) => setCMaxScore(Math.max(cMinScore, Math.min(10, parseInt(e.target.value) || 10)))}
+            className="w-full px-2 py-1.5 rounded-md text-[11px] text-center"
+            style={{ background: "var(--ba-3)", border: `1px solid ${cMaxScore < 10 ? "rgba(255,76,0,0.4)" : "var(--border)"}`, color: "var(--text)" }}
+          />
+        </div>
+      </div>
+
+      {/* Dni bez kontaktu */}
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Dni bez kontaktu</p>
+      <select
+        value={cMinDays}
+        onChange={(e) => setCMinDays(parseInt(e.target.value))}
+        className="w-full px-2 py-1.5 rounded-md text-[11px] mb-3"
+        style={{ background: "var(--ba-3)", border: `1px solid ${cMinDays > 0 ? "rgba(255,76,0,0.4)" : "var(--border)"}`, color: "var(--text)" }}
+      >
+        {DAYS_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+
+      <button
+        onClick={() => cf && ct && applyAll()}
+        className="w-full py-1.5 rounded-md text-[11px] font-semibold btn-primary"
+      >
+        Zastosuj filtry
+      </button>
     </div>
   ) : null;
 
@@ -144,7 +220,11 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
         ref={btnRef}
         onClick={() => (open ? setOpen(false) : openDropdown())}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all"
-        style={{ background: "var(--ba-3)", border: "1px solid var(--border)", color: "var(--text)" }}
+        style={{
+          background: hasExtraFilters ? "var(--accent-subtle)" : "var(--ba-3)",
+          border: hasExtraFilters ? "1px solid rgba(255,76,0,0.35)" : "1px solid var(--border)",
+          color: hasExtraFilters ? "var(--accent-2)" : "var(--text)",
+        }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -152,6 +232,11 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         {label}
+        {hasExtraFilters && (
+          <span className="flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold text-white" style={{ background: "var(--accent)" }}>
+            {(activeMinScore > 1 ? 1 : 0) + (activeMaxScore < 10 ? 1 : 0) + (activeMinDays > 0 ? 1 : 0)}
+          </span>
+        )}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
