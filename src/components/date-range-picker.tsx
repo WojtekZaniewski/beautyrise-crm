@@ -27,6 +27,9 @@ export function DateRangePicker({ from, to }: { from: string; to: string }) {
   const [cf, setCf]     = useState(from);
   const [ct, setCt]     = useState(to);
 
+  useEffect(() => { setCf(from); }, [from]);
+  useEffect(() => { setCt(to); }, [to]);
+
   const btnRef  = useRef<HTMLButtonElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 

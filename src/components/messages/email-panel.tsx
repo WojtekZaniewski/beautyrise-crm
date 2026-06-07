@@ -29,6 +29,30 @@ function formatTime(iso: string) {
   return d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" });
 }
 
+type LiveMessage = {
+  uid: number;
+  messageId: string;
+  from: { email: string; name: string };
+  subject: string;
+  bodyText: string;
+  bodyHtml: string;
+  date: string;
+  isRead: boolean;
+};
+
+const FOLDER_LABELS: Record<string, string> = {
+  INBOX: "📥 Skrzynka",
+  Sent: "📤 Wysłane",
+  "INBOX.Sent": "📤 Wysłane",
+  Spam: "🚫 Spam",
+  "INBOX.Spam": "🚫 Spam",
+  Junk: "🚫 Spam",
+  Trash: "🗑 Kosz",
+  "INBOX.Trash": "🗑 Kosz",
+  Drafts: "✏️ Szkice",
+  "INBOX.Drafts": "✏️ Szkice",
+};
+
 export function EmailPanel({ accountId, accountEmail }: { accountId: string; accountEmail: string }) {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [selected, setSelected] = useState<Thread | null>(null);
@@ -39,6 +63,10 @@ export function EmailPanel({ accountId, accountEmail }: { accountId: string; acc
   const [replyMode, setReplyMode] = useState<"text" | "html">("text");
   const [replying, setReplying] = useState(false);
   const [replyError, setReplyError] = useState("");
+  const [folders, setFolders] = useState<string[]>([]);
+  const [activeFolder, setActiveFolder] = useState("INBOX");
+  const [liveMessages, setLiveMessages] = useState<LiveMessage[]>([]);
+  const [selectedLive, setSelectedLive] = useState<LiveMessage | null>(null);
 
   const loadThreads = useCallback(
     async (sync = false) => {
@@ -63,9 +91,35 @@ export function EmailPanel({ accountId, accountEmail }: { accountId: string; acc
 
   useEffect(() => {
     setSelected(null);
+    setActiveFolder("INBOX");
     loadThreads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId]);
+
+  useEffect(() => {
+    if (!accountId) return;
+    fetch(`/api/email/folders?account_id=${accountId}`)
+      .then((r) => r.json())
+      .then((data) => setFolders(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [accountId]);
+
+  useEffect(() => {
+    if (activeFolder === "INBOX") {
+      setLiveMessages([]);
+      setSelectedLive(null);
+      return;
+    }
+    setLoading(true);
+    setSelected(null);
+    setSelectedLive(null);
+    setLiveMessages([]);
+    fetch(`/api/email/folders?account_id=${accountId}&folder=${encodeURIComponent(activeFolder)}`)
+      .then((r) => r.json())
+      .then((data) => setLiveMessages(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [activeFolder, accountId]);
 
   const sendReply = async () => {
     if (!selected || !reply.trim() || replying) return;
@@ -142,6 +196,25 @@ export function EmailPanel({ accountId, accountEmail }: { accountId: string; acc
           </button>
         </div>
 
+        {folders.length > 0 && (
+          <div className="px-2 py-2 flex flex-wrap gap-1 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
+            {["INBOX", ...folders.filter((f) => f !== "INBOX")].map((folder) => (
+              <button
+                key={folder}
+                onClick={() => setActiveFolder(folder)}
+                className="text-[11px] px-2.5 py-1 rounded-full font-medium transition-colors"
+                style={{
+                  background: activeFolder === folder ? "var(--accent)" : "var(--ba-4)",
+                  color: activeFolder === folder ? "#fff" : "var(--muted)",
+                  border: `1px solid ${activeFolder === folder ? "var(--accent)" : "var(--border)"}`,
+                }}
+              >
+                {FOLDER_LABELS[folder] ?? folder}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="px-3 py-2 shrink-0" style={{ borderBottom: "1px solid var(--border)" }}>
           <input
             type="text"
@@ -156,6 +229,48 @@ export function EmailPanel({ accountId, accountEmail }: { accountId: string; acc
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="p-4 text-sm text-[var(--muted)]">Ładowanie…</div>
+          ) : activeFolder !== "INBOX" ? (
+            liveMessages.length === 0 ? (
+              <div className="p-6 text-center text-sm text-[var(--muted)]">Brak wiadomości w tym folderze.</div>
+            ) : (
+              liveMessages.filter((m) => {
+                if (!search.trim()) return true;
+                const q = search.toLowerCase();
+                return m.subject.toLowerCase().includes(q) || m.from.email.toLowerCase().includes(q) || (m.from.name ?? "").toLowerCase().includes(q);
+              }).map((m) => {
+                const isSel = selectedLive?.uid === m.uid;
+                return (
+                  <button
+                    key={m.uid}
+                    onClick={() => setSelectedLive(m)}
+                    className="w-full text-left px-4 py-3 transition-colors flex flex-col gap-0.5"
+                    style={{
+                      background: isSel ? "var(--accent-subtle)" : undefined,
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {!m.isRead && (
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "var(--accent)" }} />
+                      )}
+                      <span
+                        className={`text-[13px] truncate ${!m.isRead ? "font-semibold" : "font-medium"}`}
+                        style={{ color: isSel ? "var(--accent)" : "var(--text)" }}
+                      >
+                        {m.subject || "(brak tematu)"}
+                      </span>
+                      <span className="text-[10px] ml-auto shrink-0" style={{ color: "var(--muted)" }}>
+                        {formatTime(m.date)}
+                      </span>
+                    </div>
+                    <div className="text-xs truncate" style={{ color: "var(--muted)" }}>
+                      <span className="font-medium">{m.from.name || m.from.email}:</span>{" "}
+                      {(m.bodyText ?? "").slice(0, 60)}
+                    </div>
+                  </button>
+                );
+              })
+            )
           ) : filtered.length === 0 ? (
             <div className="p-6 text-center text-sm text-[var(--muted)]">
               {threads.length === 0
@@ -205,15 +320,58 @@ export function EmailPanel({ accountId, accountEmail }: { accountId: string; acc
         </div>
       </div>
 
-      {/* Wątek */}
+      {/* Wątek / wiadomość */}
       <div className="flex-1 flex flex-col min-w-0" style={{ background: "var(--bg)" }}>
-        {!selected ? (
+        {selectedLive ? (
+          <>
+            <div
+              className="px-5 py-3 flex items-center justify-between shrink-0"
+              style={{ borderBottom: "1px solid var(--border)", background: "var(--panel)" }}
+            >
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{selectedLive.subject || "(brak tematu)"}</div>
+                <div className="text-xs truncate" style={{ color: "var(--muted)" }}>
+                  Od: {selectedLive.from.name ? `${selectedLive.from.name} <${selectedLive.from.email}>` : selectedLive.from.email}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLive(null)}
+                className="text-xs ml-4 shrink-0"
+                style={{ color: "var(--muted)" }}
+              >✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div
+                className="rounded-xl p-4 text-sm mr-auto"
+                style={{ maxWidth: "85%", background: "var(--panel)", border: "1px solid var(--border)" }}
+              >
+                <div className="flex justify-between items-center gap-4 mb-2">
+                  <span className="font-medium text-xs">{selectedLive.from.name || selectedLive.from.email}</span>
+                  <span className="text-xs shrink-0" style={{ color: "var(--muted)" }}>
+                    {new Date(selectedLive.date).toLocaleString("pl-PL")}
+                  </span>
+                </div>
+                {selectedLive.bodyHtml ? (
+                  <div
+                    className="text-sm"
+                    style={{ color: "var(--text)", lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: selectedLive.bodyHtml }}
+                  />
+                ) : (
+                  <div style={{ whiteSpace: "pre-wrap", color: "var(--text)", lineHeight: 1.6 }}>
+                    {selectedLive.bodyText || ""}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        ) : !selected ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2" style={{ color: "var(--muted)" }}>
             <svg width="36" height="36" viewBox="0 0 15 15" fill="none" opacity=".3">
               <rect x="1" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
               <path d="M1 5.5l6.5 4 6.5-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-sm">Wybierz wątek</span>
+            <span className="text-sm">Wybierz wiadomość</span>
           </div>
         ) : (
           <>

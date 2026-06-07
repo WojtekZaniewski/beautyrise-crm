@@ -42,6 +42,19 @@ function MessagesHubInner({ workspaceId }: { workspaceId: string }) {
     }
   }, []);
 
+  const handleConversationRead = useCallback((channel: string, unreadCount: number) => {
+    setSummary((prev) => {
+      if (!prev) return prev;
+      const key = channel as keyof typeof prev;
+      const current = typeof prev[key] === "number" ? (prev[key] as number) : 0;
+      return {
+        ...prev,
+        [key]: Math.max(0, current - unreadCount),
+        total: Math.max(0, prev.total - unreadCount),
+      };
+    });
+  }, []);
+
   useEffect(() => {
     loadAccounts();
     loadSummary();
@@ -68,7 +81,7 @@ function MessagesHubInner({ workspaceId }: { workspaceId: string }) {
 
   const renderPanel = () => {
     if (channelParam === "messenger" || channelParam === "instagram") {
-      return <MetaPanel channel={channelParam} workspaceId={workspaceId} />;
+      return <MetaPanel channel={channelParam} workspaceId={workspaceId} onConversationRead={handleConversationRead} />;
     }
     if (channelParam === "sms") {
       return <SmsPanel initialConversationId={initialConv} />;

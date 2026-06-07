@@ -42,9 +42,11 @@ function formatTime(iso: string) {
 export function MetaPanel({
   channel,
   workspaceId,
+  onConversationRead,
 }: {
   channel: MetaChannel;
   workspaceId: string;
+  onConversationRead?: (channel: MetaChannel, unreadCount: number) => void;
 }) {
   const supabase = createClient();
   const [conversations, setConversations] = useState<MetaConversation[]>([]);
@@ -132,8 +134,16 @@ export function MetaPanel({
       setMsgLoading(false);
     })();
     // Optimistically clear unread badge for the selected conversation
-    setConversations((prev) => prev.map((c) => (c.id === selectedId ? { ...c, unread_count: 0 } : c)));
-  }, [selectedId, supabase]);
+    setConversations((prev) => {
+      const conv = prev.find((c) => c.id === selectedId);
+      const unread = conv?.unread_count ?? 0;
+      if (unread > 0) {
+        supabase.from("conversations").update({ unread_count: 0 }).eq("id", selectedId);
+        onConversationRead?.(channel, unread);
+      }
+      return prev.map((c) => (c.id === selectedId ? { ...c, unread_count: 0 } : c));
+    });
+  }, [selectedId, supabase, channel, onConversationRead]);
 
   useEffect(() => {
     if (!selectedId) return;

@@ -13,6 +13,7 @@ import { SendPresaleEmailButton } from "./send-presale-email-button";
 import { SendPostsaleEmailButton } from "./send-postsale-email-button";
 import { SendLeadmagnetEmailButton } from "./send-leadmagnet-email-button";
 import { LeadContactEdit } from "./lead-contact-edit";
+import { SendMessageButton } from "./send-message-button";
 import { sourceLabel } from "@/lib/constants";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getStagesForPipeline, getCurrentPipelineId, getPipelines } from "@/lib/pipeline";
@@ -216,9 +217,12 @@ export default async function LeadDetailPage({
             {/* Email buttons — always visible for every lead */}
             <div className="mt-5 pt-5" style={{ borderTop: "1px solid var(--border)" }}>
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.09em] mb-3" style={{ color: "var(--muted)" }}>
-                Wyślij mail
+                Wyślij wiadomość
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 mb-3">
+                <SendMessageButton leadId={id} leadEmail={email} leadPhone={phone} />
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <SendPresaleEmailButton leadId={id} hasEmail={!!lead.email} leadEmail={email} />
                 <SendPostsaleEmailButton leadId={id} hasEmail={!!lead.email} leadEmail={email} />
                 <SendLeadmagnetEmailButton leadId={id} hasEmail={!!lead.email} leadEmail={email} />

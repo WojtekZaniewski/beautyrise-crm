@@ -84,15 +84,19 @@ export default async function KanbanPage({
     created_at: string;
     potential_score: number | null;
     value_pln: string | null;
+    notes: string | null;
+    custom_fields: Record<string, unknown> | null;
   }> = [];
 
   if (stageIds.length > 0) {
     let q = supabase
       .from("leads")
-      .select("id, full_name, phone, email, source, source_campaign_id, stage_id, created_at, potential_score, value_pln")
+      .select("id, full_name, phone, email, source, source_campaign_id, stage_id, created_at, potential_score, value_pln, notes, custom_fields")
       .eq("workspace_id", WORKSPACE_ID)
       .eq("archived", false)
       .in("stage_id", stageIds)
+      .gte("created_at", fromIso)
+      .lte("created_at", toIso)
       .order("created_at", { ascending: false });
 
     let shouldQuery = true;
@@ -383,7 +387,7 @@ export default async function KanbanPage({
         </div>
       </div>
       <KanbanBoard
-        key={`${source}-${campaign}-${fromDate}-${toDate}`}
+        key={`${campaign}-${fromDate}-${toDate}`}
         stages={stages}
         initialLeads={leads}
         source={source}

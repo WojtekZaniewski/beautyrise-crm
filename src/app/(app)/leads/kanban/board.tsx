@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { LastContactBadge } from "@/components/last-contact-badge";
@@ -31,6 +31,8 @@ type Lead = {
   campaign_name?: string | null;
   value_pln?: string | null;
   last_contact_at?: string | null;
+  notes?: string | null;
+  custom_fields?: Record<string, unknown> | null;
 };
 
 const sourceConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -423,28 +425,160 @@ function ClosingPriceEdit({
   );
 }
 
+function LeadQuickViewModal({
+  lead,
+  stageName,
+  onClose,
+  onNeedsCallToggle,
+}: {
+  lead: Lead;
+  stageName: string;
+  onClose: () => void;
+  onNeedsCallToggle: (needsCall: boolean) => void;
+}) {
+  const supabase = createClient();
+  const needsCall = !!(lead.custom_fields?.needs_call);
+  const [toggling, setToggling] = useState(false);
+
+  async function toggleNeedsCall() {
+    setToggling(true);
+    const newVal = !needsCall;
+    await supabase.from("leads").update({
+      custom_fields: { ...(lead.custom_fields ?? {}), needs_call: newVal },
+    }).eq("id", lead.id);
+    onNeedsCallToggle(newVal);
+    setToggling(false);
+  }
+
+  const score = lead.potential_score;
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        style={{
+          background: "var(--panel-solid, #fff)", border: "1px solid var(--border)",
+          borderRadius: "14px", boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+          padding: "24px 28px", width: "420px", maxWidth: "calc(100vw - 32px)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "16px" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>{lead.full_name}</h3>
+            <span
+              className="text-[11px] font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
+              style={{ background: "var(--accent-subtle)", color: "var(--accent-2)" }}
+            >
+              {stageName}
+            </span>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "20px", padding: "0 4px" }}>✕</button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "18px" }}>
+          {lead.phone && (
+            <div className="flex items-center gap-2 text-[13px]">
+              <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Telefon</span>
+              <a href={`tel:${lead.phone}`} style={{ color: "var(--text)", fontWeight: 500 }}>{lead.phone}</a>
+            </div>
+          )}
+          {lead.email && (
+            <div className="flex items-center gap-2 text-[13px]">
+              <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>E-mail</span>
+              <a href={`mailto:${lead.email}`} style={{ color: "var(--text)", fontWeight: 500 }}>{lead.email}</a>
+            </div>
+          )}
+          {score != null && (
+            <div className="flex items-center gap-2 text-[13px]">
+              <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Potencjał</span>
+              <div className="flex items-center gap-1.5">
+                {[1,2,3,4,5].map((s) => (
+                  <div key={s} className="w-3 h-3 rounded-sm" style={{ background: s <= score ? "#f97316" : "var(--ba-6)" }} />
+                ))}
+                <span className="text-[11px]" style={{ color: "var(--muted)" }}>{score}/5</span>
+              </div>
+            </div>
+          )}
+          {lead.last_contact_at && (
+            <div className="flex items-center gap-2 text-[13px]">
+              <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Kontakt</span>
+              <LastContactBadge lastContactAt={lead.last_contact_at} />
+            </div>
+          )}
+          {lead.notes && (
+            <div style={{ marginTop: "4px" }}>
+              <span style={{ color: "var(--muted)", fontSize: "11px", display: "block", marginBottom: "4px" }}>Notatki</span>
+              <p className="text-[12.5px] rounded-lg p-2.5" style={{ background: "var(--ba-3)", color: "var(--text)", margin: 0, whiteSpace: "pre-wrap", maxHeight: "80px", overflowY: "auto" }}>
+                {lead.notes}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={toggleNeedsCall}
+          disabled={toggling}
+          className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all mb-3"
+          style={{
+            background: needsCall ? "rgba(34,197,94,0.12)" : "rgba(249,115,22,0.10)",
+            border: needsCall ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(249,115,22,0.3)",
+            color: needsCall ? "#22c55e" : "#f97316",
+          }}
+        >
+          {needsCall ? "✓ Call zaplanowany" : "📞 Umów call sprzedażowy"}
+        </button>
+
+        <div className="flex gap-2">
+          <a
+            href={`/leads/${lead.id}`}
+            className="flex-1 py-2 rounded-lg text-[12.5px] font-semibold text-center transition-all"
+            style={{ background: "var(--accent)", color: "#fff" }}
+          >
+            Otwórz pełny profil →
+          </a>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-[12.5px] font-medium transition-colors"
+            style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--muted)" }}
+          >
+            Zamknij
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LeadCard({
   lead,
   isClosedStage,
   isDragging,
+  stageName,
   onDragStart,
   onDragEnd,
   onValueUpdate,
   onDelete,
   onContactUpdate,
+  onLeadUpdate,
 }: {
   lead: Lead;
   isClosedStage: boolean;
   isDragging: boolean;
+  stageName: string;
   onDragStart: (id: string) => void;
   onDragEnd: () => void;
   onValueUpdate: (leadId: string, value: string | null) => void;
   onDelete: (id: string) => void;
   onContactUpdate: (leadId: string, phone: string | null, email: string | null) => void;
+  onLeadUpdate: (leadId: string, patch: Partial<Lead>) => void;
 }) {
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const src = sourceConfig[lead.source];
   const hasCost = lead.acquisition_cost != null && lead.acquisition_cost > 0;
+  const needsCall = !!(lead.custom_fields?.needs_call);
 
   return (
     <div
@@ -464,14 +598,24 @@ function LeadCard({
       }}
     >
       <div className="flex items-start gap-1 mb-1">
-        <Link
-          href={`/leads/${lead.id}`}
+        <button
           draggable={false}
-          onClick={(e) => e.stopPropagation()}
-          className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug"
+          onDragStart={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setQuickViewOpen(true); }}
+          className="font-medium text-sm hover:text-[var(--accent)] transition-colors flex-1 leading-snug text-left"
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text)" }}
         >
           {lead.full_name}
-        </Link>
+        </button>
+        {needsCall && (
+          <span
+            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5"
+            style={{ background: "rgba(249,115,22,0.12)", color: "#f97316", border: "1px solid rgba(249,115,22,0.25)" }}
+            title="Do umówienia call"
+          >
+            📞 call
+          </span>
+        )}
         {isClosedStage && (
           <span
             className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5"
@@ -564,6 +708,17 @@ function LeadCard({
           email={lead.email}
           onUpdate={(p, e) => onContactUpdate(lead.id, p, e)}
           onClose={() => setContactModalOpen(false)}
+        />
+      )}
+      {quickViewOpen && (
+        <LeadQuickViewModal
+          lead={lead}
+          stageName={stageName}
+          onClose={() => setQuickViewOpen(false)}
+          onNeedsCallToggle={(val) => {
+            onLeadUpdate(lead.id, { custom_fields: { ...(lead.custom_fields ?? {}), needs_call: val } });
+            setQuickViewOpen(false);
+          }}
         />
       )}
     </div>
@@ -1105,6 +1260,11 @@ export function KanbanBoard({
   const dragCounters = useRef<Record<string, number>>({});
   const supabase = createClient();
 
+  // Sync leads when source filter changes (without full remount)
+  useEffect(() => {
+    setLeads(initialLeads);
+  }, [initialLeads]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function getVisibleCount(stageId: string) {
     return visibleCounts[stageId] ?? PAGE_SIZE;
   }
@@ -1150,6 +1310,12 @@ export function KanbanBoard({
   function handleContactUpdate(leadId: string, phone: string | null, email: string | null) {
     setLeads((prev) =>
       prev.map((l) => (l.id === leadId ? { ...l, phone, email } : l)),
+    );
+  }
+
+  function handleLeadUpdate(leadId: string, patch: Partial<Lead>) {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, ...patch } : l)),
     );
   }
 
@@ -1290,6 +1456,7 @@ export function KanbanBoard({
                     lead={lead}
                     isClosedStage={isClosed}
                     isDragging={lead.id === draggingId}
+                    stageName={stage.name}
                     onDragStart={setDraggingId}
                     onDragEnd={() => {
                       setDraggingId(null);
@@ -1299,6 +1466,7 @@ export function KanbanBoard({
                     onValueUpdate={handleValueUpdate}
                     onDelete={handleDeleteLead}
                     onContactUpdate={handleContactUpdate}
+                    onLeadUpdate={handleLeadUpdate}
                   />
                 ))}
                 {stageLeads.length === 0 && (
