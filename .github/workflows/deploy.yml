@@ -1,0 +1,27 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-jakub4biznes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g vercel@latest
+      - run: vercel --prod --yes --token ${{ secrets.VERCEL_TOKEN_JAKUB }} --scope jakub4biznes-1514s-projects
+
+  deploy-wojtektrades:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g vercel@latest
+      - run: vercel --prod --yes --token ${{ secrets.VERCEL_TOKEN_WOJTEK }} --scope wojtektrades-4421s-projects
