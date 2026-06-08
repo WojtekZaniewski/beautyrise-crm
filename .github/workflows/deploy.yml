@@ -6,22 +6,6 @@ on:
       - main
 
 jobs:
-  deploy-jakub4biznes:
-    runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_JAKUB }}
-      VERCEL_ORG_ID: team_73rAv6WbkptqteN5ldv0pdBE
-      VERCEL_PROJECT_ID: prj_VRMwv8o9vW6Ntg0i1CLaPm4otzBa
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install -g vercel@latest
-      - run: vercel pull --yes --environment=production
-      - run: vercel build --prod
-      - run: vercel deploy --prebuilt --prod
-
   deploy-wojtektrades:
     runs-on: ubuntu-latest
     env:
