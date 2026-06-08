@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getCurrentPipelineId, getStagesForPipeline, invalidateStages } from "@/lib/pipeline";
+import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { SourceSelect } from "@/components/source-select";
 import { CampaignSelect } from "@/components/campaign-select";
 import { DateRangePicker } from "@/components/date-range-picker";
@@ -68,11 +68,10 @@ export default async function KanbanPage({
   let stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
 
   // Auto-migrate 3-stage pipelines to 4-stage by inserting "Rozmowa" between order 1 and last
-  if (currentPipelineId && stages.length === 3) {
-    const sorted = [...stages].sort((a, b) => a.order - b.order);
-    const last = sorted[2];
-    const hasCallStage = sorted.some((s) => s.order === 2 && s.name !== last.name);
-    if (!hasCallStage) {
+  if (currentPipelineId && stages.length === 3 && !stages.some((s) => s.name === "Rozmowa")) {
+    try {
+      const sorted = [...stages].sort((a, b) => a.order - b.order);
+      const last = sorted[2];
       await supabase
         .from("pipeline_stages")
         .update({ order: 3 })
@@ -83,8 +82,14 @@ export default async function KanbanPage({
         color: "#a855f7",
         order: 2,
       });
-      invalidateStages();
-      stages = await getStagesForPipeline(currentPipelineId);
+      const { data: fresh } = await supabase
+        .from("pipeline_stages")
+        .select("id, pipeline_id, name, color, order")
+        .eq("pipeline_id", currentPipelineId)
+        .order("order");
+      if (fresh) stages = fresh as typeof stages;
+    } catch {
+      // Migration error — page still renders with existing stages
     }
   }
 
