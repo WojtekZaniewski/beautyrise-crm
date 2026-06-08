@@ -362,6 +362,27 @@ export default async function KanbanPage({
     });
   }
 
+  // Fetch latest note per lead from lead_events
+  const latestNoteMap: Record<string, string> = {};
+  if (leadsRaw.length > 0) {
+    const leadIds = leadsRaw.map((l) => l.id);
+    const { data: noteEvents } = await supabase
+      .from("lead_events")
+      .select("lead_id, payload, created_at")
+      .eq("type", "note")
+      .in("lead_id", leadIds)
+      .order("created_at", { ascending: false });
+
+    if (noteEvents) {
+      for (const event of noteEvents) {
+        if (!latestNoteMap[event.lead_id as string]) {
+          latestNoteMap[event.lead_id as string] =
+            (event.payload as { text?: string })?.text ?? "";
+        }
+      }
+    }
+  }
+
   // Enrich leads with per-campaign acquisition cost
   const leads = leadsRaw.map((lead) => ({
     ...lead,
@@ -374,6 +395,7 @@ export default async function KanbanPage({
         ? campaignMap[lead.source_campaign_id].name
         : null,
     last_contact_at: lastContactMap[lead.id] ?? null,
+    notes: latestNoteMap[lead.id] ?? null,
   }));
 
   const selectedEmailCampaignName = campaign !== "all"
