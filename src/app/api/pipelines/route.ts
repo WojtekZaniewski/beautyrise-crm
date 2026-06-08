@@ -31,11 +31,12 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Seed 3 default stages for new pipeline
+  // Seed 4 default stages for new pipeline
   const defaultStages = [
     { pipeline_id: pipeline.id, name: "Nowy", color: "#ff4c00", order: 0 },
     { pipeline_id: pipeline.id, name: "W kontakcie", color: "#3b82f6", order: 1 },
-    { pipeline_id: pipeline.id, name: "Zamknięty", color: "#22c55e", order: 2 },
+    { pipeline_id: pipeline.id, name: "Rozmowa", color: "#a855f7", order: 2 },
+    { pipeline_id: pipeline.id, name: "Zamknięty", color: "#22c55e", order: 3 },
   ];
   await supabase.from("pipeline_stages").insert(defaultStages);
 

@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
+import { getCurrentPipelineId, getStagesForPipeline, invalidateStages } from "@/lib/pipeline";
 import { SourceSelect } from "@/components/source-select";
 import { CampaignSelect } from "@/components/campaign-select";
 import { DateRangePicker } from "@/components/date-range-picker";
@@ -65,7 +65,29 @@ export default async function KanbanPage({
 
 
   const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
-  const stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
+  let stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
+
+  // Auto-migrate 3-stage pipelines to 4-stage by inserting "Rozmowa" between order 1 and last
+  if (currentPipelineId && stages.length === 3) {
+    const sorted = [...stages].sort((a, b) => a.order - b.order);
+    const last = sorted[2];
+    const hasCallStage = sorted.some((s) => s.order === 2 && s.name !== last.name);
+    if (!hasCallStage) {
+      await supabase
+        .from("pipeline_stages")
+        .update({ order: 3 })
+        .eq("id", last.id);
+      await supabase.from("pipeline_stages").insert({
+        pipeline_id: currentPipelineId,
+        name: "Rozmowa",
+        color: "#a855f7",
+        order: 2,
+      });
+      invalidateStages();
+      stages = await getStagesForPipeline(currentPipelineId);
+    }
+  }
+
   const stageIds = stages.map((s) => s.id);
 
   // Fetch all campaigns for this workspace (needed for dropdown + metrics)

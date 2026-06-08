@@ -1367,6 +1367,13 @@ export function KanbanBoard({
     });
   }
 
+  const funnelStages = useMemo(() => {
+    return stages.map((s) => ({
+      ...s,
+      count: leads.filter((l) => l.stage_id === s.id).length,
+    }));
+  }, [stages, leads]);
+
   return (
     <>
       {showMetaStats && (
@@ -1376,6 +1383,47 @@ export function KanbanBoard({
           convertedAcquisitionCost={convertedAcquisitionCost}
           totalRevenue={totalRevenue}
         />
+      )}
+
+      {funnelStages.length >= 2 && (
+        <div className="mb-5 px-4 py-3 rounded-xl flex flex-wrap items-center gap-2 text-sm"
+          style={{ background: "var(--bg-2)", border: "1px solid var(--border)" }}>
+          <span className="text-xs font-medium uppercase tracking-wide mr-1" style={{ color: "var(--text-3)" }}>
+            Lejek konwersji
+          </span>
+          {funnelStages.map((stage, i) => {
+            const prev = i > 0 ? funnelStages[i - 1] : null;
+            const pct = prev && prev.count > 0
+              ? Math.round((stage.count / prev.count) * 100)
+              : null;
+            return (
+              <div key={stage.id} className="flex items-center gap-2">
+                {i > 0 && (
+                  <span style={{ color: "var(--text-3)" }}>→</span>
+                )}
+                <div className="flex items-center gap-1">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full shrink-0"
+                    style={{ background: stage.color }}
+                  />
+                  <span style={{ color: "var(--text-2)" }}>{stage.name}</span>
+                  <span className="font-semibold tabular-nums" style={{ color: "var(--text-1)" }}>
+                    {stage.count}
+                  </span>
+                  {pct !== null && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: pct >= 50 ? "rgba(34,197,94,0.12)" : pct >= 25 ? "rgba(234,179,8,0.12)" : "rgba(239,68,68,0.12)",
+                        color: pct >= 50 ? "#22c55e" : pct >= 25 ? "#ca8a04" : "#ef4444",
+                      }}>
+                      {pct}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       <div className="flex flex-col xl:flex-row gap-5 items-start">
