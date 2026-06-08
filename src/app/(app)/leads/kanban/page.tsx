@@ -67,63 +67,78 @@ export default async function KanbanPage({
   const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
   let stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
 
-  // Auto-migrate to 5-stage pipeline: Nowy, W kontakcie, Umówiony na call, Po rozmowie, Zamknięty
-  if (currentPipelineId) {
-    const hasUmowiony = stages.some((s) => s.name === "Umówiony na call");
-    const hasPoRozmowie = stages.some((s) => s.name === "Po rozmowie");
+  // Ensure pipeline has exactly these 5 stages in this order (cleans up duplicates)
+  const TARGET_STAGES = [
+    { name: "Nowy",             color: "#ff4c00", order: 0 },
+    { name: "W kontakcie",      color: "#3b82f6", order: 1 },
+    { name: "Umówiony na call", color: "#a855f7", order: 2 },
+    { name: "Po rozmowie",      color: "#f59e0b", order: 3 },
+    { name: "Zamknięty",        color: "#22c55e", order: 4 },
+  ];
+  const targetNames = new Set(TARGET_STAGES.map((t) => t.name));
+  const stagesCorrect =
+    stages.length === TARGET_STAGES.length &&
+    TARGET_STAGES.every((t, i) => stages[i]?.name === t.name && stages[i]?.order === t.order);
 
-    if (!hasUmowiony || !hasPoRozmowie) {
-      try {
-        const { data: dbRaw } = await supabase
-          .from("pipeline_stages")
-          .select("id, pipeline_id, name, color, order")
-          .eq("pipeline_id", currentPipelineId)
-          .order("order");
-        const db = (dbRaw ?? []) as typeof stages;
+  if (currentPipelineId && !stagesCorrect) {
+    try {
+      const { data: db } = await supabase
+        .from("pipeline_stages")
+        .select("id, name, color, order")
+        .eq("pipeline_id", currentPipelineId)
+        .order("order");
+      const actual = (db ?? []) as Array<{ id: string; name: string; color: string; order: number }>;
 
-        const zamkniety = db.find((s) => s.name === "Zamknięty");
-        const rozmowa = db.find((s) => s.name === "Rozmowa");
-        const dbHasUmowiony = db.some((s) => s.name === "Umówiony na call");
-        const dbHasPoRozmowie = db.some((s) => s.name === "Po rozmowie");
+      const dbCorrect =
+        actual.length === TARGET_STAGES.length &&
+        TARGET_STAGES.every((t, i) => actual[i]?.name === t.name && actual[i]?.order === t.order);
 
-        if (!dbHasUmowiony || !dbHasPoRozmowie) {
-          let zamknietyMoved = false;
+      if (!dbCorrect) {
+        // Map target names to existing rows ("Rozmowa" counts as "Umówiony na call")
+        const ALIAS: Record<string, string> = { Rozmowa: "Umówiony na call" };
+        const keeperByName: Record<string, typeof actual[0]> = {};
+        for (const row of actual) {
+          const key = ALIAS[row.name] ?? row.name;
+          if (targetNames.has(key) && !keeperByName[key]) keeperByName[key] = row;
+        }
+        const keeperIds = new Set(Object.values(keeperByName).map((r) => r.id));
 
-          // Step 1: ensure "Umówiony na call" exists
-          if (!dbHasUmowiony) {
-            if (rozmowa) {
-              await supabase.from("pipeline_stages").update({ name: "Umówiony na call" }).eq("id", rozmowa.id);
-            } else if (zamkniety) {
-              await supabase.from("pipeline_stages").update({ order: 4 }).eq("id", zamkniety.id);
-              zamknietyMoved = true;
-              await supabase.from("pipeline_stages").insert({
-                pipeline_id: currentPipelineId, name: "Umówiony na call", color: "#a855f7", order: 2,
-              });
-            }
+        // Delete duplicates and unknown stages, reassigning their leads to W kontakcie
+        const fallback = keeperByName["W kontakcie"] ?? Object.values(keeperByName)[0];
+        for (const row of actual) {
+          if (!keeperIds.has(row.id)) {
+            if (fallback) await supabase.from("leads").update({ stage_id: fallback.id }).eq("stage_id", row.id);
+            await supabase.from("pipeline_stages").delete().eq("id", row.id);
           }
+        }
 
-          // Step 2: ensure "Po rozmowie" exists
-          if (!dbHasPoRozmowie) {
-            if (zamkniety && !zamknietyMoved) {
-              await supabase.from("pipeline_stages").update({ order: 4 }).eq("id", zamkniety.id);
-            }
+        // Update/insert stages in reverse order to avoid unique-constraint conflicts on order
+        for (const target of [...TARGET_STAGES].reverse()) {
+          const existing = keeperByName[target.name];
+          if (existing) {
+            await supabase
+              .from("pipeline_stages")
+              .update({ name: target.name, color: target.color, order: target.order })
+              .eq("id", existing.id);
+          } else {
             await supabase.from("pipeline_stages").insert({
-              pipeline_id: currentPipelineId, name: "Po rozmowie", color: "#f59e0b", order: 3,
+              pipeline_id: currentPipelineId,
+              name: target.name,
+              color: target.color,
+              order: target.order,
             });
           }
-
-          const { data: fresh } = await supabase
-            .from("pipeline_stages")
-            .select("id, pipeline_id, name, color, order")
-            .eq("pipeline_id", currentPipelineId)
-            .order("order");
-          if (fresh) stages = fresh as typeof stages;
-        } else {
-          stages = db;
         }
-      } catch {
-        // Migration error — page renders with existing stages
       }
+
+      const { data: fresh } = await supabase
+        .from("pipeline_stages")
+        .select("id, pipeline_id, name, color, order")
+        .eq("pipeline_id", currentPipelineId)
+        .order("order");
+      if (fresh) stages = fresh as typeof stages;
+    } catch {
+      // Migration error — page renders with existing stages
     }
   }
 
