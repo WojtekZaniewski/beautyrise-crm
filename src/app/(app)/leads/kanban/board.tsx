@@ -481,14 +481,18 @@ function LeadQuickViewModal({
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "20px", padding: "0 4px" }}>✕</button>
         </div>
 
-        {lead.notes && (
-          <div style={{ marginBottom: "14px" }}>
-            <span style={{ color: "var(--muted)", fontSize: "10.5px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: "6px" }}>Ostatnie notatki</span>
+        <div style={{ marginBottom: "14px" }}>
+          <span style={{ color: "var(--muted)", fontSize: "10.5px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: "6px" }}>Ostatnie notatki</span>
+          {lead.notes ? (
             <p className="text-[12.5px] rounded-lg p-3" style={{ background: "var(--ba-3)", color: "var(--text)", margin: 0, whiteSpace: "pre-wrap", maxHeight: "120px", overflowY: "auto", lineHeight: 1.55, border: "1px solid var(--border)" }}>
               {lead.notes}
             </p>
-          </div>
-        )}
+          ) : (
+            <p className="text-[12px] rounded-lg p-2.5 italic" style={{ background: "var(--ba-3)", color: "var(--muted)", margin: 0, border: "1px solid var(--border)" }}>
+              Brak notatek
+            </p>
+          )}
+        </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
           {lead.phone && (
@@ -503,23 +507,23 @@ function LeadQuickViewModal({
               <a href={`mailto:${lead.email}`} style={{ color: "var(--text)", fontWeight: 500 }}>{lead.email}</a>
             </div>
           )}
-          {score != null && (
-            <div className="flex items-center gap-2 text-[13px]">
-              <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Potencjał</span>
+          <div className="flex items-center gap-2 text-[13px]">
+            <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Potencjał</span>
+            {score != null ? (
               <div className="flex items-center gap-1">
                 {[1,2,3,4,5,6,7,8,9,10].map((s) => (
                   <div key={s} className="w-2.5 h-2.5 rounded-sm" style={{ background: s <= score ? "#f97316" : "var(--ba-6)" }} />
                 ))}
                 <span className="text-[11px] ml-1" style={{ color: "var(--muted)" }}>{score}/10</span>
               </div>
-            </div>
-          )}
-          {lead.last_contact_at && (
-            <div className="flex items-center gap-2 text-[13px]">
-              <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Kontakt</span>
-              <LastContactBadge lastContactAt={lead.last_contact_at} />
-            </div>
-          )}
+            ) : (
+              <span className="text-[11px]" style={{ color: "var(--muted)" }}>Nie oceniono</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-[13px]">
+            <span style={{ color: "var(--muted)", width: "70px", fontSize: "11px" }}>Kontakt</span>
+            <LastContactBadge lastContactAt={lead.last_contact_at ?? null} />
+          </div>
         </div>
 
         <button
