@@ -71,10 +71,11 @@ export default async function KanbanPage({
   const TARGET_STAGES = [
     { name: "Nowy",                              color: "#ff4c00", order: 0 },
     { name: "W kontakcie",                       color: "#3b82f6", order: 1 },
-    { name: "Umówiony na call",                  color: "#a855f7", order: 2 },
-    { name: "Po rozmowie",                       color: "#f59e0b", order: 3 },
-    { name: "Zamknięty",                         color: "#22c55e", order: 4 },
-    { name: "Lidy przekazane do prawnika",       color: "#6366f1", order: 5 },
+    { name: "Wysłany link do calla",             color: "#06b6d4", order: 2 },
+    { name: "Umówiony na call",                  color: "#a855f7", order: 3 },
+    { name: "Po rozmowie",                       color: "#f59e0b", order: 4 },
+    { name: "Zamknięty",                         color: "#22c55e", order: 5 },
+    { name: "Lidy przekazane do prawnika",       color: "#6366f1", order: 6 },
   ];
   const targetNames = new Set(TARGET_STAGES.map((t) => t.name));
   const stagesCorrect =

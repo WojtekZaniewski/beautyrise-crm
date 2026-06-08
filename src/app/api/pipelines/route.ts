@@ -35,10 +35,11 @@ export async function POST(request: Request) {
   const defaultStages = [
     { pipeline_id: pipeline.id, name: "Nowy",                        color: "#ff4c00", order: 0 },
     { pipeline_id: pipeline.id, name: "W kontakcie",                  color: "#3b82f6", order: 1 },
-    { pipeline_id: pipeline.id, name: "Umówiony na call",             color: "#a855f7", order: 2 },
-    { pipeline_id: pipeline.id, name: "Po rozmowie",                  color: "#f59e0b", order: 3 },
-    { pipeline_id: pipeline.id, name: "Zamknięty",                    color: "#22c55e", order: 4 },
-    { pipeline_id: pipeline.id, name: "Lidy przekazane do prawnika",  color: "#6366f1", order: 5 },
+    { pipeline_id: pipeline.id, name: "Wysłany link do calla",        color: "#06b6d4", order: 2 },
+    { pipeline_id: pipeline.id, name: "Umówiony na call",             color: "#a855f7", order: 3 },
+    { pipeline_id: pipeline.id, name: "Po rozmowie",                  color: "#f59e0b", order: 4 },
+    { pipeline_id: pipeline.id, name: "Zamknięty",                    color: "#22c55e", order: 5 },
+    { pipeline_id: pipeline.id, name: "Lidy przekazane do prawnika",  color: "#6366f1", order: 6 },
   ];
   await supabase.from("pipeline_stages").insert(defaultStages);
 
