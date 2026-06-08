@@ -67,29 +67,63 @@ export default async function KanbanPage({
   const currentPipelineId = await getCurrentPipelineId(WORKSPACE_ID);
   let stages = currentPipelineId ? await getStagesForPipeline(currentPipelineId) : [];
 
-  // Auto-migrate 3-stage pipelines to 4-stage by inserting "Rozmowa" between order 1 and last
-  if (currentPipelineId && stages.length === 3 && !stages.some((s) => s.name === "Rozmowa")) {
-    try {
-      const sorted = [...stages].sort((a, b) => a.order - b.order);
-      const last = sorted[2];
-      await supabase
-        .from("pipeline_stages")
-        .update({ order: 3 })
-        .eq("id", last.id);
-      await supabase.from("pipeline_stages").insert({
-        pipeline_id: currentPipelineId,
-        name: "Rozmowa",
-        color: "#a855f7",
-        order: 2,
-      });
-      const { data: fresh } = await supabase
-        .from("pipeline_stages")
-        .select("id, pipeline_id, name, color, order")
-        .eq("pipeline_id", currentPipelineId)
-        .order("order");
-      if (fresh) stages = fresh as typeof stages;
-    } catch {
-      // Migration error — page still renders with existing stages
+  // Auto-migrate to 5-stage pipeline: Nowy, W kontakcie, Umówiony na call, Po rozmowie, Zamknięty
+  if (currentPipelineId) {
+    const hasUmowiony = stages.some((s) => s.name === "Umówiony na call");
+    const hasPoRozmowie = stages.some((s) => s.name === "Po rozmowie");
+
+    if (!hasUmowiony || !hasPoRozmowie) {
+      try {
+        const { data: dbRaw } = await supabase
+          .from("pipeline_stages")
+          .select("id, pipeline_id, name, color, order")
+          .eq("pipeline_id", currentPipelineId)
+          .order("order");
+        const db = (dbRaw ?? []) as typeof stages;
+
+        const zamkniety = db.find((s) => s.name === "Zamknięty");
+        const rozmowa = db.find((s) => s.name === "Rozmowa");
+        const dbHasUmowiony = db.some((s) => s.name === "Umówiony na call");
+        const dbHasPoRozmowie = db.some((s) => s.name === "Po rozmowie");
+
+        if (!dbHasUmowiony || !dbHasPoRozmowie) {
+          let zamknietyMoved = false;
+
+          // Step 1: ensure "Umówiony na call" exists
+          if (!dbHasUmowiony) {
+            if (rozmowa) {
+              await supabase.from("pipeline_stages").update({ name: "Umówiony na call" }).eq("id", rozmowa.id);
+            } else if (zamkniety) {
+              await supabase.from("pipeline_stages").update({ order: 4 }).eq("id", zamkniety.id);
+              zamknietyMoved = true;
+              await supabase.from("pipeline_stages").insert({
+                pipeline_id: currentPipelineId, name: "Umówiony na call", color: "#a855f7", order: 2,
+              });
+            }
+          }
+
+          // Step 2: ensure "Po rozmowie" exists
+          if (!dbHasPoRozmowie) {
+            if (zamkniety && !zamknietyMoved) {
+              await supabase.from("pipeline_stages").update({ order: 4 }).eq("id", zamkniety.id);
+            }
+            await supabase.from("pipeline_stages").insert({
+              pipeline_id: currentPipelineId, name: "Po rozmowie", color: "#f59e0b", order: 3,
+            });
+          }
+
+          const { data: fresh } = await supabase
+            .from("pipeline_stages")
+            .select("id, pipeline_id, name, color, order")
+            .eq("pipeline_id", currentPipelineId)
+            .order("order");
+          if (fresh) stages = fresh as typeof stages;
+        } else {
+          stages = db;
+        }
+      } catch {
+        // Migration error — page renders with existing stages
+      }
     }
   }
 
