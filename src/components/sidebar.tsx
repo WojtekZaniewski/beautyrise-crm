@@ -76,6 +76,20 @@ const Icons = {
       <circle cx="4.8" cy="4.8" r="1.1" fill="currentColor" opacity=".7" />
     </svg>
   ),
+  wallet: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <rect x="1" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M1 6.5h13" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="10.5" cy="9" r="1" fill="currentColor" opacity=".7" />
+    </svg>
+  ),
+  signal: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path d="M1.5 11.5c1-2 2-3 3-3s2 1 3 1 2-1 3-1 2 1 2.5 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M3.5 8.5c.5-1.5 1.5-2.5 4-2.5s3.5 1 4 2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity=".6" />
+      <path d="M5.5 6C6 4 6.5 2.5 7.5 2.5S9 4 9.5 6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity=".35" />
+    </svg>
+  ),
   trash: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path d="M3 4h9M6 4V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V4M5.5 4l.5 8M9.5 4l-.5 8M3 4l.8 8.5a1 1 0 0 0 1 .9h4.4a1 1 0 0 0 1-.9L11 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" opacity=".8"/>
@@ -135,8 +149,13 @@ const primary = [
   { href: "/journal", label: "Dziennik", icon: Icons.journal },
 ];
 
+const financesNav = [
+  { href: "/finances", label: "Finanse", icon: Icons.wallet },
+];
+
 const integrationsNav = [
   { href: "/integrations/meta", label: "Meta Ads", icon: Icons.meta },
+  { href: "/integrations/meta/capi", label: "CAPI Quality", icon: Icons.signal },
   { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
   { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
   { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
@@ -328,6 +347,17 @@ export function Sidebar({
             icon={item.icon}
             active={isActive(item.href)}
             badge={item.isMessages ? totalUnread : undefined}
+          />
+        ))}
+
+        <Section label="Finanse" />
+        {financesNav.map((item) => (
+          <NavLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={isActive(item.href)}
           />
         ))}
 
