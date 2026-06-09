@@ -47,14 +47,26 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
   const lastDay = new Date(Number(year), Number(m), 0).getDate();
   const toDate = `${year}-${m}-${String(lastDay).padStart(2, "0")}`;
 
-  // Current month entries
-  const { data: entries = [] } = await supabase
-    .from("finance_entries")
-    .select("id, type, amount_pln, category, description, date, status, client_name, created_at")
-    .eq("workspace_id", workspaceId)
-    .gte("date", fromDate)
-    .lte("date", toDate)
-    .order("date", { ascending: false });
+  const sixMonthsAgo = new Date(Number(year), Number(m) - 7, 1);
+  const histFrom = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
+
+  // Run both queries in parallel
+  const [{ data: entries = [] }, { data: histEntries = [] }] = await Promise.all([
+    supabase
+      .from("finance_entries")
+      .select("id, type, amount_pln, category, description, date, status, client_name, created_at")
+      .eq("workspace_id", workspaceId)
+      .gte("date", fromDate)
+      .lte("date", toDate)
+      .order("date", { ascending: false }),
+    supabase
+      .from("finance_entries")
+      .select("type, amount_pln, date, status")
+      .eq("workspace_id", workspaceId)
+      .gte("date", histFrom)
+      .lte("date", toDate)
+      .order("date", { ascending: true }),
+  ]);
 
   const all = (entries ?? []) as FinanceEntry[];
   const incomeEntries = all.filter((e) => e.type === "income");
@@ -71,18 +83,6 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
   const profit = receivedIncome - totalExpense;
   const margin = totalIncome > 0 ? (profit / totalIncome) * 100 : null;
   const expenseRatio = totalIncome > 0 ? Math.min(100, (totalExpense / totalIncome) * 100) : 0;
-
-  // Last 6 months for trend chart
-  const sixMonthsAgo = new Date(Number(year), Number(m) - 7, 1);
-  const histFrom = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
-
-  const { data: histEntries = [] } = await supabase
-    .from("finance_entries")
-    .select("type, amount_pln, date, status")
-    .eq("workspace_id", workspaceId)
-    .gte("date", histFrom)
-    .lte("date", toDate)
-    .order("date", { ascending: true });
 
   // Build 6-month bar chart data
   const monthMap = new Map<string, { income: number; potential: number; expense: number }>();

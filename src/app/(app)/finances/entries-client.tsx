@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useOptimistic } from "react";
+import { useRouter } from "next/navigation";
 
 export type FinanceEntry = {
   id: string;
@@ -272,6 +273,7 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
   const isIncome = type === "income";
   const label = isIncome ? "Przychody" : "Wydatki";
   const accentColor = isIncome ? "#22c55e" : "#ef4444";
+  const router = useRouter();
 
   const [showForm, setShowForm] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
@@ -299,7 +301,7 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
     const res = await fetch(`/api/finance/${id}`, { method: "DELETE" });
     if (res.ok) {
       setLocalEntries((prev) => prev.filter((e) => e.id !== id));
-      window.location.reload();
+      router.refresh();
     } else {
       setDeletingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
     }
@@ -313,7 +315,7 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
       body: JSON.stringify({ status: "received" }),
     });
     if (res.ok) {
-      window.location.reload();
+      router.refresh();
     } else {
       setReceivingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
     }
