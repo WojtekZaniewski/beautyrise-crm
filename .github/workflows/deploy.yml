@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_WOJTEK }}
-      VERCEL_ORG_ID: team_95UcCtkAA2CiZxbeW1eOMv21
-      VERCEL_PROJECT_ID: prj_dkSGzWKA54nkz7FsGcmHJCm3KCBt
+      VERCEL_ORG_ID: team_CwcpE11VgzkJAmm9TrBy8jf0
+      VERCEL_PROJECT_ID: prj_Y4N347wDbbjiQXc3i6fbvzyihdLC
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
