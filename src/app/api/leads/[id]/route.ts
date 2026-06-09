@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { fireCapiForStageChange } from "@/lib/meta/capi";
 
 export async function GET(
   _: NextRequest,
@@ -164,6 +165,11 @@ export async function PATCH(
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Fire CAPI event when stage changes (non-blocking — don't await)
+  if (typeof update.stage_id === "string") {
+    fireCapiForStageChange({ leadId: id, stageId: update.stage_id, workspaceId }).catch(() => {});
+  }
 
   // Detect potential duplicates by new phone/email
   type DupeLead = { id: string; full_name: string; phone: string | null; email: string | null };

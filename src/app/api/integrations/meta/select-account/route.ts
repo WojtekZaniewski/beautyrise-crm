@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { MetaClient } from "@/lib/meta/client";
 
 export async function POST(request: Request) {
   const { account_id } = (await request.json()) as { account_id: string };
@@ -25,6 +26,21 @@ export async function POST(request: Request) {
 
   const creds = (integration.credentials ?? {}) as Record<string, unknown>;
   creds.selected_ad_account_id = account_id;
+
+  // Auto-fetch the first pixel for this ad account and store it for CAPI
+  if (creds.access_token) {
+    try {
+      const client = new MetaClient(creds.access_token as string);
+      const pixelRes = await client.get<{ data: Array<{ id: string; name: string }> }>(
+        `${account_id}/adspixels`,
+        { fields: "id,name" },
+      );
+      if (pixelRes.data?.[0]) {
+        creds.pixel_id = pixelRes.data[0].id;
+        creds.pixel_name = pixelRes.data[0].name;
+      }
+    } catch {}
+  }
 
   const { error } = await supabase
     .from("integrations")
