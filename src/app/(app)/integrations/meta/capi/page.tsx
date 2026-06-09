@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { CapiClientsManager } from "./clients-manager";
 
 type CapiLog = {
   id: string;
@@ -65,7 +66,7 @@ export default async function CapiQualityPage() {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
 
-  // Fetch integration credentials
+  // Fetch integration credentials (fallback source)
   const { data: integration } = await supabase
     .from("integrations")
     .select("credentials, status")
@@ -77,6 +78,22 @@ export default async function CapiQualityPage() {
     pixel_id?: string; pixel_name?: string; access_token?: string;
     selected_ad_account_id?: string;
   };
+
+  // Fetch capi_clients (gateway-style config)
+  const { data: capiClientsRaw } = await supabase
+    .from("capi_clients")
+    .select("id, name, pixel_id, test_event_code, active, created_at")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true });
+
+  const capiClients = (capiClientsRaw ?? []) as Array<{
+    id: string; name: string; pixel_id: string; test_event_code: string | null; active: boolean; created_at: string;
+  }>;
+
+  // Effective pixel = from capi_clients or fallback to integrations
+  const activeClient = capiClients.find((c) => c.active);
+  const effectivePixelId = activeClient?.pixel_id ?? creds.pixel_id;
+  const effectivePixelName = activeClient?.name ?? creds.pixel_name;
 
   // Fetch CAPI logs
   const { data: logsRaw } = await supabase
@@ -130,27 +147,32 @@ export default async function CapiQualityPage() {
         </p>
       </div>
 
+      {/* Gateway-style CAPI clients manager */}
+      <div className="rounded-2xl p-5 mb-6" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+        <CapiClientsManager initialClients={capiClients} />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {/* Pixel status */}
         <div
           className="rounded-2xl p-5"
           style={{ background: "var(--panel)", border: "1px solid var(--border)" }}
         >
-          <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-3">Pixel</div>
-          {creds.pixel_id ? (
+          <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-3">Pixel (aktywny)</div>
+          {effectivePixelId ? (
             <>
               <div className="flex items-center gap-2 mb-1">
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ background: isConnected ? "#22c55e" : "#f59e0b" }}
+                  style={{ background: (activeClient ?? isConnected) ? "#22c55e" : "#f59e0b" }}
                 />
                 <span className="text-[14px] font-semibold">
-                  {creds.pixel_name ?? "Pixel"}
+                  {effectivePixelName ?? "Pixel"}
                 </span>
               </div>
-              <div className="text-[12px] text-[var(--muted)] mb-3 font-mono">ID: {creds.pixel_id}</div>
+              <div className="text-[12px] text-[var(--muted)] mb-3 font-mono">ID: {effectivePixelId}</div>
               <a
-                href={`https://www.facebook.com/events_manager2/list/pixel/${creds.pixel_id}/overview`}
+                href={`https://www.facebook.com/events_manager2/list/pixel/${effectivePixelId}/overview`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[12px] underline"

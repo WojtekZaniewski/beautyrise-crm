@@ -1,36 +1,22 @@
-import crypto from "crypto";
 import { createServiceClient } from "@/lib/supabase/server";
-import { normalizeEmail, normalizePhone } from "./normalize";
+import { buildUserData, matchKeys } from "./user-data";
+import { buildServerEvent } from "./event";
+import { sendEvents } from "./graph";
+import type { SendResult } from "./graph";
 
-const CAPI_VERSION = "v21.0";
-const CAPI_BASE = `https://graph.facebook.com/${CAPI_VERSION}`;
-const PARTNER_AGENT = "beautyrise-crm-1.0";
+export type { SendResult };
 
-export type SendResult = {
-  ok: boolean;
-  eventsReceived?: number;
-  fbtraceId?: string;
-  matchKeys: string[];
-  error?: string;
+type CapiClientRow = {
+  id: string;
+  name: string;
+  pixel_id: string;
+  access_token: string;
+  test_event_code: string | null;
+  workspace_id: string | null;
+  active: boolean;
 };
 
-function sha256(value: string): string {
-  return crypto.createHash("sha256").update(value).digest("hex");
-}
-
-export function buildMatchKeys(
-  email: string | null | undefined,
-  phone: string | null | undefined,
-  leadId: unknown,
-): string[] {
-  const keys: string[] = [];
-  if (normalizeEmail(email)) keys.push("em");
-  if (normalizePhone(phone)) keys.push("ph");
-  if (leadId != null && String(leadId).length > 0) keys.push("lead_id");
-  return keys;
-}
-
-type MetaCredentials = {
+type MetaIntegrationCreds = {
   access_token?: string;
   pixel_id?: string;
   pixel_name?: string;
@@ -38,90 +24,45 @@ type MetaCredentials = {
   [key: string]: unknown;
 };
 
-export async function getMetaIntegration(workspaceId: string): Promise<MetaCredentials | null> {
+/**
+ * Resolve CAPI config: prefer capi_clients table (gateway-style, full EMQ),
+ * fall back to integrations.credentials for workspaces that haven't migrated yet.
+ */
+async function resolveCapiConfig(
+  workspaceId: string,
+): Promise<{ pixelId: string; accessToken: string; testEventCode?: string | null; clientName?: string } | null> {
   const supabase = createServiceClient();
-  const { data } = await supabase
+
+  // 1) Check capi_clients table (gateway approach)
+  const { data: client } = await supabase
+    .from("capi_clients")
+    .select("pixel_id, access_token, test_event_code, name, active")
+    .eq("workspace_id", workspaceId)
+    .eq("active", true)
+    .maybeSingle();
+
+  if (client) {
+    const row = client as CapiClientRow;
+    return {
+      pixelId: row.pixel_id,
+      accessToken: row.access_token,
+      testEventCode: row.test_event_code,
+      clientName: row.name,
+    };
+  }
+
+  // 2) Fall back to integrations table
+  const { data: integration } = await supabase
     .from("integrations")
     .select("credentials")
     .eq("workspace_id", workspaceId)
     .eq("type", "meta_ads")
     .maybeSingle();
-  return (data?.credentials ?? null) as MetaCredentials | null;
-}
 
-export async function sendCapiEvent({
-  pixelId,
-  accessToken,
-  eventName,
-  email,
-  phone,
-  leadId,
-  customData,
-}: {
-  pixelId: string;
-  accessToken: string;
-  eventName: string;
-  email?: string | null;
-  phone?: string | null;
-  leadId?: string | number | null;
-  customData?: Record<string, unknown>;
-}): Promise<SendResult> {
-  const normEmail = normalizeEmail(email);
-  const normPhone = normalizePhone(phone);
+  const creds = (integration?.credentials ?? null) as MetaIntegrationCreds | null;
+  if (!creds?.access_token || !creds?.pixel_id) return null;
 
-  const userData: Record<string, unknown> = {};
-  if (normEmail) userData.em = [sha256(normEmail)];
-  if (normPhone) userData.ph = [sha256(normPhone)];
-  if (leadId != null) userData.lead_id = leadId;
-
-  const matchKeys = Object.keys(userData).filter((k) => k !== "lead_id");
-  if (leadId != null) matchKeys.push("lead_id");
-
-  const event: Record<string, unknown> = {
-    action_source: "system_generated",
-    event_name: eventName,
-    event_time: Math.floor(Date.now() / 1000),
-    user_data: userData,
-  };
-  if (customData && Object.keys(customData).length > 0) event.custom_data = customData;
-
-  const url = `${CAPI_BASE}/${pixelId}/events?access_token=${encodeURIComponent(accessToken)}`;
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [event], partner_agent: PARTNER_AGENT }),
-      cache: "no-store",
-    });
-
-    const body = await res.json() as {
-      events_received?: number;
-      fbtrace_id?: string;
-      messages?: unknown[];
-      error?: { message?: string; code?: number };
-    };
-
-    if (!res.ok) {
-      return {
-        ok: false,
-        matchKeys,
-        error: body.error?.message ?? `HTTP ${res.status}`,
-      };
-    }
-
-    return {
-      ok: true,
-      eventsReceived: body.events_received,
-      fbtraceId: body.fbtrace_id,
-      matchKeys,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      matchKeys,
-      error: err instanceof Error ? err.message : "Network error",
-    };
-  }
+  return { pixelId: creds.pixel_id, accessToken: creds.access_token };
 }
 
 // Stage-name → Meta standard event mapping
@@ -144,13 +85,13 @@ export async function fireCapiForStageChange({
 }): Promise<void> {
   const supabase = createServiceClient();
 
-  const [leadRes, stageRes, creds] = await Promise.all([
+  const [leadRes, stageRes, config] = await Promise.all([
     supabase.from("leads").select("email, phone, value_pln, custom_fields").eq("id", leadId).maybeSingle(),
     supabase.from("pipeline_stages").select("name").eq("id", stageId).maybeSingle(),
-    getMetaIntegration(workspaceId),
+    resolveCapiConfig(workspaceId),
   ]);
 
-  if (!creds?.access_token || !creds?.pixel_id) return;
+  if (!config) return;
 
   const lead = leadRes.data;
   const stageName = stageRes.data?.name ?? "";
@@ -158,34 +99,35 @@ export async function fireCapiForStageChange({
 
   const metaLeadId = (lead.custom_fields as Record<string, unknown> | null)?.meta_lead_id;
 
-  let result: SendResult;
+  const isPurchase = stageName === "Zamknięty" && lead.value_pln;
+  const eventName = isPurchase ? "Purchase" : (STAGE_EVENT_MAP[stageName] ?? "Lead");
 
-  if (stageName === "Zamknięty" && lead.value_pln) {
-    result = await sendCapiEvent({
-      pixelId: creds.pixel_id,
-      accessToken: creds.access_token,
-      eventName: "Purchase",
-      email: lead.email as string | null,
-      phone: lead.phone as string | null,
-      leadId: metaLeadId as string | number | null,
-      customData: { value: parseFloat(lead.value_pln as string), currency: "PLN" },
-    });
-  } else {
-    const eventName = STAGE_EVENT_MAP[stageName] ?? "Lead";
-    result = await sendCapiEvent({
-      pixelId: creds.pixel_id,
-      accessToken: creds.access_token,
-      eventName,
-      email: lead.email as string | null,
-      phone: lead.phone as string | null,
-      leadId: metaLeadId as string | number | null,
-    });
-  }
+  const rawUserData = {
+    em: lead.email as string | undefined,
+    ph: lead.phone as string | undefined,
+    external_id: metaLeadId ? String(metaLeadId) : undefined,
+  };
+  const hashedUserData = buildUserData(rawUserData);
+  const keys = matchKeys(hashedUserData);
 
-  const eventName = stageName === "Zamknięty" && lead.value_pln
-    ? "Purchase"
-    : (STAGE_EVENT_MAP[stageName] ?? "Lead");
+  const serverEvent = buildServerEvent({
+    event_name: eventName,
+    action_source: "system_generated",
+    user_data: hashedUserData,
+    custom_data: isPurchase
+      ? { value: parseFloat(lead.value_pln as string), currency: "PLN" }
+      : undefined,
+  });
 
+  const result = await sendEvents({
+    pixelId: config.pixelId,
+    accessToken: config.accessToken,
+    events: [serverEvent],
+    testEventCode: config.testEventCode,
+    matchKeys: keys,
+  });
+
+  // Log to capi_logs (non-blocking)
   supabase.from("capi_logs").insert({
     workspace_id: workspaceId,
     lead_id: leadId,
@@ -194,6 +136,18 @@ export async function fireCapiForStageChange({
     ok: result.ok,
     events_received: result.eventsReceived ?? null,
     fbtrace_id: result.fbtraceId ?? null,
-    error_message: result.error ?? null,
+    error_message: result.error?.message ?? null,
   }).then(() => {}, () => {});
+}
+
+// Legacy export for any existing callers
+export async function getMetaIntegration(workspaceId: string): Promise<MetaIntegrationCreds | null> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("integrations")
+    .select("credentials")
+    .eq("workspace_id", workspaceId)
+    .eq("type", "meta_ads")
+    .maybeSingle();
+  return (data?.credentials ?? null) as MetaIntegrationCreds | null;
 }

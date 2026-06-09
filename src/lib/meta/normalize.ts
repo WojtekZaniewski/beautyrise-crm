@@ -78,3 +78,25 @@ export function normalizeCountry(v: unknown): string | null {
   if (COUNTRY_MAP[letters]) return COUNTRY_MAP[letters];
   return letters.slice(0, 2) || null;
 }
+
+export function normalizeDob(v: unknown): string | null {
+  const digits = clean(v).replace(/\D/g, "");
+  if (digits.length !== 8) return null;
+  const month = Number(digits.slice(4, 6));
+  const day = Number(digits.slice(6, 8));
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return digits;
+}
+
+export function normalizeGender(v: unknown): "m" | "f" | null {
+  const c = clean(v).toLowerCase()[0];
+  if (!c) return null;
+  if (c === "m") return "m";
+  if (c === "f" || c === "k") return "f";
+  return null;
+}
+
+export function normalizeExternalId(v: unknown): string | null {
+  const s = clean(v).toLowerCase();
+  return s || null;
+}
