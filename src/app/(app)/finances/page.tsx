@@ -50,7 +50,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
   // Current month entries
   const { data: entries = [] } = await supabase
     .from("finance_entries")
-    .select("id, type, amount_pln, category, description, date, status, created_at")
+    .select("id, type, amount_pln, category, description, date, status, client_name, created_at")
     .eq("workspace_id", workspaceId)
     .gte("date", fromDate)
     .lte("date", toDate)
@@ -154,17 +154,17 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
 
       {/* Summary */}
       <div className="rounded-2xl p-5 mb-6" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
-        <div className={`grid grid-cols-2 gap-4 mb-4 ${potentialIncome > 0 ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
           <div>
             <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Przychód</div>
             <div className="text-[18px] font-semibold" style={{ color: "#22c55e" }}>{fmtPln(receivedIncome)}</div>
           </div>
-          {potentialIncome > 0 && (
-            <div>
-              <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Potencjalny</div>
-              <div className="text-[18px] font-semibold" style={{ color: "#f59e0b" }}>{fmtPln(potentialIncome)}</div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Potencjalny</div>
+            <div className="text-[18px] font-semibold" style={{ color: potentialIncome > 0 ? "#f59e0b" : "var(--muted)" }}>
+              {fmtPln(potentialIncome)}
             </div>
-          )}
+          </div>
           <div>
             <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Wydatki</div>
             <div className="text-[18px] font-semibold" style={{ color: "#ef4444" }}>{fmtPln(totalExpense)}</div>

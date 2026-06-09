@@ -9,6 +9,7 @@ export type FinanceEntry = {
   amount_pln: number;
   category: string | null;
   description: string;
+  client_name: string | null;
   date: string;
 };
 
@@ -55,43 +56,70 @@ function PotentialChip() {
 type EntryRowProps = {
   entry: FinanceEntry;
   onDelete: (id: string) => void;
+  onReceive: (id: string) => void;
   isDeleting: boolean;
+  isReceiving: boolean;
 };
 
-function EntryRow({ entry, onDelete, isDeleting }: EntryRowProps) {
+function EntryRow({ entry, onDelete, onReceive, isDeleting, isReceiving }: EntryRowProps) {
   return (
     <div
-      className="flex items-center gap-3 py-2.5 px-3 rounded-lg group"
-      style={{ opacity: isDeleting ? 0.4 : 1, transition: "opacity 0.15s" }}
+      className="flex items-start gap-3 py-2.5 px-3 rounded-lg group"
+      style={{
+        opacity: isDeleting || isReceiving ? 0.4 : 1,
+        transition: "opacity 0.15s",
+        background: entry.status === "potential" ? "rgba(245,158,11,0.04)" : "transparent",
+      }}
     >
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-medium truncate">{entry.description}</div>
+        {entry.client_name && (
+          <div className="text-[11px] font-medium truncate" style={{ color: "var(--accent)" }}>
+            {entry.client_name}
+          </div>
+        )}
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[11px] text-[var(--muted)]">
             {new Date(entry.date + "T00:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
           </span>
           <CategoryChip cat={entry.category} />
-          {entry.status === "potential" && <PotentialChip />}
+          {entry.type === "income" && entry.status === "potential" && <PotentialChip />}
         </div>
       </div>
-      <div
-        className="text-[14px] font-semibold tabular-nums"
-        style={{ color: entryColor(entry) }}
-      >
-        {entry.type === "income" ? "+" : "-"}{formatAmount(entry.amount_pln)}
+
+      <div className="flex flex-col items-end gap-1">
+        <div
+          className="text-[14px] font-semibold tabular-nums"
+          style={{ color: entryColor(entry) }}
+        >
+          {entry.type === "income" ? "+" : "-"}{formatAmount(entry.amount_pln)}
+        </div>
+
+        {/* Odbierz button — only for potential income */}
+        {entry.type === "income" && entry.status === "potential" && (
+          <button
+            onClick={() => onReceive(entry.id)}
+            disabled={isReceiving}
+            className="text-[10px] px-2 py-0.5 rounded-md font-semibold transition-colors disabled:opacity-50"
+            style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}
+          >
+            ✓ Odbierz
+          </button>
+        )}
+
+        <button
+          onClick={() => onDelete(entry.id)}
+          disabled={isDeleting}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--ba-4)]"
+          style={{ color: "var(--muted)" }}
+          title="Usuń"
+        >
+          <svg width="12" height="12" viewBox="0 0 15 15" fill="none">
+            <path d="M3 4h9M6 4V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V4M5.5 4l.5 8M9.5 4l-.5 8"
+              stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
-      <button
-        onClick={() => onDelete(entry.id)}
-        disabled={isDeleting}
-        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-[var(--ba-4)]"
-        style={{ color: "var(--muted)" }}
-        title="Usuń"
-      >
-        <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
-          <path d="M3 4h9M6 4V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V4M5.5 4l.5 8M9.5 4l-.5 8"
-            stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-        </svg>
-      </button>
     </div>
   );
 }
@@ -106,6 +134,7 @@ type AddFormProps = {
 function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
   const [isPending, startTransition] = useTransition();
   const [description, setDescription] = useState("");
+  const [clientName, setClientName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(type === "income" ? "revenue" : "ads");
   const [date, setDate] = useState(month + "-01");
@@ -132,6 +161,7 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
           description: description.trim(),
           date,
           status: type === "income" ? incomeStatus : "received",
+          client_name: clientName.trim() || null,
         }),
       });
       if (res.ok) {
@@ -151,9 +181,10 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
   return (
     <div className="mt-2 mb-1 rounded-xl p-3.5 flex flex-col gap-2.5"
       style={{ background: "var(--ba-3)", border: "1px solid var(--border)" }}>
+
       <div className="flex gap-2">
         <input
-          type="text" placeholder="Opis" value={description}
+          type="text" placeholder="Opis / tytuł" value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none focus:border-[var(--accent)]"
           onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -166,6 +197,14 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
           onKeyDown={(e) => e.key === "Enter" && submit()}
         />
       </div>
+
+      {/* Client name */}
+      <input
+        type="text" placeholder="Klientka / klient (opcjonalnie)" value={clientName}
+        onChange={(e) => setClientName(e.target.value)}
+        className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none focus:border-[var(--accent)]"
+      />
+
       <div className="flex gap-2 flex-wrap">
         <select
           value={category} onChange={(e) => setCategory(e.target.value)}
@@ -179,6 +218,7 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
           className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none"
         />
       </div>
+
       {/* Status toggle — only for income */}
       {type === "income" && (
         <div className="flex gap-1.5">
@@ -204,7 +244,9 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
           </button>
         </div>
       )}
+
       {error && <p className="text-[12px]" style={{ color: "var(--danger)" }}>{error}</p>}
+
       <div className="flex gap-2 justify-end">
         <button onClick={onClose}
           className="px-3 py-1.5 rounded-lg text-[13px] text-[var(--muted)] hover:bg-[var(--ba-4)]">
@@ -233,6 +275,7 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
 
   const [showForm, setShowForm] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [receivingIds, setReceivingIds] = useState<Set<string>>(new Set());
 
   const [, addOptimistic] = useOptimistic<FinanceEntry[], FinanceEntry>(
     initialEntries,
@@ -259,6 +302,20 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
       window.location.reload();
     } else {
       setDeletingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    }
+  }
+
+  async function handleReceive(id: string) {
+    setReceivingIds((prev) => new Set([...prev, id]));
+    const res = await fetch(`/api/finance/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "received" }),
+    });
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      setReceivingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
     }
   }
 
@@ -309,7 +366,9 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
                 key={entry.id}
                 entry={entry}
                 onDelete={handleDelete}
+                onReceive={handleReceive}
                 isDeleting={deletingIds.has(entry.id)}
+                isReceiving={receivingIds.has(entry.id)}
               />
             ))}
           </div>
