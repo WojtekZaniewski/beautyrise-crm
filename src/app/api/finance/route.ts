@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("finance_entries")
-    .select("id, type, amount_pln, category, description, date, created_at")
+    .select("id, type, amount_pln, category, description, date, status, created_at")
     .eq("workspace_id", workspaceId)
     .order("date", { ascending: false });
 
@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
   const workspaceId = await getCurrentWorkspaceId();
   const body = await req.json() as {
     type?: string; amount_pln?: unknown; category?: string;
-    description?: string; date?: string;
+    description?: string; date?: string; status?: string;
   };
 
-  const { type, amount_pln, category, description, date } = body;
+  const { type, amount_pln, category, description, date, status } = body;
   if (!type || !["income", "expense"].includes(type)) {
     return NextResponse.json({ error: "Nieprawidłowy typ" }, { status: 400 });
   }
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       category: category?.trim() || null,
       description: description.trim(),
       date,
+      status: type === "income" && status === "potential" ? "potential" : "received",
     })
     .select()
     .single();

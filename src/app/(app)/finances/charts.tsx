@@ -8,6 +8,7 @@ import {
 type MonthPoint = {
   month: string;
   income: number;
+  potential: number;
   expense: number;
   profit: number;
 };
@@ -19,6 +20,7 @@ type CategoryPoint = {
 
 const EXPENSE_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16"];
 const INCOME_COLOR = "#22c55e";
+const POTENTIAL_COLOR = "#f59e0b";
 const EXPENSE_COLOR = "#ef4444";
 const PROFIT_COLOR = "#3b82f6";
 
@@ -76,7 +78,7 @@ export function FinanceCharts({
   monthlyData: MonthPoint[];
   categoryData: CategoryPoint[];
 }) {
-  const hasMonthly = monthlyData.some((d) => d.income > 0 || d.expense > 0);
+  const hasMonthly = monthlyData.some((d) => d.income > 0 || d.potential > 0 || d.expense > 0);
   const hasCategory = categoryData.some((d) => d.value > 0);
 
   if (!hasMonthly && !hasCategory) {
@@ -117,6 +119,7 @@ export function FinanceCharts({
               />
               <Tooltip content={<CustomTooltipBar />} />
               <Bar dataKey="income" name="Przychód" fill={INCOME_COLOR} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="potential" name="Potencjalny" fill={POTENTIAL_COLOR} radius={[4, 4, 0, 0]} />
               <Bar dataKey="expense" name="Wydatki" fill={EXPENSE_COLOR} radius={[4, 4, 0, 0]} />
               <Bar dataKey="profit" name="Zysk" fill={PROFIT_COLOR} radius={[4, 4, 0, 0]} />
             </BarChart>

@@ -2,9 +2,10 @@
 
 import { useState, useTransition, useOptimistic } from "react";
 
-type FinanceEntry = {
+export type FinanceEntry = {
   id: string;
   type: "income" | "expense";
+  status: "received" | "potential";
   amount_pln: number;
   category: string | null;
   description: string;
@@ -27,17 +28,26 @@ function formatAmount(n: number) {
   return n.toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " zł";
 }
 
+function entryColor(entry: FinanceEntry): string {
+  if (entry.type === "expense") return "#ef4444";
+  return entry.status === "potential" ? "#f59e0b" : "#22c55e";
+}
+
 function CategoryChip({ cat }: { cat: string | null }) {
   if (!cat) return null;
   return (
-    <span
-      className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-      style={{
-        background: "var(--ba-4)",
-        color: "var(--muted)",
-      }}
-    >
+    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+      style={{ background: "var(--ba-4)", color: "var(--muted)" }}>
       {CATEGORY_LABELS[cat] ?? cat}
+    </span>
+  );
+}
+
+function PotentialChip() {
+  return (
+    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+      style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+      Potencjalny
     </span>
   );
 }
@@ -56,16 +66,17 @@ function EntryRow({ entry, onDelete, isDeleting }: EntryRowProps) {
     >
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-medium truncate">{entry.description}</div>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[11px] text-[var(--muted)]">
             {new Date(entry.date + "T00:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
           </span>
           <CategoryChip cat={entry.category} />
+          {entry.status === "potential" && <PotentialChip />}
         </div>
       </div>
       <div
         className="text-[14px] font-semibold tabular-nums"
-        style={{ color: entry.type === "income" ? "#22c55e" : "#ef4444" }}
+        style={{ color: entryColor(entry) }}
       >
         {entry.type === "income" ? "+" : "-"}{formatAmount(entry.amount_pln)}
       </div>
@@ -77,7 +88,8 @@ function EntryRow({ entry, onDelete, isDeleting }: EntryRowProps) {
         title="Usuń"
       >
         <svg width="13" height="13" viewBox="0 0 15 15" fill="none">
-          <path d="M3 4h9M6 4V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V4M5.5 4l.5 8M9.5 4l-.5 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          <path d="M3 4h9M6 4V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V4M5.5 4l.5 8M9.5 4l-.5 8"
+            stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>
       </button>
     </div>
@@ -97,6 +109,7 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(type === "income" ? "revenue" : "ads");
   const [date, setDate] = useState(month + "-01");
+  const [incomeStatus, setIncomeStatus] = useState<"received" | "potential">("received");
   const [error, setError] = useState("");
 
   const cats = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -112,7 +125,14 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
       const res = await fetch("/api/finance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, amount_pln: parsed, category, description: description.trim(), date }),
+        body: JSON.stringify({
+          type,
+          amount_pln: parsed,
+          category,
+          description: description.trim(),
+          date,
+          status: type === "income" ? incomeStatus : "received",
+        }),
       });
       if (res.ok) {
         const entry = await res.json() as FinanceEntry;
@@ -125,61 +145,74 @@ function AddForm({ type, month, onAdded, onClose }: AddFormProps) {
     });
   }
 
+  const submitColor = type === "expense" ? "#ef4444"
+    : incomeStatus === "potential" ? "#f59e0b" : "#22c55e";
+
   return (
-    <div
-      className="mt-2 mb-1 rounded-xl p-3.5 flex flex-col gap-2.5"
-      style={{ background: "var(--ba-3)", border: "1px solid var(--border)" }}
-    >
+    <div className="mt-2 mb-1 rounded-xl p-3.5 flex flex-col gap-2.5"
+      style={{ background: "var(--ba-3)", border: "1px solid var(--border)" }}>
       <div className="flex gap-2">
         <input
-          type="text"
-          placeholder="Opis"
-          value={description}
+          type="text" placeholder="Opis" value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none focus:border-[var(--accent)]"
           onKeyDown={(e) => e.key === "Enter" && submit()}
           autoFocus
         />
         <input
-          type="number"
-          placeholder="Kwota PLN"
-          value={amount}
+          type="number" placeholder="Kwota PLN" value={amount}
           onChange={(e) => setAmount(e.target.value)}
           className="w-28 bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none focus:border-[var(--accent)]"
           onKeyDown={(e) => e.key === "Enter" && submit()}
         />
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none flex-1"
-        >
+          value={category} onChange={(e) => setCategory(e.target.value)}
+          className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none flex-1 min-w-[120px]">
           {cats.map((c) => (
             <option key={c} value={c}>{CATEGORY_LABELS[c] ?? c}</option>
           ))}
         </select>
         <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+          type="date" value={date} onChange={(e) => setDate(e.target.value)}
           className="bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-[13px] outline-none"
         />
       </div>
+      {/* Status toggle — only for income */}
+      {type === "income" && (
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setIncomeStatus("received")}
+            className="px-3 py-1 rounded-lg text-[12px] font-medium transition-colors"
+            style={{
+              background: incomeStatus === "received" ? "rgba(34,197,94,0.15)" : "var(--ba-4)",
+              color: incomeStatus === "received" ? "#22c55e" : "var(--muted)",
+            }}
+          >
+            ✓ Otrzymany
+          </button>
+          <button
+            onClick={() => setIncomeStatus("potential")}
+            className="px-3 py-1 rounded-lg text-[12px] font-medium transition-colors"
+            style={{
+              background: incomeStatus === "potential" ? "rgba(245,158,11,0.15)" : "var(--ba-4)",
+              color: incomeStatus === "potential" ? "#f59e0b" : "var(--muted)",
+            }}
+          >
+            ◌ Potencjalny
+          </button>
+        </div>
+      )}
       {error && <p className="text-[12px]" style={{ color: "var(--danger)" }}>{error}</p>}
       <div className="flex gap-2 justify-end">
-        <button
-          onClick={onClose}
-          className="px-3 py-1.5 rounded-lg text-[13px] text-[var(--muted)] hover:bg-[var(--ba-4)]"
-        >
+        <button onClick={onClose}
+          className="px-3 py-1.5 rounded-lg text-[13px] text-[var(--muted)] hover:bg-[var(--ba-4)]">
           Anuluj
         </button>
-        <button
-          onClick={submit}
-          disabled={isPending}
+        <button onClick={submit} disabled={isPending}
           className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-white disabled:opacity-50"
-          style={{ background: type === "income" ? "#22c55e" : "#ef4444" }}
-        >
+          style={{ background: submitColor }}>
           {isPending ? "Dodawanie…" : "Dodaj"}
         </button>
       </div>
@@ -201,13 +234,18 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
   const [showForm, setShowForm] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
-  const [entries, addOptimistic] = useOptimistic<FinanceEntry[], FinanceEntry>(
+  const [, addOptimistic] = useOptimistic<FinanceEntry[], FinanceEntry>(
     initialEntries,
     (state, newEntry) => [newEntry, ...state],
   );
 
   const [localEntries, setLocalEntries] = useState<FinanceEntry[]>([]);
-  const allEntries = [...localEntries.filter((e) => !initialEntries.some((i) => i.id === e.id)), ...initialEntries];
+  const allEntries = [
+    ...localEntries.filter((e) => !initialEntries.some((i) => i.id === e.id)),
+    ...initialEntries,
+  ];
+
+  const potentialCount = isIncome ? allEntries.filter((e) => e.status === "potential").length : 0;
 
   function handleAdded(entry: FinanceEntry) {
     setLocalEntries((prev) => [entry, ...prev]);
@@ -218,40 +256,32 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
     const res = await fetch(`/api/finance/${id}`, { method: "DELETE" });
     if (res.ok) {
       setLocalEntries((prev) => prev.filter((e) => e.id !== id));
-      // Force re-fetch by navigating — or use router.refresh()
       window.location.reload();
     } else {
-      setDeletingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      setDeletingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
     }
   }
 
-  void addOptimistic; // useOptimistic used via localEntries pattern above
+  void addOptimistic;
 
   return (
-    <div
-      className="flex flex-col rounded-2xl overflow-hidden"
-      style={{ border: "1px solid var(--border)", background: "var(--panel)" }}
-    >
-      <div
-        className="px-4 py-3 flex items-center justify-between"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
+    <div className="flex flex-col rounded-2xl overflow-hidden"
+      style={{ border: "1px solid var(--border)", background: "var(--panel)" }}>
+      <div className="px-4 py-3 flex items-center justify-between"
+        style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ background: accentColor }}
-          />
+          <span className="w-2 h-2 rounded-full" style={{ background: accentColor }} />
           <span className="font-semibold text-[14px]">{label}</span>
-          <span
-            className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
-            style={{ background: "var(--ba-4)", color: "var(--muted)" }}
-          >
+          <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
+            style={{ background: "var(--ba-4)", color: "var(--muted)" }}>
             {allEntries.length}
           </span>
+          {potentialCount > 0 && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
+              style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+              {potentialCount} potenj.
+            </span>
+          )}
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
@@ -259,8 +289,7 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
           style={{
             background: showForm ? "var(--ba-4)" : `${accentColor}15`,
             color: showForm ? "var(--muted)" : accentColor,
-          }}
-        >
+          }}>
           {showForm ? "Anuluj" : "+ Dodaj"}
         </button>
       </div>
@@ -268,19 +297,11 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
       <div className="flex-1 overflow-y-auto max-h-[500px]">
         {showForm && (
           <div className="px-3 pt-2">
-            <AddForm
-              type={type}
-              month={month}
-              onAdded={handleAdded}
-              onClose={() => setShowForm(false)}
-            />
+            <AddForm type={type} month={month} onAdded={handleAdded} onClose={() => setShowForm(false)} />
           </div>
         )}
-
         {allEntries.length === 0 && !showForm ? (
-          <div className="px-4 py-8 text-center text-[13px] text-[var(--muted)]">
-            Brak wpisów
-          </div>
+          <div className="px-4 py-8 text-center text-[13px] text-[var(--muted)]">Brak wpisów</div>
         ) : (
           <div className="px-1 py-1">
             {allEntries.map((entry) => (

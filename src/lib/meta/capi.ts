@@ -24,16 +24,11 @@ type MetaIntegrationCreds = {
   [key: string]: unknown;
 };
 
-/**
- * Resolve CAPI config: prefer capi_clients table (gateway-style, full EMQ),
- * fall back to integrations.credentials for workspaces that haven't migrated yet.
- */
-async function resolveCapiConfig(
+export async function resolveCapiConfig(
   workspaceId: string,
 ): Promise<{ pixelId: string; accessToken: string; testEventCode?: string | null; clientName?: string } | null> {
   const supabase = createServiceClient();
 
-  // 1) Check capi_clients table (gateway approach)
   const { data: client } = await supabase
     .from("capi_clients")
     .select("pixel_id, access_token, test_event_code, name, active")
@@ -51,7 +46,6 @@ async function resolveCapiConfig(
     };
   }
 
-  // 2) Fall back to integrations table
   const { data: integration } = await supabase
     .from("integrations")
     .select("credentials")
@@ -65,7 +59,6 @@ async function resolveCapiConfig(
   return { pixelId: creds.pixel_id, accessToken: creds.access_token };
 }
 
-// Stage-name → Meta standard event mapping
 const STAGE_EVENT_MAP: Record<string, string> = {
   "Umówiony na call":            "Schedule",
   "Wysłany link do calla":       "Lead",
@@ -73,6 +66,11 @@ const STAGE_EVENT_MAP: Record<string, string> = {
   "Zamknięty":                   "CompleteRegistration",
   "Lidy przekazane do prawnika": "Lead",
 };
+
+function nextAttemptAt(attempts: number): string {
+  const delayMs = Math.pow(2, Math.min(attempts + 1, 7)) * 60 * 1000;
+  return new Date(Date.now() + delayMs).toISOString();
+}
 
 export async function fireCapiForStageChange({
   leadId,
@@ -92,13 +90,11 @@ export async function fireCapiForStageChange({
   ]);
 
   if (!config) return;
-
   const lead = leadRes.data;
   const stageName = stageRes.data?.name ?? "";
   if (!lead) return;
 
   const metaLeadId = (lead.custom_fields as Record<string, unknown> | null)?.meta_lead_id;
-
   const isPurchase = stageName === "Zamknięty" && lead.value_pln;
   const eventName = isPurchase ? "Purchase" : (STAGE_EVENT_MAP[stageName] ?? "Lead");
 
@@ -119,15 +115,64 @@ export async function fireCapiForStageChange({
       : undefined,
   });
 
-  const result = await sendEvents({
-    pixelId: config.pixelId,
-    accessToken: config.accessToken,
-    events: [serverEvent],
-    testEventCode: config.testEventCode,
-    matchKeys: keys,
-  });
+  // Queue-first: insert with dedup (ON CONFLICT DO NOTHING via ignoreDuplicates)
+  const { data: queueRow } = await supabase
+    .from("capi_events")
+    .upsert({
+      workspace_id: workspaceId,
+      event_id: serverEvent.event_id,
+      event_name: eventName,
+      status: "pending",
+      payload: serverEvent,
+      match_keys: keys,
+      lead_id: leadId,
+    }, {
+      onConflict: "workspace_id,event_id,event_name",
+      ignoreDuplicates: true,
+    })
+    .select("id")
+    .maybeSingle();
 
-  // Log to capi_logs (non-blocking)
+  // Duplicate — idempotent, skip
+  if (!queueRow) return;
+
+  const rowId = (queueRow as { id: string }).id;
+
+  // Attempt immediate send
+  let result: SendResult;
+  try {
+    result = await sendEvents({
+      pixelId: config.pixelId,
+      accessToken: config.accessToken,
+      events: [serverEvent],
+      testEventCode: config.testEventCode,
+      matchKeys: keys,
+    });
+  } catch {
+    // Network error — leave as pending for cron retry
+    await supabase
+      .from("capi_events")
+      .update({ attempts: 1, next_attempt_at: nextAttemptAt(0), last_error: "Network error" })
+      .eq("id", rowId);
+    return;
+  }
+
+  const isFatal = result.error ? result.error.retryable === false : false;
+
+  await supabase
+    .from("capi_events")
+    .update({
+      status: result.ok ? "sent" : isFatal ? "failed" : "pending",
+      attempts: 1,
+      fbtrace_id: result.fbtraceId ?? null,
+      events_received: result.eventsReceived ?? null,
+      last_error: result.error?.message ?? null,
+      sent_at: result.ok ? new Date().toISOString() : null,
+      next_attempt_at: result.ok || isFatal ? null : nextAttemptAt(0),
+    })
+    .eq("id", rowId);
+
+  // Mirror to capi_logs for dashboard (non-blocking)
   supabase.from("capi_logs").insert({
     workspace_id: workspaceId,
     lead_id: leadId,
@@ -140,7 +185,6 @@ export async function fireCapiForStageChange({
   }).then(() => {}, () => {});
 }
 
-// Legacy export for any existing callers
 export async function getMetaIntegration(workspaceId: string): Promise<MetaIntegrationCreds | null> {
   const supabase = createServiceClient();
   const { data } = await supabase

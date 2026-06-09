@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { FinanceColumn } from "./entries-client";
+import { FinanceColumn, type FinanceEntry } from "./entries-client";
 import { FinanceCharts } from "./charts";
 import Link from "next/link";
 
@@ -50,20 +50,25 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
   // Current month entries
   const { data: entries = [] } = await supabase
     .from("finance_entries")
-    .select("id, type, amount_pln, category, description, date, created_at")
+    .select("id, type, amount_pln, category, description, date, status, created_at")
     .eq("workspace_id", workspaceId)
     .gte("date", fromDate)
     .lte("date", toDate)
     .order("date", { ascending: false });
 
-  type Entry = { id: string; type: "income" | "expense"; amount_pln: number; category: string | null; description: string; date: string };
-  const all = (entries ?? []) as Entry[];
+  const all = (entries ?? []) as FinanceEntry[];
   const incomeEntries = all.filter((e) => e.type === "income");
   const expenseEntries = all.filter((e) => e.type === "expense");
 
-  const totalIncome = incomeEntries.reduce((sum, e) => sum + Number(e.amount_pln), 0);
+  const receivedIncome = incomeEntries
+    .filter((e) => e.status !== "potential")
+    .reduce((sum, e) => sum + Number(e.amount_pln), 0);
+  const potentialIncome = incomeEntries
+    .filter((e) => e.status === "potential")
+    .reduce((sum, e) => sum + Number(e.amount_pln), 0);
+  const totalIncome = receivedIncome + potentialIncome;
   const totalExpense = expenseEntries.reduce((sum, e) => sum + Number(e.amount_pln), 0);
-  const profit = totalIncome - totalExpense;
+  const profit = receivedIncome - totalExpense;
   const margin = totalIncome > 0 ? (profit / totalIncome) * 100 : null;
   const expenseRatio = totalIncome > 0 ? Math.min(100, (totalExpense / totalIncome) * 100) : 0;
 
@@ -73,32 +78,36 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
 
   const { data: histEntries = [] } = await supabase
     .from("finance_entries")
-    .select("type, amount_pln, date")
+    .select("type, amount_pln, date, status")
     .eq("workspace_id", workspaceId)
     .gte("date", histFrom)
     .lte("date", toDate)
     .order("date", { ascending: true });
 
   // Build 6-month bar chart data
-  const monthMap = new Map<string, { income: number; expense: number }>();
+  const monthMap = new Map<string, { income: number; potential: number; expense: number }>();
   const months: string[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(Number(year), Number(m) - 1 - i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    monthMap.set(key, { income: 0, expense: 0 });
+    monthMap.set(key, { income: 0, potential: 0, expense: 0 });
     months.push(key);
   }
   for (const e of histEntries ?? []) {
     const mKey = (e.date as string).slice(0, 7);
     const existing = monthMap.get(mKey);
     if (!existing) continue;
-    if (e.type === "income") existing.income += Number(e.amount_pln);
-    else existing.expense += Number(e.amount_pln);
+    if (e.type === "income") {
+      if ((e as { status?: string }).status === "potential") existing.potential += Number(e.amount_pln);
+      else existing.income += Number(e.amount_pln);
+    } else {
+      existing.expense += Number(e.amount_pln);
+    }
   }
 
   const monthlyData = months.map((mKey) => {
-    const { income, expense } = monthMap.get(mKey)!;
-    return { month: shortMonth(mKey), income, expense, profit: income - expense };
+    const { income, potential, expense } = monthMap.get(mKey)!;
+    return { month: shortMonth(mKey), income, potential, expense, profit: income - expense };
   });
 
   // Category breakdown for expenses (current month)
@@ -145,11 +154,17 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
 
       {/* Summary */}
       <div className="rounded-2xl p-5 mb-6" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        <div className={`grid grid-cols-2 gap-4 mb-4 ${potentialIncome > 0 ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
           <div>
             <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Przychód</div>
-            <div className="text-[18px] font-semibold" style={{ color: "#22c55e" }}>{fmtPln(totalIncome)}</div>
+            <div className="text-[18px] font-semibold" style={{ color: "#22c55e" }}>{fmtPln(receivedIncome)}</div>
           </div>
+          {potentialIncome > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Potencjalny</div>
+              <div className="text-[18px] font-semibold" style={{ color: "#f59e0b" }}>{fmtPln(potentialIncome)}</div>
+            </div>
+          )}
           <div>
             <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-1">Wydatki</div>
             <div className="text-[18px] font-semibold" style={{ color: "#ef4444" }}>{fmtPln(totalExpense)}</div>

@@ -95,6 +95,20 @@ export default async function CapiQualityPage() {
   const effectivePixelId = activeClient?.pixel_id ?? creds.pixel_id;
   const effectivePixelName = activeClient?.name ?? creds.pixel_name;
 
+  // Fetch capi_events queue stats
+  const { data: queueStats } = await supabase
+    .from("capi_events")
+    .select("status")
+    .eq("workspace_id", workspaceId);
+
+  const queueCounts = { sent: 0, pending: 0, failed: 0 };
+  for (const row of queueStats ?? []) {
+    const s = (row as { status: string }).status;
+    if (s === "sent") queueCounts.sent++;
+    else if (s === "pending") queueCounts.pending++;
+    else if (s === "failed") queueCounts.failed++;
+  }
+
   // Fetch CAPI logs
   const { data: logsRaw } = await supabase
     .from("capi_logs")
@@ -227,6 +241,44 @@ export default async function CapiQualityPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Queue Stats */}
+      <div
+        className="rounded-2xl p-5 mb-6"
+        style={{ background: "var(--panel)", border: "1px solid var(--border)" }}
+      >
+        <div className="text-[11px] uppercase tracking-wider text-[var(--muted)] mb-3">Kolejka CAPI</div>
+        {queueCounts.failed > 0 && (
+          <div
+            className="rounded-xl px-3 py-2.5 mb-3 text-[13px] flex items-center gap-2"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}
+          >
+            <span>⚠</span>
+            <span>{queueCounts.failed} event{queueCounts.failed > 1 ? "y" : ""} nie dotarł{queueCounts.failed > 1 ? "y" : ""} do Meta</span>
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <div className="text-[20px] font-bold" style={{ color: "#22c55e" }}>{queueCounts.sent}</div>
+            <div className="text-[11px] text-[var(--muted)]">✓ Wysłane</div>
+          </div>
+          <div>
+            <div className="text-[20px] font-bold" style={{ color: "#f59e0b" }}>{queueCounts.pending}</div>
+            <div className="text-[11px] text-[var(--muted)]">⏳ Oczekujące</div>
+          </div>
+          <div>
+            <div className="text-[20px] font-bold" style={{ color: queueCounts.failed > 0 ? "#ef4444" : "var(--muted)" }}>
+              {queueCounts.failed}
+            </div>
+            <div className="text-[11px] text-[var(--muted)]">✗ Nieudane</div>
+          </div>
+        </div>
+        {queueCounts.sent === 0 && queueCounts.pending === 0 && queueCounts.failed === 0 && (
+          <p className="text-[13px] text-[var(--muted)] mt-1">
+            Brak eventów w kolejce — tabela <code>capi_events</code> pusta lub nie istnieje
+          </p>
+        )}
       </div>
 
       {/* Quality Score */}
