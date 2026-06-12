@@ -267,9 +267,10 @@ type ColumnProps = {
   type: "income" | "expense";
   initialEntries: FinanceEntry[];
   month: string;
+  metaSpend?: number;
 };
 
-export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
+export function FinanceColumn({ type, initialEntries, month, metaSpend = 0 }: ColumnProps) {
   const isIncome = type === "income";
   const label = isIncome ? "Przychody" : "Wydatki";
   const accentColor = isIncome ? "#22c55e" : "#ef4444";
@@ -359,7 +360,29 @@ export function FinanceColumn({ type, initialEntries, month }: ColumnProps) {
             <AddForm type={type} month={month} onAdded={handleAdded} onClose={() => setShowForm(false)} />
           </div>
         )}
-        {allEntries.length === 0 && !showForm ? (
+        {/* Auto-synced Meta Ads spend — pinned, not deletable */}
+        {metaSpend > 0 && (
+          <div className="flex items-start gap-3 py-2.5 px-3 mx-1 mt-1 rounded-lg"
+            style={{ background: "rgba(239,68,68,0.05)", border: "1px dashed var(--border)" }}>
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-medium">Meta Ads — wydatki na reklamy</div>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                  style={{ background: "var(--ba-4)", color: "var(--muted)" }}>
+                  {CATEGORY_LABELS.ads}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                  style={{ background: "rgba(124,92,255,0.12)", color: "var(--accent-2)" }}>
+                  Auto-sync
+                </span>
+              </div>
+            </div>
+            <div className="text-[14px] font-semibold tabular-nums" style={{ color: "#ef4444" }}>
+              -{formatAmount(metaSpend)}
+            </div>
+          </div>
+        )}
+        {allEntries.length === 0 && metaSpend === 0 && !showForm ? (
           <div className="px-4 py-8 text-center text-[13px] text-[var(--muted)]">Brak wpisów</div>
         ) : (
           <div className="px-1 py-1">

@@ -50,8 +50,8 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
   const sixMonthsAgo = new Date(Number(year), Number(m) - 7, 1);
   const histFrom = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
 
-  // Run both queries in parallel
-  const [{ data: entries = [] }, { data: histEntries = [] }] = await Promise.all([
+  // Run queries in parallel (Meta ad spend joins through campaigns for workspace scoping)
+  const [{ data: entries = [] }, { data: histEntries = [] }, { data: metaMetrics = [] }] = await Promise.all([
     supabase
       .from("finance_entries")
       .select("id, type, amount_pln, category, description, date, status, client_name, created_at")
@@ -66,7 +66,21 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
       .gte("date", histFrom)
       .lte("date", toDate)
       .order("date", { ascending: true }),
+    supabase
+      .from("campaign_metrics_daily")
+      .select("date, spend, campaigns!inner(workspace_id)")
+      .eq("campaigns.workspace_id", workspaceId)
+      .gte("date", histFrom)
+      .lte("date", toDate),
   ]);
+
+  // Meta Ads spend: current month total + per-month sums for the history chart
+  const metaSpendByMonth = new Map<string, number>();
+  for (const row of (metaMetrics ?? []) as Array<{ date: string; spend: string | null }>) {
+    const mKey = row.date.slice(0, 7);
+    metaSpendByMonth.set(mKey, (metaSpendByMonth.get(mKey) ?? 0) + parseFloat(row.spend ?? "0"));
+  }
+  const metaSpendMonth = metaSpendByMonth.get(currentMonth) ?? 0;
 
   const all = (entries ?? []) as FinanceEntry[];
   const incomeEntries = all.filter((e) => e.type === "income");
@@ -79,7 +93,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
     .filter((e) => e.status === "potential")
     .reduce((sum, e) => sum + Number(e.amount_pln), 0);
   const totalIncome = receivedIncome + potentialIncome;
-  const totalExpense = expenseEntries.reduce((sum, e) => sum + Number(e.amount_pln), 0);
+  const totalExpense = expenseEntries.reduce((sum, e) => sum + Number(e.amount_pln), 0) + metaSpendMonth;
   const profit = receivedIncome - totalExpense;
   const margin = totalIncome > 0 ? (profit / totalIncome) * 100 : null;
   const expenseRatio = totalIncome > 0 ? Math.min(100, (totalExpense / totalIncome) * 100) : 0;
@@ -107,7 +121,8 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
 
   const monthlyData = months.map((mKey) => {
     const { income, potential, expense } = monthMap.get(mKey)!;
-    return { month: shortMonth(mKey), income, potential, expense, profit: income - expense };
+    const expenseWithMeta = expense + (metaSpendByMonth.get(mKey) ?? 0);
+    return { month: shortMonth(mKey), income, potential, expense: expenseWithMeta, profit: income - expenseWithMeta };
   });
 
   // Category breakdown for expenses (current month)
@@ -116,6 +131,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
     const cat = e.category ?? "other";
     catMap.set(cat, (catMap.get(cat) ?? 0) + Number(e.amount_pln));
   }
+  if (metaSpendMonth > 0) catMap.set("ads", (catMap.get("ads") ?? 0) + metaSpendMonth);
   const categoryData = [...catMap.entries()]
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
@@ -202,7 +218,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
       {/* Two-column entry lists */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FinanceColumn type="income" initialEntries={incomeEntries} month={currentMonth} />
-        <FinanceColumn type="expense" initialEntries={expenseEntries} month={currentMonth} />
+        <FinanceColumn type="expense" initialEntries={expenseEntries} month={currentMonth} metaSpend={metaSpendMonth} />
       </div>
     </div>
   );

@@ -74,7 +74,7 @@ export default async function Dashboard({
   const weekIso = new Date(Date.now() - 7 * 86400000).toISOString();
   const sevenDaysAgoDate = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
 
-  const [todayRes, weekRes, leadsRes, metaIntRes] = await Promise.all([
+  const [todayRes, weekRes, leadsRes, metaIntRes, recentNotesRes] = await Promise.all([
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
@@ -99,7 +99,26 @@ export default async function Dashboard({
       .eq("workspace_id", WORKSPACE_ID)
       .eq("type", "meta_ads")
       .maybeSingle(),
+    supabase
+      .from("lead_events")
+      .select("id, lead_id, payload, created_at, leads!inner(full_name, workspace_id)")
+      .eq("type", "note")
+      .eq("leads.workspace_id", WORKSPACE_ID)
+      .order("created_at", { ascending: false })
+      .limit(3),
   ]);
+
+  type RecentNote = { id: string; lead_id: string; text: string; leadName: string; created_at: string };
+  const recentNotes: RecentNote[] = ((recentNotesRes.data ?? []) as unknown as Array<{
+    id: string; lead_id: string; payload: { text?: string } | null; created_at: string;
+    leads: { full_name: string };
+  }>).map((ev) => ({
+    id: ev.id,
+    lead_id: ev.lead_id,
+    text: ev.payload?.text ?? "",
+    leadName: ev.leads.full_name,
+    created_at: ev.created_at,
+  }));
 
   const todayCount = todayRes.count ?? 0;
   const weekCount = weekRes.count ?? 0;
@@ -640,8 +659,51 @@ export default async function Dashboard({
 
       </div>{/* end left col */}
 
-      {/* Right column — Journal */}
-      <div className="lg:col-span-1">
+      {/* Right column — Recent lead notes + Journal */}
+      <div className="lg:col-span-1 flex flex-col gap-5">
+        <section
+          className="rounded-lg p-5"
+          style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[13.5px] font-semibold tracking-tight">Ostatnie notatki</h2>
+            <Link href="/leads/kanban" className="text-[12px] font-medium" style={{ color: "var(--accent-2)" }}>
+              Kanban →
+            </Link>
+          </div>
+          {recentNotes.length === 0 ? (
+            <p className="text-[12.5px]" style={{ color: "var(--muted)" }}>
+              Brak notatek. Dodaj notatkę w karcie leada.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {recentNotes.map((n) => (
+                <Link
+                  key={n.id}
+                  href={`/leads/${n.lead_id}`}
+                  className="rounded-lg px-3 py-2.5 block transition-colors hover:border-[var(--accent)]"
+                  style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[12px] font-semibold truncate" style={{ color: "var(--accent-2)" }}>
+                      {n.leadName}
+                    </span>
+                    <span className="text-[10.5px] shrink-0" style={{ color: "var(--muted)" }}>
+                      {new Date(n.created_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[12.5px] leading-relaxed break-words"
+                    style={{ color: "var(--text)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                  >
+                    {n.text}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
         <JournalWidget />
       </div>
 

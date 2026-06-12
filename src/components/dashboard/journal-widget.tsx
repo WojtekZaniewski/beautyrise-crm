@@ -5,7 +5,7 @@ import Link from "next/link";
 
 type TodoState = "todo" | "waiting" | "done";
 type Note = { id: string; content: string; created_at: string };
-type Todo = { id: string; text: string; completed: boolean; waiting: boolean; completed_at: string | null };
+type Todo = { id: string; text: string; completed: boolean; waiting: boolean; completed_at: string | null; date?: string };
 
 const TODAY = new Date().toISOString().split("T")[0];
 
@@ -56,6 +56,7 @@ export function JournalWidget() {
   const [draft, setDraft] = useState("");
   const [notes, setNotes] = useState<Note[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [overdueTodos, setOverdueTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [sending, setSending] = useState(false);
@@ -67,9 +68,11 @@ export function JournalWidget() {
     Promise.all([
       fetch(`/api/journal/notes?date=${TODAY}`).then((r) => r.json()) as Promise<{ notes: Note[] }>,
       fetch(`/api/journal/todos?date=${TODAY}`).then((r) => r.json()) as Promise<{ todos: Todo[] }>,
-    ]).then(([n, t]) => {
+      fetch(`/api/journal/todos?date=${TODAY}&overdue=1`).then((r) => r.json()) as Promise<{ todos: Todo[] }>,
+    ]).then(([n, t, o]) => {
       setNotes(n.notes ?? []);
       setTodos(t.todos ?? []);
+      setOverdueTodos(o.todos ?? []);
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
@@ -111,6 +114,30 @@ export function JournalWidget() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     }).catch(() => {});
+  }
+
+  async function cycleOverdue(t: Todo) {
+    const next = nextState(getTodoState(t));
+    const patch = next === "done"
+      ? { completed: true, waiting: false }
+      : next === "waiting"
+      ? { completed: false, waiting: true }
+      : { completed: false, waiting: false };
+    if (patch.completed) {
+      setOverdueTodos((p) => p.filter((x) => x.id !== t.id));
+    } else {
+      setOverdueTodos((p) => p.map((x) => x.id === t.id ? { ...x, ...patch, completed_at: null } : x));
+    }
+    await fetch(`/api/journal/todos/${t.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }).catch(() => {});
+  }
+
+  async function deleteOverdue(id: string) {
+    setOverdueTodos((p) => p.filter((t) => t.id !== id));
+    await fetch(`/api/journal/todos/${id}`, { method: "DELETE" }).catch(() => {});
   }
 
   async function addTodo(e: React.FormEvent) {
@@ -209,6 +236,34 @@ export function JournalWidget() {
       </div>
 
       <div className="mx-5" style={{ borderTop: "1px solid var(--border)" }} />
+
+      {/* Overdue todos from previous days */}
+      {overdueTodos.length > 0 && (
+        <div className="px-5 pt-3 pb-1">
+          <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-2.5" style={{ color: "#ef4444" }}>
+            Zaległe ({overdueTodos.length})
+          </div>
+          <div className="flex flex-col gap-1.5 mb-1">
+            {overdueTodos.map((t) => {
+              const state = getTodoState(t);
+              return (
+                <div key={t.id} className="flex items-center gap-2.5 group min-h-[28px]">
+                  <button onClick={() => cycleOverdue(t)} className="shrink-0"><TodoCheckbox state={state} /></button>
+                  <span className="flex-1 text-[13px] leading-snug" style={{ color: state === "waiting" ? "#eab308" : "var(--text)" }}>
+                    {t.text}
+                  </span>
+                  {t.date && (
+                    <span className="text-[10.5px] shrink-0" style={{ color: "var(--muted)" }}>
+                      {new Date(t.date + "T00:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                  <button onClick={() => deleteOverdue(t.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1 shrink-0" style={{ color: "var(--muted)" }}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Todos */}
       <div className="px-5 pt-3 pb-2">

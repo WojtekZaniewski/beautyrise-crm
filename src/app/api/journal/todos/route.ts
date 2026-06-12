@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date") ?? new Date().toISOString().split("T")[0];
+    const overdue = searchParams.get("overdue") === "1";
 
     const userClient = await createClient();
     const { data: { user } } = await userClient.auth.getUser();
@@ -14,13 +15,16 @@ export async function GET(request: Request) {
     const workspaceId = await getCurrentWorkspaceId();
     const supabase = createServiceClient();
 
-    const { data, error } = await supabase
+    // overdue=1 → incomplete tasks from days before `date`
+    const query = supabase
       .from("todo_items")
-      .select("id, text, completed, waiting, completed_at, created_at")
+      .select("id, date, text, completed, waiting, completed_at, created_at")
       .eq("workspace_id", workspaceId)
-      .eq("user_id", user.id)
-      .eq("date", date)
-      .order("created_at", { ascending: true });
+      .eq("user_id", user.id);
+
+    const { data, error } = overdue
+      ? await query.eq("completed", false).lt("date", date).order("date", { ascending: true })
+      : await query.eq("date", date).order("created_at", { ascending: true });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ todos: data ?? [] });
