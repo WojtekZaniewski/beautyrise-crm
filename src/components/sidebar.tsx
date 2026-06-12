@@ -132,6 +132,12 @@ const Icons = {
       <path d="M9.5 12c0-1.5 1.3-2.4 3-2.4s1.5.6 1.5 1.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity=".6" />
     </svg>
   ),
+  logs: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path d="M2 12.5V2.5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M4.5 4.5h6M4.5 7h6M4.5 9.5h3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity=".6" />
+    </svg>
+  ),
   signout: (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
       <path d="M6 2H2.5A1.5 1.5 0 0 0 1 3.5v8A1.5 1.5 0 0 0 2.5 13H6" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
@@ -376,6 +382,9 @@ export function Sidebar({
         {settingsNav.map((item) => (
           <NavLink key={item.href} {...item} active={isActive(item.href)} />
         ))}
+
+        <Section label="System" />
+        <NavLink href="/logs" label="Logi" icon={Icons.logs} active={isActive("/logs")} />
       </nav>
 
       <div
