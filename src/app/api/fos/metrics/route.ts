@@ -17,7 +17,9 @@ export async function GET() {
   const weekStart = getWeekStart();
   const todayStr = new Date().toISOString().split("T")[0];
 
-  const [sprintRes, prioritiesRes, allPrioritiesRes] = await Promise.all([
+  const weekStartDate = `${weekStart}T00:00:00`;
+
+  const [sprintRes, prioritiesRes, allPrioritiesRes, leadsRes, reviewRes] = await Promise.all([
     supabase
       .from("fos_sprints")
       .select("*")
@@ -33,6 +35,16 @@ export async function GET() {
       .from("fos_weekly_priorities")
       .select("id, deadline, status, completed_at, owner_id")
       .eq("workspace_id", workspaceId),
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+      .gte("created_at", weekStartDate),
+    supabase
+      .from("fos_weekly_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+      .eq("week_start", weekStart),
   ]);
 
   const sprint = sprintRes.data;
@@ -46,6 +58,8 @@ export async function GET() {
   const blockedTasks = weekPriorities.filter((p) => p.status === "blocked").length;
   const activeProjects = weekPriorities.filter((p) => p.status === "in_progress").length;
   const sprintCompletionRate = sprint?.completion_pct ?? 0;
+  const leadsThisWeek = leadsRes.count ?? 0;
+  const hasWeeklyReview = (reviewRes.count ?? 0) > 0;
 
   const completed = allPriorities.filter((p) => p.status === "completed");
   const onTime = completed.filter(
@@ -54,6 +68,16 @@ export async function GET() {
   const accountabilityScore =
     completed.length > 0 ? Math.round((onTime.length / completed.length) * 100) : 100;
 
+  // Sprint goal changes for active sprint
+  let sprintGoalChanges = 0;
+  if (sprint) {
+    const { count } = await supabase
+      .from("fos_sprint_goal_history")
+      .select("id", { count: "exact", head: true })
+      .eq("sprint_id", sprint.id);
+    sprintGoalChanges = count ?? 0;
+  }
+
   return NextResponse.json({
     tasksCompletedThisWeek,
     tasksOverdue,
@@ -61,5 +85,8 @@ export async function GET() {
     accountabilityScore,
     activeProjects,
     blockedTasks,
+    leadsThisWeek,
+    hasWeeklyReview,
+    sprintGoalChanges,
   });
 }

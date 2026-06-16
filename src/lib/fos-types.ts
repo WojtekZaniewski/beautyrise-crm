@@ -75,6 +75,39 @@ export interface FosMetrics {
   accountabilityScore: number;
   activeProjects: number;
   blockedTasks: number;
+  leadsThisWeek: number;
+  hasWeeklyReview: boolean;
+  sprintGoalChanges: number;
+}
+
+export interface FosDecision {
+  id: string;
+  workspace_id: string;
+  author_label: string | null;
+  title: string;
+  description: string | null;
+  decided_at: string;
+  created_at: string;
+}
+
+export interface FosWaitingFor {
+  id: string;
+  workspace_id: string;
+  from_label: string;
+  for_label: string;
+  description: string;
+  resolved: boolean;
+  created_at: string;
+}
+
+export interface FosDailyNote {
+  id: string;
+  workspace_id: string;
+  owner_label: string;
+  date: string;
+  content: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface FosActivityItem {

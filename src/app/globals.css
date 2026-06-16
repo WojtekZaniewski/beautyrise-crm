@@ -39,15 +39,15 @@
   --ba-40: rgba(0, 0, 0, 0.40);
   --ba-56: rgba(0, 0, 0, 0.56);
 
-  /* Status — one shade per meaning */
-  --success: #16a34a;
-  --success-bg: rgba(22, 163, 74, 0.12);
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.12);
-  --danger: #dc2626;
-  --danger-bg: rgba(220, 38, 38, 0.12);
-  --info: #2563eb;
-  --info-bg: rgba(37, 99, 235, 0.12);
+  /* Status — STRICT palette: orange · black · gray only (white/orange/black) */
+  --success: #FF4C00;                       /* positive / active / sent  → orange */
+  --success-bg: rgba(255, 76, 0, 0.12);
+  --warning: #FF8C42;                        /* pending / sending         → light orange */
+  --warning-bg: rgba(255, 140, 66, 0.14);
+  --danger: #1C1917;                         /* error / failed / blocked  → near-black */
+  --danger-bg: rgba(0, 0, 0, 0.07);
+  --info: #78716C;                           /* informational / low-key   → gray */
+  --info-bg: rgba(120, 113, 108, 0.12);
 
   /* Shadows — soft, Creative Tim depth */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -77,6 +77,16 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* ─── Finances scope — ONLY place allowed green/red/yellow (revenue) ────── */
+.finance-colors {
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.12);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.12);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.12);
 }
 
 /* Hardware-accelerated transitions limited to non-layout properties */
