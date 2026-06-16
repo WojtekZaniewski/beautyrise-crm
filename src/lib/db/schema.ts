@@ -380,3 +380,77 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [workspaces.id],
   }),
 }));
+
+// ─── FOS Enums ────────────────────────────────────────────────────────────────
+
+export const fosSprintStatusEnum = pgEnum("fos_sprint_status", ["active", "completed", "archived"]);
+export const fosPriorityStatusEnum = pgEnum("fos_priority_status", ["not_started", "in_progress", "completed", "blocked"]);
+export const fosIdeaStatusEnum = pgEnum("fos_idea_status", ["backlog", "under_review", "approved", "rejected"]);
+
+// ─── FOS Tables ───────────────────────────────────────────────────────────────
+
+export const fosSprints = pgTable("fos_sprints", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  goal: text("goal").notNull(),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+  status: fosSprintStatusEnum("status").notNull().default("active"),
+  completionPct: integer("completion_pct").notNull().default(0),
+  createdBy: uuid("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const fosSprintGoalHistory = pgTable("fos_sprint_goal_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sprintId: uuid("sprint_id").notNull().references(() => fosSprints.id, { onDelete: "cascade" }),
+  oldGoal: text("old_goal").notNull(),
+  newGoal: text("new_goal").notNull(),
+  changedBy: uuid("changed_by"),
+  changedAt: timestamp("changed_at").defaultNow().notNull(),
+});
+
+export const fosWeeklyPriorities = pgTable("fos_weekly_priorities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  sprintId: uuid("sprint_id").references(() => fosSprints.id, { onDelete: "set null" }),
+  weekStart: text("week_start").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  ownerId: uuid("owner_id"),
+  ownerLabel: text("owner_label"),
+  deadline: text("deadline"),
+  status: fosPriorityStatusEnum("status").notNull().default("not_started"),
+  isCompanyGoal: boolean("is_company_goal").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const fosWeeklyReviews = pgTable("fos_weekly_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull(),
+  userLabel: text("user_label"),
+  weekStart: text("week_start").notNull(),
+  doneThisWeek: text("done_this_week"),
+  notDone: text("not_done"),
+  blockers: text("blockers"),
+  focusNextWeek: text("focus_next_week"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const fosIdeas = pgTable("fos_ideas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  authorId: uuid("author_id"),
+  authorLabel: text("author_label"),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: fosIdeaStatusEnum("status").notNull().default("backlog"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

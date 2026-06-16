@@ -3,6 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
+import { CompanyFocusBanner } from "@/components/fos/company-focus-banner";
 import {
   UnifiedCampaignChart,
   type DayPoint,
@@ -427,6 +428,7 @@ export default async function Dashboard({
 
   return (
     <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page">
+      <CompanyFocusBanner />
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-y-3 heat-glow -mx-4 sm:-mx-7 -mt-4 sm:-mt-7 px-4 sm:px-7 pt-4 sm:pt-7 pb-5 mb-6">
         <div>

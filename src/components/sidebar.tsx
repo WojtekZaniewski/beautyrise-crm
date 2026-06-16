@@ -144,7 +144,45 @@ const Icons = {
       <path d="M10 10.5 13 7.5 10 4.5M13 7.5H5.5" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  fos: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path d="M7.5 1L9.5 5.5H14L10.5 8.5L12 13L7.5 10L3 13L4.5 8.5L1 5.5H5.5L7.5 1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+    </svg>
+  ),
+  sprint: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M7.5 4v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  priority: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path d="M3 2.5h9M3 5.5h6M3 8.5h7M3 11.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity=".8" />
+      <circle cx="12" cy="11.5" r="2" fill="currentColor" opacity=".5" />
+    </svg>
+  ),
+  review: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M5 5.5h5M5 8h5M5 10.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity=".6" />
+      <path d="M4.5 5.5L4.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+  idea: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <path d="M7.5 1.5a4 4 0 0 1 1.5 7.7V10.5H6V9.2A4 4 0 0 1 7.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M6 11.5h3M6.5 13h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  ),
 };
+
+const fosNav = [
+  { href: "/fos", label: "FOS Hub", icon: Icons.fos },
+  { href: "/fos/sprints", label: "Sprinty", icon: Icons.sprint },
+  { href: "/fos/priorities", label: "Priorytety", icon: Icons.priority },
+  { href: "/fos/reviews", label: "Weekly Review", icon: Icons.review },
+  { href: "/fos/ideas", label: "Idea Backlog", icon: Icons.idea },
+];
 
 const salesNav = [
   { href: "/", label: "Dashboard", icon: Icons.dashboard },
@@ -235,7 +273,7 @@ export function Sidebar({
   const { open: mobileOpen, setOpen } = useNav();
 
   // Most-specific match wins, so /leads doesn't light up on /leads/kanban etc.
-  const allHrefs = [...salesNav, ...commsNav, ...marketingNav, ...financesNav, ...settingsNav].map((i) => i.href);
+  const allHrefs = [...fosNav, ...salesNav, ...commsNav, ...marketingNav, ...financesNav, ...settingsNav].map((i) => i.href);
   const activeHref = allHrefs.reduce((best, href) => {
     const matches = href === "/" ? path === "/" : path === href || path.startsWith(href + "/");
     return matches && href.length > best.length ? href : best;
@@ -379,6 +417,11 @@ export function Sidebar({
 
         <Section label="Finanse" />
         {financesNav.map((item) => (
+          <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
+        ))}
+
+        <Section label="Founder OS" />
+        {fosNav.map((item) => (
           <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
         ))}
 
