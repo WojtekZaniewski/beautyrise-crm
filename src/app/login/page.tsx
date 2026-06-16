@@ -69,9 +69,9 @@ export default function LoginPage() {
             <div
               className="text-[13px] mb-4 px-3 py-2.5 rounded-lg"
               style={{
-                color: "#b91c1c",
-                background: "rgba(220,38,38,0.06)",
-                border: "1px solid rgba(220,38,38,0.16)",
+                color: "#1C1917",
+                background: "rgba(0,0,0,0.06)",
+                border: "1px solid rgba(0,0,0,0.16)",
               }}
             >
               {error}

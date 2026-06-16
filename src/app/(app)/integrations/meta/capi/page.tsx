@@ -15,7 +15,7 @@ type CapiLog = {
 
 function QualityBar({ score, max = 5 }: { score: number; max?: number }) {
   const pct = Math.min(100, (score / max) * 100);
-  const color = score >= 3 ? "#22c55e" : score >= 2 ? "#f59e0b" : "#ef4444";
+  const color = score >= 3 ? "#FF4C00" : score >= 2 ? "#FF8C42" : "#1C1917";
   const label = score >= 3 ? "Good" : score >= 2 ? "Fair" : "Poor";
   return (
     <div className="flex items-center gap-3">
@@ -34,9 +34,9 @@ function QualityBar({ score, max = 5 }: { score: number; max?: number }) {
 
 function MatchKeyChip({ k }: { k: string }) {
   const colors: Record<string, string> = {
-    em: "#3b82f6",
-    ph: "#8b5cf6",
-    lead_id: "#06b6d4",
+    em: "#FF4C00",
+    ph: "#FF4C00",
+    lead_id: "#FF4C00",
   };
   return (
     <span
@@ -53,8 +53,8 @@ function StatusBadge({ ok }: { ok: boolean }) {
     <span
       className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
       style={{
-        background: ok ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-        color: ok ? "#22c55e" : "#ef4444",
+        background: ok ? "rgba(255,76,0,0.12)" : "rgba(0,0,0,0.12)",
+        color: ok ? "#FF4C00" : "#1C1917",
       }}
     >
       {ok ? "✓ OK" : "✗ Błąd"}
@@ -178,7 +178,7 @@ export default async function CapiQualityPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ background: (activeClient ?? isConnected) ? "#22c55e" : "#f59e0b" }}
+                  style={{ background: (activeClient ?? isConnected) ? "#FF4C00" : "#FF8C42" }}
                 />
                 <span className="text-[14px] font-semibold">
                   {effectivePixelName ?? "Pixel"}
@@ -221,20 +221,20 @@ export default async function CapiQualityPage() {
             <div>
               <div
                 className="text-[20px] font-bold"
-                style={{ color: successRate == null ? "var(--muted)" : successRate >= 90 ? "#22c55e" : "#f59e0b" }}
+                style={{ color: successRate == null ? "var(--muted)" : successRate >= 90 ? "#FF4C00" : "#FF8C42" }}
               >
                 {successRate == null ? "—" : `${successRate}%`}
               </div>
               <div className="text-[11px] text-[var(--muted)]">Sukces</div>
             </div>
             <div>
-              <div className="text-[20px] font-bold" style={{ color: "#3b82f6" }}>
+              <div className="text-[20px] font-bold" style={{ color: "#FF4C00" }}>
                 {last50.length === 0 ? "—" : `${Math.round((logsWithEm / last50.length) * 100)}%`}
               </div>
               <div className="text-[11px] text-[var(--muted)]">Z emailem</div>
             </div>
             <div>
-              <div className="text-[20px] font-bold" style={{ color: "#8b5cf6" }}>
+              <div className="text-[20px] font-bold" style={{ color: "#FF4C00" }}>
                 {last50.length === 0 ? "—" : `${Math.round((logsWithPh / last50.length) * 100)}%`}
               </div>
               <div className="text-[11px] text-[var(--muted)]">Z telefonem</div>
@@ -252,7 +252,7 @@ export default async function CapiQualityPage() {
         {queueCounts.failed > 0 && (
           <div
             className="rounded-xl px-3 py-2.5 mb-3 text-[13px] flex items-center gap-2"
-            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}
+            style={{ background: "rgba(0,0,0,0.08)", border: "1px solid rgba(0,0,0,0.2)", color: "#1C1917" }}
           >
             <span>⚠</span>
             <span>{queueCounts.failed} event{queueCounts.failed > 1 ? "y" : ""} nie dotarł{queueCounts.failed > 1 ? "y" : ""} do Meta</span>
@@ -260,15 +260,15 @@ export default async function CapiQualityPage() {
         )}
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <div className="text-[20px] font-bold" style={{ color: "#22c55e" }}>{queueCounts.sent}</div>
+            <div className="text-[20px] font-bold" style={{ color: "#FF4C00" }}>{queueCounts.sent}</div>
             <div className="text-[11px] text-[var(--muted)]">✓ Wysłane</div>
           </div>
           <div>
-            <div className="text-[20px] font-bold" style={{ color: "#f59e0b" }}>{queueCounts.pending}</div>
+            <div className="text-[20px] font-bold" style={{ color: "#FF8C42" }}>{queueCounts.pending}</div>
             <div className="text-[11px] text-[var(--muted)]">⏳ Oczekujące</div>
           </div>
           <div>
-            <div className="text-[20px] font-bold" style={{ color: queueCounts.failed > 0 ? "#ef4444" : "var(--muted)" }}>
+            <div className="text-[20px] font-bold" style={{ color: queueCounts.failed > 0 ? "#1C1917" : "var(--muted)" }}>
               {queueCounts.failed}
             </div>
             <div className="text-[11px] text-[var(--muted)]">✗ Nieudane</div>
@@ -300,15 +300,15 @@ export default async function CapiQualityPage() {
       {recommendations.length > 0 && (
         <div
           className="rounded-2xl p-5 mb-6"
-          style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.16)" }}
+          style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.16)" }}
         >
-          <div className="text-[11px] uppercase tracking-wider mb-3" style={{ color: "#ef4444" }}>
+          <div className="text-[11px] uppercase tracking-wider mb-3" style={{ color: "#1C1917" }}>
             Rekomendacje
           </div>
           <ul className="flex flex-col gap-2">
             {recommendations.map((r, i) => (
               <li key={i} className="flex items-start gap-2 text-[13px]">
-                <span style={{ color: "#f59e0b" }}>⚠</span>
+                <span style={{ color: "#FF8C42" }}>⚠</span>
                 <span>{r}</span>
               </li>
             ))}

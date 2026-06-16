@@ -97,7 +97,7 @@ export function WeeklyReviewForm() {
         </div>
         <div className="flex items-center gap-2">
           {existingId && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "#22c55e15", color: "#22c55e", border: "1px solid #22c55e30" }}>
+            <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "#FF4C0015", color: "#FF4C00", border: "1px solid #FF4C0030" }}>
               Zapisane
             </span>
           )}
@@ -136,7 +136,7 @@ export function WeeklyReviewForm() {
           {saving ? "Zapisuję..." : "Zapisz review"}
         </button>
         {saved && (
-          <span className="text-[12px] font-medium" style={{ color: "#22c55e" }}>
+          <span className="text-[12px] font-medium" style={{ color: "#FF4C00" }}>
             ✓ Zapisano
           </span>
         )}

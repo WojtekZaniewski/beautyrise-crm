@@ -7,9 +7,9 @@ import { AccountabilityBadge } from "./accountability-badge";
 
 const STATUS_CONFIG: Record<FosPriorityStatus, { label: string; color: string }> = {
   not_started: { label: "Nie started", color: "#6b7280" },
-  in_progress: { label: "W toku", color: "#3b82f6" },
-  completed: { label: "Ukończone", color: "#22c55e" },
-  blocked: { label: "Zablokowane", color: "#ef4444" },
+  in_progress: { label: "W toku", color: "#FF4C00" },
+  completed: { label: "Ukończone", color: "#FF4C00" },
+  blocked: { label: "Zablokowane", color: "#1C1917" },
 };
 
 function StatusPill({ status }: { status: FosPriorityStatus }) {
@@ -136,7 +136,7 @@ export function WeeklyPrioritiesClient() {
       {limitWarning && (
         <div
           className="rounded-lg px-4 py-3 mb-4 text-[12px] font-medium"
-          style={{ background: "#eab30820", border: "1px solid #eab30840", color: "#eab308" }}
+          style={{ background: "#FF8C4220", border: "1px solid #FF8C4240", color: "#FF8C42" }}
         >
           ⚠ {limitWarning}
         </div>
@@ -297,8 +297,8 @@ function PriorityRow({
     <div
       className="rounded-lg p-3"
       style={{
-        background: isOverdue ? "#ef444408" : "var(--ba-4)",
-        border: `1px solid ${isOverdue ? "#ef444430" : "var(--border)"}`,
+        background: isOverdue ? "#1C191708" : "var(--ba-4)",
+        border: `1px solid ${isOverdue ? "#1C191730" : "var(--border)"}`,
       }}
     >
       <div className="flex items-start gap-3">
@@ -310,7 +310,7 @@ function PriorityRow({
             <StatusPill status={p.status} />
             {isOverdue && (
               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                style={{ background: "#ef444415", color: "#ef4444", border: "1px solid #ef444430" }}>
+                style={{ background: "#1C191715", color: "#1C1917", border: "1px solid #1C191730" }}>
                 Zaległe
               </span>
             )}
@@ -328,7 +328,7 @@ function PriorityRow({
             )}
             {score !== null && <AccountabilityBadge score={score} size="sm" />}
             {p.deadline && (
-              <span className="text-[11px] tabular-nums" style={{ color: isOverdue ? "#ef4444" : "var(--muted)" }}>
+              <span className="text-[11px] tabular-nums" style={{ color: isOverdue ? "#1C1917" : "var(--muted)" }}>
                 📅 {p.deadline.slice(5).replace("-", ".")}
               </span>
             )}

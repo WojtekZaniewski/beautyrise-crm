@@ -17,9 +17,9 @@ const EVENT_LABELS: Record<string, string> = {
 };
 
 const CTX_COLOR: Record<string, string> = {
-  meta_ads: "#3b82f6",
-  email: "#8b5cf6",
-  sms: "#22c55e",
+  meta_ads: "#FF4C00",
+  email: "#FF4C00",
+  sms: "#FF4C00",
 };
 
 function formatDate(iso: string) {

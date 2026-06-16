@@ -58,12 +58,12 @@ function Stat({ label, value, sub }: { label: string; value: number | string; su
 }
 
 const STATUS_STYLES: Record<string, [string, string]> = {
-  sent: ["#22c55e1a", "#16a34a"],
-  opened: ["#3b82f61a", "#2563eb"],
-  clicked: ["#8b5cf61a", "#7c3aed"],
-  replied: ["#f59e0b1a", "#d97706"],
+  sent: ["#FF4C001a", "#FF4C00"],
+  opened: ["#FF4C001a", "#FF4C00"],
+  clicked: ["#FF4C001a", "#FF4C00"],
+  replied: ["#FF8C421a", "#FF8C42"],
   pending: ["rgba(0,0,0,0.05)", "#78716C"],
-  failed: ["#ef44441a", "#dc2626"],
+  failed: ["#1C19171a", "#1C1917"],
   draft: ["rgba(0,0,0,0.05)", "#78716C"],
 };
 const STATUS_LABELS: Record<string, string> = {
@@ -114,12 +114,12 @@ function EmptyState({ icon = true, text }: { icon?: boolean; text: string }) {
 // ─── Outreach Tab ─────────────────────────────────────────────────────────────
 
 const EMAIL_CAMPAIGN_TYPES: { value: string; label: string; color: string }[] = [
-  { value: "outreach",   label: "Outreach",    color: "#3b82f6" },
-  { value: "followup",   label: "Follow-up",   color: "#8b5cf6" },
-  { value: "promo",      label: "Promocja",    color: "#f59e0b" },
-  { value: "newsletter", label: "Newsletter",  color: "#22c55e" },
-  { value: "welcome",    label: "Powitanie",   color: "#06b6d4" },
-  { value: "other",      label: "Inne",        color: "#94a3b8" },
+  { value: "outreach",   label: "Outreach",    color: "#FF4C00" },
+  { value: "followup",   label: "Follow-up",   color: "#FF4C00" },
+  { value: "promo",      label: "Promocja",    color: "#FF8C42" },
+  { value: "newsletter", label: "Newsletter",  color: "#FF4C00" },
+  { value: "welcome",    label: "Powitanie",   color: "#FF4C00" },
+  { value: "other",      label: "Inne",        color: "#A8A29E" },
 ];
 
 function parseEmailCampaignName(raw: string): { type: string | null; name: string } {
@@ -334,7 +334,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                     {syncingReplies ? "…" : "↻ Synchronizuj"}
                   </button>
                   <button onClick={() => setShowSend(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: "var(--accent)" }}>Wyślij kampanię</button>
-                  <button onClick={deleteCampaign} className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-red-600 transition-colors">Usuń</button>
+                  <button onClick={deleteCampaign} className="px-3 py-2 rounded-lg text-sm text-[var(--muted)] hover:text-[#1C1917] transition-colors">Usuń</button>
                 </div>
               </div>
             </Panel>
@@ -360,7 +360,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                       <YAxis stroke="#78716C" style={{ fontSize: 11 }} />
                       <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid rgba(0,0,0,0.10)", borderRadius: 7, fontSize: 12, color: "#0C0A08", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }} />
                       <Line type="monotone" dataKey="opens" stroke="#FF4C00" strokeWidth={2} dot={false} name="Otwarcia" />
-                      <Line type="monotone" dataKey="clicks" stroke="#3b82f6" strokeWidth={2} dot={false} name="Kliknięcia" />
+                      <Line type="monotone" dataKey="clicks" stroke="#FF4C00" strokeWidth={2} dot={false} name="Kliknięcia" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -391,7 +391,7 @@ function OutreachTab({ accounts }: { accounts: EmailAccount[] }) {
                               <span className="font-medium">{r.email}</span>
                               {(r.reply_count ?? 0) > 0 && !viewedRecipients.has(r.id) && (
                                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold text-white shrink-0"
-                                  style={{ background: "#dc2626", fontSize: 10 }}>
+                                  style={{ background: "#1C1917", fontSize: 10 }}>
                                   {r.reply_count}
                                 </span>
                               )}
@@ -949,11 +949,11 @@ function AccountsTab({ onChanged }: { onChanged: () => void }) {
               <div className="text-xs text-[var(--muted)] truncate">{a.email} · {PURPOSES[a.purpose] ?? a.purpose}</div>
             </div>
             <span className="text-xs px-2 py-0.5 rounded-full shrink-0"
-              style={{ background: a.is_active ? "#22c55e1a" : "var(--ba-6)", color: a.is_active ? "#16a34a" : "var(--muted)" }}>
+              style={{ background: a.is_active ? "#FF4C001a" : "var(--ba-6)", color: a.is_active ? "#FF4C00" : "var(--muted)" }}>
               {a.is_active ? "Aktywne" : "Nieaktywne"}
             </span>
             <button onClick={() => deleteAccount(a.id)} className="text-xs transition-colors" style={{ color: "var(--muted)" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")}
+              onMouseEnter={e => (e.currentTarget.style.color = "#1C1917")}
               onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}>Usuń</button>
           </div>
         ))}
@@ -982,7 +982,7 @@ function AccountsTab({ onChanged }: { onChanged: () => void }) {
               {Object.entries(PURPOSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-[#1C1917]">{error}</p>}
           <div className="flex gap-2 justify-end">
             <button onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-lg text-sm" style={{ color: "var(--muted)" }}>Anuluj</button>
             <button onClick={addAccount} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--accent)" }}>

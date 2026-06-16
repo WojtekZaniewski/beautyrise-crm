@@ -55,9 +55,9 @@ export default async function DeletedLeadsPage() {
           <div
             className="text-[12px] px-4 py-3 rounded-lg mb-4"
             style={{
-              background: "rgba(239,68,68,0.06)",
-              border: "1px solid rgba(239,68,68,0.2)",
-              color: "#b91c1c",
+              background: "rgba(0,0,0,0.06)",
+              border: "1px solid rgba(0,0,0,0.2)",
+              color: "#1C1917",
             }}
           >
             Leady w koszu można przywrócić lub trwale usunąć. Trwałe usunięcie jest nieodwracalne.

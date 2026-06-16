@@ -391,7 +391,7 @@ export function MetaPanel({
             </div>
 
             <div className="shrink-0 px-4 py-3" style={{ borderTop: "1px solid var(--border)", background: "var(--panel)" }}>
-              {replyError && <div className="text-xs text-red-500 mb-2">{replyError}</div>}
+              {replyError && <div className="text-xs text-[#1C1917] mb-2">{replyError}</div>}
               <form onSubmit={handleReply} className="flex gap-2 items-end">
                 <textarea
                   value={replyText}

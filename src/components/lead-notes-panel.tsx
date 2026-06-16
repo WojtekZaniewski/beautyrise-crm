@@ -27,17 +27,17 @@ type NoteContext =
   | { type: "email" | "sms"; campaign_id: string; campaign_name: string };
 
 function scoreColor(s: number): string {
-  if (s <= 3) return "#ef4444";
-  if (s <= 6) return "#f59e0b";
-  return "#16a34a";
+  if (s <= 3) return "#1C1917";
+  if (s <= 6) return "#FF8C42";
+  return "#FF4C00";
 }
 
 const GROUP_COLORS: Record<string, [string, string]> = {
-  "SMS":       ["#dcfce7", "#15803d"],
-  "Email":     ["#dbeafe", "#1d4ed8"],
-  "Meta Ads":  ["#ede9fe", "#6d28d9"],
-  "Messenger": ["#fef3c7", "#b45309"],
-  "Instagram": ["#fce7f3", "#be185d"],
+  "SMS":       ["#FF4C00", "#FF4C00"],
+  "Email":     ["#FFF7F0", "#FF4C00"],
+  "Meta Ads":  ["#FFF7F0", "#FF4C00"],
+  "Messenger": ["#FFF7F0", "#FF8C42"],
+  "Instagram": ["#FFF7F0", "#FF4C00"],
 };
 
 function formatDate(iso: string) {
@@ -376,7 +376,7 @@ export function LeadNotesPanel({
                           key={c.id}
                           style={contextBtnStyle(
                             noteContext.type === "email" && noteContext.campaign_id === c.id,
-                            "#8b5cf6",
+                            "#FF4C00",
                           )}
                           onClick={() => setNoteContext({ type: "email", campaign_id: c.id, campaign_name: c.name })}
                         >
@@ -388,7 +388,7 @@ export function LeadNotesPanel({
                           key={c.id}
                           style={contextBtnStyle(
                             noteContext.type === "sms" && noteContext.campaign_id === c.id,
-                            "#22c55e",
+                            "#FF4C00",
                           )}
                           onClick={() => setNoteContext({ type: "sms", campaign_id: c.id, campaign_name: c.name })}
                         >
@@ -434,7 +434,7 @@ export function LeadNotesPanel({
                     </div>
                   ) : filteredNotes.map((note) => {
                     const isCampaignNote = note.payload.context_type && note.payload.context_type !== "general";
-                    const badgeColor = note.payload.context_type === "email" ? "#8b5cf6" : "#22c55e";
+                    const badgeColor = note.payload.context_type === "email" ? "#FF4C00" : "#FF4C00";
                     return (
                       <div key={note.id} style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--ba-4)", border: "1px solid var(--border)", marginBottom: "10px", position: "relative" }}>
                         {isCampaignNote && note.payload.campaign_name && (
@@ -526,7 +526,7 @@ export function LeadNotesPanel({
                       style={{ padding: "9px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, opacity: savingDetails ? 0.5 : 1 }}>
                       {savingDetails ? "Zapisywanie…" : "Zapisz dane"}
                     </button>
-                    {detailsSaved && <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 500 }}>✓ Zapisano</span>}
+                    {detailsSaved && <span style={{ fontSize: "12px", color: "#FF4C00", fontWeight: 500 }}>✓ Zapisano</span>}
                   </div>
                 </form>
 
@@ -614,16 +614,16 @@ export function LeadNotesPanel({
 
                     {/* Duplicate warning */}
                     {duplicates.length > 0 && (
-                      <div style={{ padding: "12px 14px", borderRadius: "10px", background: "#fef3c7", border: "1px solid #fcd34d", display: "flex", flexDirection: "column", gap: "8px" }}>
-                        <div style={{ fontSize: "12px", fontWeight: 600, color: "#92400e" }}>
+                      <div style={{ padding: "12px 14px", borderRadius: "10px", background: "#FFF7F0", border: "1px solid #FF8C42", display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 600, color: "#C2410C" }}>
                           ⚠ Wykryto możliwe duplikaty
                         </div>
-                        <div style={{ fontSize: "11px", color: "#78350f" }}>
+                        <div style={{ fontSize: "11px", color: "#9A3412" }}>
                           Następujące leady mają ten sam numer telefonu lub email:
                         </div>
                         {duplicates.map(d => (
                           <a key={d.id} href={`/leads/${d.id}`} target="_blank" rel="noreferrer"
-                            style={{ fontSize: "12px", fontWeight: 500, color: "#b45309", textDecoration: "underline" }}>
+                            style={{ fontSize: "12px", fontWeight: 500, color: "#FF8C42", textDecoration: "underline" }}>
                             {d.full_name}
                             {d.phone && <span style={{ fontWeight: 400, marginLeft: "6px" }}>{d.phone}</span>}
                             {d.email && <span style={{ fontWeight: 400, marginLeft: "6px" }}>{d.email}</span>}

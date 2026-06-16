@@ -372,7 +372,7 @@ export function FinanceColumn({ type, initialEntries, month, metaSpend = 0 }: Co
                   {CATEGORY_LABELS.ads}
                 </span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                  style={{ background: "rgba(124,92,255,0.12)", color: "var(--accent-2)" }}>
+                  style={{ background: "rgba(255,76,0,0.12)", color: "var(--accent-2)" }}>
                   Auto-sync
                 </span>
               </div>

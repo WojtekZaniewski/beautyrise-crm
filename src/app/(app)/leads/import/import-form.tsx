@@ -108,7 +108,7 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
       {error && (
         <div
           className="text-sm px-3 py-2 rounded-lg"
-          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+          style={{ color: "var(--danger)", background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.16)" }}
         >
           {error}
         </div>
@@ -117,7 +117,7 @@ export function ImportForm({ stages }: { stages: Stage[] }) {
       {result && (
         <div
           className="text-sm px-3 py-2 rounded-lg"
-          style={{ color: "var(--success)", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.2)" }}
+          style={{ color: "var(--success)", background: "rgba(255,76,0,0.06)", border: "1px solid rgba(255,76,0,0.2)" }}
         >
           Zaimportowano {result.imported} leadów. Przekierowuję…
         </div>

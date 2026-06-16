@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import type { FosActivityItem } from "@/lib/fos-types";
 
 const TYPE_CONFIG: Record<FosActivityItem["type"], { icon: string; color: string }> = {
-  priority_completed: { icon: "✓", color: "#22c55e" },
+  priority_completed: { icon: "✓", color: "#FF4C00" },
   idea_added: { icon: "💡", color: "#f97316" },
-  review_submitted: { icon: "📋", color: "#3b82f6" },
-  lead_added: { icon: "👤", color: "#8b5cf6" },
+  review_submitted: { icon: "📋", color: "#FF4C00" },
+  lead_added: { icon: "👤", color: "#FF4C00" },
   sprint_started: { icon: "🚀", color: "var(--accent)" },
 };
 

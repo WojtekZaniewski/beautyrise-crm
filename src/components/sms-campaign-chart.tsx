@@ -31,7 +31,7 @@ export function SmsCampaignChart({ data }: { data: SmsDailyPoint[] }) {
           />
           <Legend wrapperStyle={{ fontSize: 12, color: "var(--muted)" }} />
           <Bar dataKey="sent" name="Wysłane" fill="#FF4C00" radius={[3, 3, 0, 0]} />
-          <Bar dataKey="replied" name="Odpowiedzi" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="replied" name="Odpowiedzi" fill="#FF4C00" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

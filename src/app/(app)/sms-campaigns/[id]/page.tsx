@@ -5,26 +5,26 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { SmsCampaignChart, type SmsDailyPoint } from "@/components/sms-campaign-chart";
 
 const CAMPAIGN_TYPES: Record<string, { label: string; color: string }> = {
-  outreach:  { label: "Outreach",       color: "#3b82f6" },
-  followup:  { label: "Follow-up",      color: "#8b5cf6" },
-  promo:     { label: "Promocja",       color: "#f59e0b" },
-  reminder:  { label: "Przypomnienie",  color: "#22c55e" },
+  outreach:  { label: "Outreach",       color: "#FF4C00" },
+  followup:  { label: "Follow-up",      color: "#FF4C00" },
+  promo:     { label: "Promocja",       color: "#FF8C42" },
+  reminder:  { label: "Przypomnienie",  color: "#FF4C00" },
   info:      { label: "Informacja",     color: "#6b7280" },
-  other:     { label: "Inne",           color: "#94a3b8" },
+  other:     { label: "Inne",           color: "#A8A29E" },
 };
 
 const SMS_STATUS: Record<string, { bg: string; color: string; label: string }> = {
-  sending: { bg: "#f59e0b1a", color: "#d97706", label: "Wysyłanie" },
-  sent:    { bg: "#22c55e1a", color: "#16a34a", label: "Wysłana" },
+  sending: { bg: "#FF8C421a", color: "#FF8C42", label: "Wysyłanie" },
+  sent:    { bg: "#FF4C001a", color: "#FF4C00", label: "Wysłana" },
   draft:   { bg: "rgba(0,0,0,0.05)", color: "#78716C", label: "Szkic" },
 };
 
 const RECIPIENT_STATUS: Record<string, { bg: string; color: string; label: string }> = {
-  sent:    { bg: "#22c55e1a", color: "#16a34a", label: "Wysłany" },
+  sent:    { bg: "#FF4C001a", color: "#FF4C00", label: "Wysłany" },
   pending: { bg: "rgba(0,0,0,0.05)", color: "#78716C", label: "Oczekuje" },
-  sending: { bg: "#f59e0b1a", color: "#d97706", label: "Wysyłanie…" },
-  queued:  { bg: "#3b82f61a", color: "#2563eb", label: "W kolejce" },
-  failed:  { bg: "#ef44441a", color: "#dc2626", label: "Błąd" },
+  sending: { bg: "#FF8C421a", color: "#FF8C42", label: "Wysyłanie…" },
+  queued:  { bg: "#FF4C001a", color: "#FF4C00", label: "W kolejce" },
+  failed:  { bg: "#1C19171a", color: "#1C1917", label: "Błąd" },
 };
 
 function parseName(raw: string): { type: string | null; name: string } {
@@ -244,7 +244,7 @@ export default async function SmsCampaignDetailPage({
                       </td>
                       <td className="px-5 py-3">
                         {r.replied_at ? (
-                          <span style={{ color: "#16a34a" }} className="text-xs font-medium">
+                          <span style={{ color: "#FF4C00" }} className="text-xs font-medium">
                             ✓ {new Date(r.replied_at as string).toLocaleDateString("pl-PL")}
                           </span>
                         ) : (

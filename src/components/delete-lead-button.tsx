@@ -25,7 +25,7 @@ export function DeleteLeadButton({ leadId }: { leadId: string }) {
           disabled={pending}
           style={{
             fontSize: "11.5px", padding: "2px 8px", borderRadius: "5px", cursor: "pointer",
-            background: "#ef4444", color: "#fff", border: "none", fontWeight: 600,
+            background: "#1C1917", color: "#fff", border: "none", fontWeight: 600,
             opacity: pending ? 0.5 : 1,
           }}
         >
@@ -56,8 +56,8 @@ export function DeleteLeadButton({ leadId }: { leadId: string }) {
         color: "var(--muted)", cursor: "pointer", transition: "color 0.15s, border-color 0.15s",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.color = "#ef4444";
-        (e.currentTarget as HTMLElement).style.borderColor = "#ef4444";
+        (e.currentTarget as HTMLElement).style.color = "#1C1917";
+        (e.currentTarget as HTMLElement).style.borderColor = "#1C1917";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.color = "var(--muted)";

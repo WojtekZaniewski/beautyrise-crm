@@ -179,13 +179,13 @@ export function CapiClientsManager({ initialClients }: { initialClients: CapiCli
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
-                    style={{ background: client.active ? "#22c55e" : "#6b7280" }}
+                    style={{ background: client.active ? "#FF4C00" : "#6b7280" }}
                   />
                   <span className="font-semibold text-[14px]">{client.name}</span>
                   {client.test_event_code && (
                     <span
                       className="text-[10px] px-1.5 py-0.5 rounded-full"
-                      style={{ background: "#f59e0b20", color: "#f59e0b" }}
+                      style={{ background: "#FF8C4220", color: "#FF8C42" }}
                     >
                       TEST: {client.test_event_code}
                     </span>
@@ -204,8 +204,8 @@ export function CapiClientsManager({ initialClients }: { initialClients: CapiCli
                   onClick={() => handleToggle(client.id, !client.active)}
                   className="text-[12px] px-2.5 py-1 rounded-lg"
                   style={{
-                    background: client.active ? "rgba(34,197,94,0.1)" : "var(--ba-4)",
-                    color: client.active ? "#22c55e" : "var(--muted)",
+                    background: client.active ? "rgba(255,76,0,0.1)" : "var(--ba-4)",
+                    color: client.active ? "#FF4C00" : "var(--muted)",
                   }}
                 >
                   {client.active ? "Aktywny" : "Nieaktywny"}

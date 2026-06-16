@@ -5,9 +5,9 @@ import type { FosIdea, FosIdeaStatus } from "@/lib/fos-types";
 
 const STATUS_CONFIG: Record<FosIdeaStatus, { label: string; color: string }> = {
   backlog: { label: "Backlog", color: "#6b7280" },
-  under_review: { label: "Under Review", color: "#3b82f6" },
-  approved: { label: "Approved", color: "#22c55e" },
-  rejected: { label: "Rejected", color: "#ef4444" },
+  under_review: { label: "Under Review", color: "#FF4C00" },
+  approved: { label: "Approved", color: "#FF4C00" },
+  rejected: { label: "Rejected", color: "#1C1917" },
 };
 
 const ALL_STATUSES: FosIdeaStatus[] = ["backlog", "under_review", "approved", "rejected"];
@@ -102,7 +102,7 @@ export function IdeaBacklogClient() {
           className="rounded-xl p-4 mb-4 space-y-3"
           style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}
         >
-          {error && <div className="text-[12px] text-red-500">{error}</div>}
+          {error && <div className="text-[12px] text-[#1C1917]">{error}</div>}
           <input
             placeholder="Tytuł pomysłu *"
             value={form.title}
@@ -212,7 +212,7 @@ export function IdeaBacklogClient() {
                         <button
                           onClick={() => deleteIdea(idea.id)}
                           className="w-full text-left text-[12px] px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--ba-4)] mt-1"
-                          style={{ color: "#ef4444", borderTop: "1px solid var(--border)" }}
+                          style={{ color: "#1C1917", borderTop: "1px solid var(--border)" }}
                         >
                           Usuń
                         </button>

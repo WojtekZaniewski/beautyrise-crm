@@ -5,7 +5,7 @@ import type { FosSprint, FosSprintGoalHistory } from "@/lib/fos-types";
 import { SprintGoalModal } from "./sprint-goal-modal";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: "Aktywny", color: "#22c55e" },
+  active: { label: "Aktywny", color: "#FF4C00" },
   completed: { label: "Zakończony", color: "#6b7280" },
   archived: { label: "Archiwum", color: "#6b7280" },
 };
@@ -104,7 +104,7 @@ export function SprintManager() {
       {showForm && (
         <div className="rounded-xl p-5 space-y-3" style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}>
           <div className="text-[13px] font-semibold mb-1">Nowy sprint</div>
-          {error && <div className="text-[12px] text-red-500">{error}</div>}
+          {error && <div className="text-[12px] text-[#1C1917]">{error}</div>}
           <input
             placeholder="Nazwa (np. Sprint 12)"
             value={form.name}

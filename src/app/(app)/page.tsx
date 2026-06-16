@@ -30,10 +30,10 @@ function fmtPct(n: number | null | undefined) {
 }
 
 const statusLabel: Record<string, { label: string; color: string }> = {
-  ACTIVE: { label: "Aktywna", color: "#22c55e" },
-  PAUSED: { label: "Wstrzymana", color: "#eab308" },
+  ACTIVE: { label: "Aktywna", color: "#FF4C00" },
+  PAUSED: { label: "Wstrzymana", color: "#FF8C42" },
   ARCHIVED: { label: "Archiwum", color: "#6b7280" },
-  DELETED: { label: "Usunięta", color: "#ef4444" },
+  DELETED: { label: "Usunięta", color: "#1C1917" },
 };
 
 export default async function Dashboard({

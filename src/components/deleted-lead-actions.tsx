@@ -49,7 +49,7 @@ export function DeletedLeadActions({ leadId }: { leadId: string }) {
           <button
             onClick={() => { setConfirmingPermanent(false); permanentDelete(); }}
             disabled={pending}
-            style={{ ...btnBase, background: "#ef4444", color: "#fff", border: "none", fontWeight: 600 }}
+            style={{ ...btnBase, background: "#1C1917", color: "#fff", border: "none", fontWeight: 600 }}
           >
             Usuń na stałe
           </button>
@@ -64,8 +64,8 @@ export function DeletedLeadActions({ leadId }: { leadId: string }) {
         <button
           onClick={() => setConfirmingPermanent(true)}
           disabled={pending}
-          style={{ ...btnBase, background: "transparent", color: "#ef4444", border: "1px solid #ef444440" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#ef444412"; }}
+          style={{ ...btnBase, background: "transparent", color: "#1C1917", border: "1px solid #1C191740" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1C191712"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
         >
           Usuń na stałe

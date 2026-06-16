@@ -205,7 +205,7 @@ export function ChannelsSidebar({
                     <span
                       className="w-1.5 h-1.5 rounded-full shrink-0"
                       style={{
-                        background: a.is_active ? "#22c55e" : "var(--ba-6)",
+                        background: a.is_active ? "#FF4C00" : "var(--ba-6)",
                       }}
                     />
                     <span className="flex-1 truncate">{a.email}</span>

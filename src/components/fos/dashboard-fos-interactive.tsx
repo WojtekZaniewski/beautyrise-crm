@@ -22,7 +22,7 @@ function CircleProgress({ done, total }: { done: number; total: number }) {
   const circ = 2 * Math.PI * r;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   const offset = circ - (pct / 100) * circ;
-  const color = pct === 100 ? "#22c55e" : "var(--accent)";
+  const color = pct === 100 ? "#FF4C00" : "var(--accent)";
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -83,8 +83,8 @@ function GoalRow({
         onClick={() => onToggle(goal)}
         className="shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
         style={{
-          borderColor: done ? "#22c55e" : "var(--border)",
-          background: done ? "#22c55e" : "transparent",
+          borderColor: done ? "#FF4C00" : "var(--border)",
+          background: done ? "#FF4C00" : "transparent",
         }}
       >
         {done && <span className="text-white" style={{ fontSize: 9 }}>✓</span>}
@@ -105,7 +105,7 @@ function GoalRow({
       {/* Deadline */}
       <div className="shrink-0 flex items-center gap-1">
         {isOverdue && (
-          <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: "#ef444415", color: "#ef4444" }}>
+          <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ background: "#1C191715", color: "#1C1917" }}>
             zaległe
           </span>
         )}
@@ -114,7 +114,7 @@ function GoalRow({
           value={goal.deadline ?? ""}
           onChange={(e) => onDeadlineChange(goal.id, e.target.value)}
           className="text-[10px] bg-transparent outline-none cursor-pointer transition-colors hover:opacity-80"
-          style={{ color: isOverdue ? "#ef4444" : "var(--muted)", width: 110 }}
+          style={{ color: isOverdue ? "#1C1917" : "var(--muted)", width: 110 }}
           title="Deadline"
         />
       </div>
@@ -280,8 +280,8 @@ export function DashboardFosInteractive({
                   onClick={() => toggleTask(t)}
                   className="shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
                   style={{
-                    borderColor: t.status === "completed" ? "#22c55e" : "var(--border)",
-                    background: t.status === "completed" ? "#22c55e" : "transparent",
+                    borderColor: t.status === "completed" ? "#FF4C00" : "var(--border)",
+                    background: t.status === "completed" ? "#FF4C00" : "transparent",
                   }}
                 >
                   {t.status === "completed" && <span className="text-white" style={{ fontSize: 9 }}>✓</span>}

@@ -11,8 +11,8 @@ const CHANNEL_LABEL: Record<string, string> = {
 };
 
 const CHANNEL_COLOR: Record<string, string> = {
-  messenger: "#0084ff",
-  instagram: "#e1306c",
+  messenger: "#FF4C00",
+  instagram: "#FF4C00",
 };
 
 export default async function ConversationPage({

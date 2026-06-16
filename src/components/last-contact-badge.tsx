@@ -26,10 +26,10 @@ export function LastContactBadge({
   const isWarning = !isUrgent && diffDays > 1;
 
   const style: React.CSSProperties = isUrgent
-    ? { background: "rgba(239,68,68,0.12)", color: "#ef4444" }
+    ? { background: "rgba(0,0,0,0.12)", color: "#1C1917" }
     : isWarning
     ? { background: "rgba(249,115,22,0.12)", color: "#f97316" }
-    : { background: "rgba(34,197,94,0.12)", color: "#22c55e" };
+    : { background: "rgba(255,76,0,0.12)", color: "#FF4C00" };
 
   return (
     <span

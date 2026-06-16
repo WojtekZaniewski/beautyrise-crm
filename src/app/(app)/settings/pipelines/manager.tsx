@@ -66,7 +66,7 @@ export function PipelinesManager({
       <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-5 mb-6" style={{ boxShadow: "var(--shadow-sm)" }}>
         <div className="text-sm font-medium mb-3 text-[var(--text)]">Nowy pipeline</div>
         {error && (
-          <div className="text-sm mb-3 px-3 py-2 rounded-lg" style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}>
+          <div className="text-sm mb-3 px-3 py-2 rounded-lg" style={{ color: "var(--danger)", background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.16)" }}>
             {error}
           </div>
         )}

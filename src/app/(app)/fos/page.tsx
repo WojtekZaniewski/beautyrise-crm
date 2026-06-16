@@ -42,7 +42,7 @@ function CircleProgress({ done, total, size = 56 }: { done: number; total: numbe
   const circ = 2 * Math.PI * r;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   const offset = circ - (pct / 100) * circ;
-  const color = pct === 100 ? "#22c55e" : "var(--accent)";
+  const color = pct === 100 ? "#FF4C00" : "var(--accent)";
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
@@ -76,7 +76,7 @@ function WeeklyScoreboard({ metrics }: { metrics: FosMetrics | null }) {
       {items.map(({ label, value, danger }) => (
         <div key={label} className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px]" style={{ color: "var(--muted)" }}>{label}</span>
-          <span className="text-[13px] font-bold tabular-nums" style={{ color: danger ? "#ef4444" : "inherit" }}>{value}</span>
+          <span className="text-[13px] font-bold tabular-nums" style={{ color: danger ? "#1C1917" : "inherit" }}>{value}</span>
         </div>
       ))}
     </div>
@@ -96,7 +96,7 @@ function computeHealth(metrics: FosMetrics, sprint: FosSprint | null) {
 function HealthScore({ metrics, sprint }: { metrics: FosMetrics; sprint: FosSprint | null }) {
   const h = computeHealth(metrics, sprint);
   const overall = parseFloat(h.overall);
-  const color = overall >= 7 ? "#22c55e" : overall >= 5 ? "#FF8C42" : "#ef4444";
+  const color = overall >= 7 ? "#FF4C00" : overall >= 5 ? "#FF8C42" : "#1C1917";
   const dims = [
     { label: "Focus", value: h.focus },
     { label: "Execution", value: h.execution },
@@ -115,7 +115,7 @@ function HealthScore({ metrics, sprint }: { metrics: FosMetrics; sprint: FosSpri
             <span className="text-[10px] w-24 shrink-0" style={{ color: "var(--muted)" }}>{label}</span>
             <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
               <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${value * 10}%`, background: value >= 7 ? "#22c55e" : value >= 5 ? "#FF8C42" : "#ef4444" }} />
+                style={{ width: `${value * 10}%`, background: value >= 7 ? "#FF4C00" : value >= 5 ? "#FF8C42" : "#1C1917" }} />
             </div>
             <span className="text-[10px] tabular-nums w-4 text-right" style={{ color: "var(--muted)" }}>{value}</span>
           </div>
@@ -175,7 +175,7 @@ function CompanyGoalCard({
 
   return (
     <div className="rounded-xl px-4 py-4 mb-3"
-      style={{ background: "linear-gradient(126.97deg, rgba(6,11,40,0.74) 28.26%, rgba(10,14,35,0.71) 91.2%)", border: "2px solid rgba(255,76,0,0.25)" }}>
+      style={{ background: "linear-gradient(135deg, rgba(255,76,0,0.10) 0%, rgba(255,255,255,0.95) 100%)", border: "2px solid rgba(255,76,0,0.25)" }}>
       <div className="flex gap-4">
         <CircleProgress done={done} total={allTasks.length} size={60} />
         <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ function CompanyGoalCard({
               <div key={t.id} className="flex items-center gap-2">
                 <button onClick={() => onToggle(t)}
                   className="shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
-                  style={{ borderColor: t.status === "completed" ? "#22c55e" : "rgba(255,255,255,0.3)", background: t.status === "completed" ? "#22c55e" : "transparent" }}>
+                  style={{ borderColor: t.status === "completed" ? "#FF4C00" : "rgba(255,255,255,0.3)", background: t.status === "completed" ? "#FF4C00" : "transparent" }}>
                   {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
                 </button>
                 <span className={`text-[12px] ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
@@ -242,7 +242,7 @@ function TaskSection({
         {completed.map((t) => (
           <div key={t.id} className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
             <button onClick={() => onToggle(t)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
-              style={{ borderColor: "#22c55e", background: "#22c55e" }}>
+              style={{ borderColor: "#FF4C00", background: "#FF4C00" }}>
               <span className="text-white" style={{ fontSize: 8 }}>✓</span>
             </button>
             <span className="text-[12px] flex-1 min-w-0 truncate line-through opacity-40">{t.title}</span>
@@ -314,7 +314,7 @@ function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, dailyNote
           <div className="text-[10px]" style={{ color: "var(--muted)" }}>{done}/{tasks.length} ukończone</div>
         </div>
         <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold"
-          style={{ background: tasks.length === 0 ? "var(--ba-2)" : done === tasks.length && tasks.length > 0 ? "#22c55e20" : "var(--accent-subtle)", color: tasks.length === 0 ? "var(--muted)" : done === tasks.length && tasks.length > 0 ? "#22c55e" : "var(--accent)" }}>
+          style={{ background: tasks.length === 0 ? "var(--ba-2)" : done === tasks.length && tasks.length > 0 ? "#FF4C0020" : "var(--accent-subtle)", color: tasks.length === 0 ? "var(--muted)" : done === tasks.length && tasks.length > 0 ? "#FF4C00" : "var(--accent)" }}>
           {tasks.length === 0 ? "0" : done === tasks.length ? "✓" : tasks.length - done}
         </div>
       </div>
@@ -331,8 +331,8 @@ function BlockersSection({ priorities, onUnblock }: { priorities: FosWeeklyPrior
   if (blockers.length === 0) return null;
   const byOwner = OWNERS.map((o) => ({ owner: o, items: blockers.filter((p) => p.owner_label === o) })).filter((g) => g.items.length > 0);
   return (
-    <div className="rounded-xl px-4 py-3 mb-3" style={{ background: "#ef444408", border: "1px solid #ef444430" }}>
-      <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>🚨 Blockers</div>
+    <div className="rounded-xl px-4 py-3 mb-3" style={{ background: "#1C191708", border: "1px solid #1C191730" }}>
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#1C1917" }}>🚨 Blockers</div>
       <div className="space-y-2">
         {byOwner.map(({ owner, items }) => (
           <div key={owner}>
@@ -341,7 +341,7 @@ function BlockersSection({ priorities, onUnblock }: { priorities: FosWeeklyPrior
               <div key={p.id} className="flex items-center gap-2 py-1">
                 <span className="text-[12px] flex-1 min-w-0 truncate">{p.title}</span>
                 <button onClick={() => onUnblock(p)} className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
-                  style={{ background: "#ef444415", color: "#ef4444", border: "1px solid #ef444430" }}>
+                  style={{ background: "#1C191715", color: "#1C1917", border: "1px solid #1C191730" }}>
                   Odblokuj
                 </button>
               </div>
@@ -378,7 +378,7 @@ function WaitingForSection({ items, onResolve, onAdd }: {
             <span className="text-[11px] font-semibold shrink-0">{item.for_label}</span>
             <span className="text-[11px] flex-1 min-w-0 truncate" style={{ color: "var(--muted)" }}>— {item.description}</span>
             <button onClick={() => onResolve(item.id)} className="shrink-0 text-[10px] px-1.5 py-0.5 rounded transition-colors hover:opacity-80"
-              style={{ background: "#22c55e15", color: "#22c55e" }}>✓</button>
+              style={{ background: "#FF4C0015", color: "#FF4C00" }}>✓</button>
           </div>
         ))}
       </div>

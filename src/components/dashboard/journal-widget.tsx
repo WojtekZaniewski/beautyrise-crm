@@ -31,10 +31,10 @@ function TodoCheckbox({ state }: { state: TodoState }) {
   }
   if (state === "waiting") {
     return (
-      <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(234,179,8,0.12)", border: "1.5px solid #eab308" }}>
+      <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(255,140,66,0.12)", border: "1.5px solid #FF8C42" }}>
         <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-          <circle cx="4" cy="4" r="3" stroke="#eab308" strokeWidth="1.2" />
-          <path d="M4 2.5V4l1 1" stroke="#eab308" strokeWidth="1.1" strokeLinecap="round" />
+          <circle cx="4" cy="4" r="3" stroke="#FF8C42" strokeWidth="1.2" />
+          <path d="M4 2.5V4l1 1" stroke="#FF8C42" strokeWidth="1.1" strokeLinecap="round" />
         </svg>
       </div>
     );
@@ -189,8 +189,8 @@ export function JournalWidget() {
         </div>
         {total > 0 && (
           <div className="flex items-center gap-1.5">
-            {waiting > 0 && <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(234,179,8,0.1)", color: "#eab308" }}>⏳ {waiting}</span>}
-            <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: done === total ? "rgba(34,197,94,0.12)" : "var(--ba-4)", color: done === total ? "#22c55e" : "var(--muted)" }}>
+            {waiting > 0 && <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(255,140,66,0.1)", color: "#FF8C42" }}>⏳ {waiting}</span>}
+            <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: done === total ? "rgba(255,76,0,0.12)" : "var(--ba-4)", color: done === total ? "#FF4C00" : "var(--muted)" }}>
               {done}/{total}
             </span>
           </div>
@@ -240,7 +240,7 @@ export function JournalWidget() {
       {/* Overdue todos from previous days */}
       {overdueTodos.length > 0 && (
         <div className="px-5 pt-3 pb-1">
-          <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-2.5" style={{ color: "#ef4444" }}>
+          <div className="text-[10.5px] uppercase tracking-wide font-semibold mb-2.5" style={{ color: "#1C1917" }}>
             Zaległe ({overdueTodos.length})
           </div>
           <div className="flex flex-col gap-1.5 mb-1">
@@ -249,7 +249,7 @@ export function JournalWidget() {
               return (
                 <div key={t.id} className="flex items-center gap-2.5 group min-h-[28px]">
                   <button onClick={() => cycleOverdue(t)} className="shrink-0"><TodoCheckbox state={state} /></button>
-                  <span className="flex-1 text-[13px] leading-snug" style={{ color: state === "waiting" ? "#eab308" : "var(--text)" }}>
+                  <span className="flex-1 text-[13px] leading-snug" style={{ color: state === "waiting" ? "#FF8C42" : "var(--text)" }}>
                     {t.text}
                   </span>
                   {t.date && (
@@ -288,7 +288,7 @@ export function JournalWidget() {
                   <span
                     className="flex-1 text-[13px] leading-snug cursor-text"
                     style={{
-                      color: state === "done" ? "var(--muted)" : state === "waiting" ? "#eab308" : "var(--text)",
+                      color: state === "done" ? "var(--muted)" : state === "waiting" ? "#FF8C42" : "var(--text)",
                       textDecoration: state === "done" ? "line-through" : "none",
                     }}
                     onDoubleClick={() => state !== "done" && startEdit(t)}

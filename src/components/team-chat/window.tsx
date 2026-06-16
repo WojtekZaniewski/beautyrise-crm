@@ -214,9 +214,9 @@ export function TeamChatWindow({
         <div
           className="px-7 py-2 text-[12.5px] shrink-0"
           style={{
-            background: "rgba(220,38,38,0.06)",
+            background: "rgba(0,0,0,0.06)",
             color: "var(--danger)",
-            borderTop: "1px solid rgba(220,38,38,0.15)",
+            borderTop: "1px solid rgba(0,0,0,0.15)",
           }}
         >
           {error}

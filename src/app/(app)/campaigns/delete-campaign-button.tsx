@@ -27,9 +27,9 @@ export function DeleteCampaignButton({ id, name }: { id: string; name: string })
           disabled={loading}
           className="text-[11px] font-medium px-2 py-0.5 rounded"
           style={{
-            background: "rgba(220,38,38,0.1)",
-            color: "#dc2626",
-            border: "1px solid rgba(220,38,38,0.25)",
+            background: "rgba(0,0,0,0.1)",
+            color: "#1C1917",
+            border: "1px solid rgba(0,0,0,0.25)",
           }}
         >
           {loading ? "…" : "Tak"}

@@ -30,10 +30,10 @@ function TodoCheck({ state }: { state: TodoState }) {
     </div>
   );
   if (state === "waiting") return (
-    <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(234,179,8,0.12)", border: "1.5px solid #eab308" }}>
+    <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(255,140,66,0.12)", border: "1.5px solid #FF8C42" }}>
       <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-        <circle cx="4" cy="4" r="3" stroke="#eab308" strokeWidth="1.2" />
-        <path d="M4 2.5V4l1 1" stroke="#eab308" strokeWidth="1.1" strokeLinecap="round" />
+        <circle cx="4" cy="4" r="3" stroke="#FF8C42" strokeWidth="1.2" />
+        <path d="M4 2.5V4l1 1" stroke="#FF8C42" strokeWidth="1.1" strokeLinecap="round" />
       </svg>
     </div>
   );
@@ -60,8 +60,8 @@ function DayBreakdownBar({ todos }: { todos: TodoEntry[] }) {
   const waiting = todos.filter(t => t.waiting).length;
   return (
     <div className="flex h-1.5 rounded-full overflow-hidden mt-2" style={{ background: "var(--ba-4)" }}>
-      {done > 0 && <div style={{ flex: done, background: "#22c55e" }} />}
-      {waiting > 0 && <div style={{ flex: waiting, background: "#eab308" }} />}
+      {done > 0 && <div style={{ flex: done, background: "#FF4C00" }} />}
+      {waiting > 0 && <div style={{ flex: waiting, background: "#FF8C42" }} />}
       {(total - done - waiting) > 0 && <div style={{ flex: total - done - waiting, background: "var(--ba-4)" }} />}
     </div>
   );
@@ -224,16 +224,16 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                       {total > 0 && (
-                        <span className="text-[12px]" style={{ color: allDone ? "#22c55e" : "var(--muted)" }}>
+                        <span className="text-[12px]" style={{ color: allDone ? "#FF4C00" : "var(--muted)" }}>
                           {allDone ? "✓ wszystko zrobione" : `${done}/${total} zadań`}
-                          {waiting > 0 && <span style={{ color: "#eab308" }}> · ⏳ {waiting} oczekuje</span>}
+                          {waiting > 0 && <span style={{ color: "#FF8C42" }}> · ⏳ {waiting} oczekuje</span>}
                         </span>
                       )}
                       {notes.length > 0 && (
                         <span className="text-[12px]" style={{ color: "var(--muted)" }}>{notes.length === 1 ? "1 notatka" : `${notes.length} notatki`}</span>
                       )}
                       {pct !== null && !allDone && (
-                        <span className="text-[12px] font-medium" style={{ color: pct >= 80 ? "#22c55e" : "var(--muted)" }}>{pct}%</span>
+                        <span className="text-[12px] font-medium" style={{ color: pct >= 80 ? "#FF4C00" : "var(--muted)" }}>{pct}%</span>
                       )}
                     </div>
                     <DayBreakdownBar todos={todos} />
@@ -328,7 +328,7 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
                                   <span
                                     className="flex-1 text-[13px] leading-snug cursor-text"
                                     style={{
-                                      color: state === "done" ? "var(--muted)" : state === "waiting" ? "#eab308" : "var(--text)",
+                                      color: state === "done" ? "var(--muted)" : state === "waiting" ? "#FF8C42" : "var(--text)",
                                       textDecoration: state === "done" ? "line-through" : "none",
                                     }}
                                     onDoubleClick={() => state !== "done" && startEdit(t)}
@@ -337,7 +337,7 @@ export function JournalClient({ initialDays }: { initialDays: DayEntry[] }) {
                                   </span>
                                 )}
                                 {state === "done" && t.completed_at && <span className="text-[11px] shrink-0" style={{ color: "var(--muted)" }}>{formatTime(t.completed_at)}</span>}
-                                {state === "waiting" && <span className="text-[11px] shrink-0" style={{ color: "#eab308" }}>oczekuje</span>}
+                                {state === "waiting" && <span className="text-[11px] shrink-0" style={{ color: "#FF8C42" }}>oczekuje</span>}
                                 <button onClick={() => deleteTodo(day.date, t.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1 shrink-0" style={{ color: "var(--muted)" }}>✕</button>
                               </div>
                             );

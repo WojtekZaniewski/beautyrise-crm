@@ -82,9 +82,9 @@ export function SendLeadmagnetEmailButton({
           fontSize: "13px",
           fontWeight: 600,
           cursor: state === "sending" || state === "sent" ? "default" : "pointer",
-          border: state === "sent" ? "1px solid #16a34a40" : "1px solid #0891b240",
-          background: state === "sent" ? "#f0fdf4" : "#ecfeff",
-          color: state === "sent" ? "#16a34a" : "#0891b2",
+          border: state === "sent" ? "1px solid #FF4C0040" : "1px solid #FF4C0040",
+          background: state === "sent" ? "#FFF7F0" : "#FFF7F0",
+          color: state === "sent" ? "#FF4C00" : "#FF4C00",
           transition: "all 0.15s",
           opacity: state === "sending" ? 0.7 : 1,
           flex: 1,
@@ -233,7 +233,7 @@ export function SendLeadmagnetEmailButton({
                 disabled={!currentEmail || state === "sending" || editingEmail}
                 style={{
                   flex: 2, padding: "10px", borderRadius: "8px", fontSize: "13px", fontWeight: 700,
-                  border: "none", background: currentEmail ? "#0891b2" : "var(--ba-4)",
+                  border: "none", background: currentEmail ? "#FF4C00" : "var(--ba-4)",
                   color: currentEmail ? "#fff" : "var(--muted)",
                   cursor: !currentEmail || state === "sending" || editingEmail ? "default" : "pointer",
                   opacity: state === "sending" ? 0.7 : 1,

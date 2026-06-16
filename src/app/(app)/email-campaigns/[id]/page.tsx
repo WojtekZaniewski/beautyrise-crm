@@ -5,28 +5,28 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { EmailCampaignChart, type EmailDailyPoint } from "@/components/email-campaign-chart";
 
 const CAMPAIGN_TYPES: Record<string, { label: string; color: string }> = {
-  outreach:   { label: "Outreach",    color: "#3b82f6" },
-  followup:   { label: "Follow-up",   color: "#8b5cf6" },
-  promo:      { label: "Promocja",    color: "#f59e0b" },
-  newsletter: { label: "Newsletter",  color: "#22c55e" },
-  welcome:    { label: "Powitanie",   color: "#06b6d4" },
-  other:      { label: "Inne",        color: "#94a3b8" },
+  outreach:   { label: "Outreach",    color: "#FF4C00" },
+  followup:   { label: "Follow-up",   color: "#FF4C00" },
+  promo:      { label: "Promocja",    color: "#FF8C42" },
+  newsletter: { label: "Newsletter",  color: "#FF4C00" },
+  welcome:    { label: "Powitanie",   color: "#FF4C00" },
+  other:      { label: "Inne",        color: "#A8A29E" },
 };
 
 const EMAIL_STATUS: Record<string, { bg: string; color: string; label: string }> = {
   draft:   { bg: "rgba(0,0,0,0.05)", color: "#78716C", label: "Szkic" },
-  sending: { bg: "#f59e0b1a", color: "#d97706", label: "Wysyłanie" },
-  sent:    { bg: "#22c55e1a", color: "#16a34a", label: "Wysłana" },
-  failed:  { bg: "#ef44441a", color: "#dc2626", label: "Błąd" },
+  sending: { bg: "#FF8C421a", color: "#FF8C42", label: "Wysyłanie" },
+  sent:    { bg: "#FF4C001a", color: "#FF4C00", label: "Wysłana" },
+  failed:  { bg: "#1C19171a", color: "#1C1917", label: "Błąd" },
 };
 
 const RECIPIENT_STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   pending:  { bg: "rgba(0,0,0,0.05)", color: "#78716C", label: "Oczekuje" },
-  sent:     { bg: "#22c55e1a", color: "#16a34a", label: "Wysłany" },
-  opened:   { bg: "#3b82f61a", color: "#2563eb", label: "Otwarto" },
-  clicked:  { bg: "#8b5cf61a", color: "#7c3aed", label: "Kliknięto" },
-  replied:  { bg: "#f59e0b1a", color: "#d97706", label: "Odpowiedź" },
-  failed:   { bg: "#ef44441a", color: "#dc2626", label: "Błąd" },
+  sent:     { bg: "#FF4C001a", color: "#FF4C00", label: "Wysłany" },
+  opened:   { bg: "#FF4C001a", color: "#FF4C00", label: "Otwarto" },
+  clicked:  { bg: "#FF4C001a", color: "#FF4C00", label: "Kliknięto" },
+  replied:  { bg: "#FF8C421a", color: "#FF8C42", label: "Odpowiedź" },
+  failed:   { bg: "#1C19171a", color: "#1C1917", label: "Błąd" },
 };
 
 function parseName(raw: string): { type: string | null; name: string } {
@@ -253,17 +253,17 @@ export default async function EmailCampaignDetailPage({
                           {rs.label}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-xs" style={{ color: r.opened_at ? "#16a34a" : "var(--muted)" }}>
+                      <td className="px-5 py-3 text-xs" style={{ color: r.opened_at ? "#FF4C00" : "var(--muted)" }}>
                         {r.opened_at
                           ? new Date(r.opened_at).toLocaleDateString("pl-PL")
                           : "—"}
                       </td>
-                      <td className="px-5 py-3 text-xs" style={{ color: r.clicked_at ? "#7c3aed" : "var(--muted)" }}>
+                      <td className="px-5 py-3 text-xs" style={{ color: r.clicked_at ? "#FF4C00" : "var(--muted)" }}>
                         {r.clicked_at
                           ? new Date(r.clicked_at).toLocaleDateString("pl-PL")
                           : "—"}
                       </td>
-                      <td className="px-5 py-3 text-xs" style={{ color: r.replied_at ? "#d97706" : "var(--muted)" }}>
+                      <td className="px-5 py-3 text-xs" style={{ color: r.replied_at ? "#FF8C42" : "var(--muted)" }}>
                         {r.replied_at
                           ? new Date(r.replied_at).toLocaleDateString("pl-PL")
                           : "—"}

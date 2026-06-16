@@ -48,7 +48,7 @@ export function MetricsChart({ data }: { data: DailyMetric[] }) {
           <YAxis
             yAxisId="leads"
             orientation="right"
-            stroke="#22c55e"
+            stroke="#1C1917"
             style={{ fontSize: 11.5 }}
           />
           <Tooltip
@@ -84,7 +84,7 @@ export function MetricsChart({ data }: { data: DailyMetric[] }) {
             yAxisId="leads"
             type="monotone"
             dataKey="leads"
-            stroke="#22c55e"
+            stroke="#1C1917"
             strokeWidth={2}
             dot={false}
           />

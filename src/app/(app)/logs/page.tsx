@@ -26,14 +26,14 @@ type GhDeploymentStatus = { state: string; created_at: string };
 type CommitTypeInfo = { label: string; color: string; bg: string };
 
 const COMMIT_TYPES: Record<string, CommitTypeInfo> = {
-  feat:     { label: "Nowość",      color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
-  fix:      { label: "Poprawka",    color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
-  ci:       { label: "Techniczne",  color: "#8b8d9a", bg: "var(--ba-4)" },
-  chore:    { label: "Techniczne",  color: "#8b8d9a", bg: "var(--ba-4)" },
-  refactor: { label: "Techniczne",  color: "#8b8d9a", bg: "var(--ba-4)" },
-  docs:     { label: "Dokumentacja", color: "#8b8d9a", bg: "var(--ba-4)" },
-  style:    { label: "Wygląd",      color: "#7c5cff", bg: "rgba(124,92,255,0.12)" },
-  perf:     { label: "Wydajność",   color: "#7c5cff", bg: "rgba(124,92,255,0.12)" },
+  feat:     { label: "Nowość",      color: "#FF4C00", bg: "rgba(255,76,0,0.12)" },
+  fix:      { label: "Poprawka",    color: "#FF8C42", bg: "rgba(255,140,66,0.12)" },
+  ci:       { label: "Techniczne",  color: "#78716C", bg: "var(--ba-4)" },
+  chore:    { label: "Techniczne",  color: "#78716C", bg: "var(--ba-4)" },
+  refactor: { label: "Techniczne",  color: "#78716C", bg: "var(--ba-4)" },
+  docs:     { label: "Dokumentacja", color: "#78716C", bg: "var(--ba-4)" },
+  style:    { label: "Wygląd",      color: "#FF4C00", bg: "rgba(255,76,0,0.12)" },
+  perf:     { label: "Wydajność",   color: "#FF4C00", bg: "rgba(255,76,0,0.12)" },
 };
 const DEFAULT_TYPE: CommitTypeInfo = { label: "Zmiana", color: "var(--muted)", bg: "var(--ba-4)" };
 
@@ -47,12 +47,12 @@ function parseCommit(message: string) {
 }
 
 const DEPLOY_STATES: Record<string, { label: string; color: string }> = {
-  success:     { label: "✓ Wdrożono",   color: "#22c55e" },
-  error:       { label: "✗ Błąd",       color: "#ef4444" },
-  failure:     { label: "✗ Błąd",       color: "#ef4444" },
-  in_progress: { label: "⏳ W trakcie",  color: "#f59e0b" },
-  queued:      { label: "⏳ W kolejce",  color: "#f59e0b" },
-  pending:     { label: "⏳ Oczekuje",   color: "#f59e0b" },
+  success:     { label: "✓ Wdrożono",   color: "#FF4C00" },
+  error:       { label: "✗ Błąd",       color: "#1C1917" },
+  failure:     { label: "✗ Błąd",       color: "#1C1917" },
+  in_progress: { label: "⏳ W trakcie",  color: "#FF8C42" },
+  queued:      { label: "⏳ W kolejce",  color: "#FF8C42" },
+  pending:     { label: "⏳ Oczekuje",   color: "#FF8C42" },
 };
 
 function fmtDate(iso: string) {

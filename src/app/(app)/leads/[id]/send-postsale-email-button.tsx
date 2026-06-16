@@ -94,9 +94,9 @@ export function SendPostsaleEmailButton({
           fontSize: "13px",
           fontWeight: 600,
           cursor: state === "sending" || state === "sent" ? "default" : "pointer",
-          border: state === "sent" ? "1px solid #16a34a40" : "1px solid #ff6b0040",
-          background: state === "sent" ? "#f0fdf4" : "#fff7f0",
-          color: state === "sent" ? "#16a34a" : "#ff6b00",
+          border: state === "sent" ? "1px solid #FF4C0040" : "1px solid #ff6b0040",
+          background: state === "sent" ? "#FFF7F0" : "#fff7f0",
+          color: state === "sent" ? "#FF4C00" : "#ff6b00",
           transition: "all 0.15s",
           opacity: state === "sending" ? 0.7 : 1,
           flex: 1,
@@ -239,7 +239,7 @@ export function SendPostsaleEmailButton({
                 marginBottom: "24px",
                 textAlign: "center",
                 cursor: "pointer",
-                background: fileName ? "#f0fdf4" : "var(--ba-4, #fafafa)",
+                background: fileName ? "#FFF7F0" : "var(--ba-4, #fafafa)",
               }}
               onClick={() => fileRef.current?.click()}
             >
@@ -251,7 +251,7 @@ export function SendPostsaleEmailButton({
                 onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
               />
               {fileName ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "13px", color: "#16a34a", fontWeight: 600 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "13px", color: "#FF4C00", fontWeight: 600 }}>
                   <PaperclipIcon />
                   {fileName}
                 </div>

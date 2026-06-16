@@ -18,11 +18,11 @@ type CategoryPoint = {
   value: number;
 };
 
-const EXPENSE_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16"];
+const EXPENSE_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#eab308", "#FF4C00"];
 const INCOME_COLOR = "#22c55e";
 const POTENTIAL_COLOR = "#f59e0b";
 const EXPENSE_COLOR = "#ef4444";
-const PROFIT_COLOR = "#3b82f6";
+const PROFIT_COLOR = "#FF4C00";
 
 function fmtPln(n: number) {
   if (Math.abs(n) >= 1000) return `${(n / 1000).toFixed(1)}k zł`;

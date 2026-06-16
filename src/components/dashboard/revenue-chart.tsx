@@ -45,9 +45,9 @@ const MAIN_FILTERS: { key: FilterMode; label: string }[] = [
 ];
 
 const FILTER_COLOR: Record<FilterMode, string> = {
-  spend: "#3b82f6", revenue: "#22c55e", both: "#3b82f6",
-  cpl: "#f97316", cpc: "#8b5cf6", ctr: "#ec4899",
-  clicks: "#f59e0b", leads: "#06b6d4", impressions: "#6b7280",
+  spend: "#FF4C00", revenue: "#1C1917", both: "#FF4C00",
+  cpl: "#f97316", cpc: "#FF4C00", ctr: "#FF4C00",
+  clicks: "#FF8C42", leads: "#FF4C00", impressions: "#6b7280",
 };
 
 const PLN_MODES = new Set<FilterMode>(["spend", "revenue", "both", "cpl", "cpc"]);
@@ -102,9 +102,9 @@ export function RevenueChart({
     : [];
 
   const summary = [
-    { label: "Wydatki (30 dni)",    value: pln(totalSpend),       color: "#3b82f6" },
-    { label: "Przychód (30 dni)",   value: pln(totalRevenue),     color: "#22c55e" },
-    { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#22c55e" : "#ef4444" },
+    { label: "Wydatki (30 dni)",    value: pln(totalSpend),       color: "#FF4C00" },
+    { label: "Przychód (30 dni)",   value: pln(totalRevenue),     color: "#1C1917" },
+    { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#1C1917" : "#1C1917" },
   ];
 
   return (
@@ -136,16 +136,16 @@ export function RevenueChart({
       {metaItems.length > 0 && (
         <div
           className="rounded-lg p-3 mb-4"
-          style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.14)" }}
+          style={{ background: "rgba(255,76,0,0.04)", border: "1px solid rgba(255,76,0,0.14)" }}
         >
           <div className="flex items-center gap-1.5 mb-2.5">
             <div
               className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold"
-              style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
+              style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}
             >
               f
             </div>
-            <span className="text-[10.5px] font-semibold" style={{ color: "#3b82f6" }}>
+            <span className="text-[10.5px] font-semibold" style={{ color: "#FF4C00" }}>
               Meta Ads (30 dni) — kliknij wskaźnik, aby zobaczyć wykres
             </span>
           </div>
@@ -198,12 +198,12 @@ export function RevenueChart({
         <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="rcGradA" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              <stop offset="5%" stopColor="#FF4C00" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="rcGradB" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+              <stop offset="5%" stopColor="#1C1917" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#1C1917" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="rcGradMeta" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.15} />
@@ -223,10 +223,10 @@ export function RevenueChart({
             contentStyle={{ fontSize: 12, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 10px" }}
           />
           {(filter === "spend" || filter === "both") && (
-            <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#3b82f6" fill="url(#rcGradA)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#FF4C00" fill="url(#rcGradA)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
           )}
           {(filter === "revenue" || filter === "both") && (
-            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#rcGradB)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#1C1917" fill="url(#rcGradB)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
           )}
           {!isFinancial && (
             <Area

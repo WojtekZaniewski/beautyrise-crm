@@ -134,7 +134,7 @@ export async function DashboardFosSection() {
                 </span>
                 <span
                   className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: "#22c55e15", color: "#22c55e", border: "1px solid #22c55e30" }}
+                  style={{ background: "#FF4C0015", color: "#FF4C00", border: "1px solid #FF4C0030" }}
                 >
                   Aktywny
                 </span>
@@ -192,8 +192,8 @@ export async function DashboardFosSection() {
               key={label}
               className={`rounded-xl px-3 py-3 ${isDangerous ? "" : "glass-card"}`}
               style={isDangerous ? {
-                background: "#ef444410",
-                border: "1px solid #ef444430",
+                background: "#1C191710",
+                border: "1px solid #1C191730",
               } : undefined}
             >
               <div
@@ -204,7 +204,7 @@ export async function DashboardFosSection() {
               </div>
               <div
                 className="text-[20px] font-bold leading-none tabular-nums"
-                style={{ color: isDangerous ? "#ef4444" : "inherit" }}
+                style={{ color: isDangerous ? "#1C1917" : "inherit" }}
               >
                 {value}
                 {suffix}

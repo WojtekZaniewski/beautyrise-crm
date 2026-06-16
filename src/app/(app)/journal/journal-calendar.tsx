@@ -38,10 +38,10 @@ function TodoCheckCal({ state }: { state: TodoState }) {
     </div>
   );
   if (state === "waiting") return (
-    <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(234,179,8,0.12)", border: "1.5px solid #eab308" }}>
+    <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center" style={{ background: "rgba(255,140,66,0.12)", border: "1.5px solid #FF8C42" }}>
       <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-        <circle cx="4" cy="4" r="3" stroke="#eab308" strokeWidth="1.2" />
-        <path d="M4 2.5V4l1 1" stroke="#eab308" strokeWidth="1.1" strokeLinecap="round" />
+        <circle cx="4" cy="4" r="3" stroke="#FF8C42" strokeWidth="1.2" />
+        <path d="M4 2.5V4l1 1" stroke="#FF8C42" strokeWidth="1.1" strokeLinecap="round" />
       </svg>
     </div>
   );
@@ -221,7 +221,7 @@ export function JournalCalendar({ initialDays }: { initialDays: DayEntry[] }) {
                 </span>
                 <div className="flex gap-0.5 h-1.5">
                   {hasNotes && <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--accent)" }} />}
-                  {hasTodos && <span className="w-1.5 h-1.5 rounded-full" style={{ background: allDone ? "#22c55e" : "#eab308" }} />}
+                  {hasTodos && <span className="w-1.5 h-1.5 rounded-full" style={{ background: allDone ? "#FF4C00" : "#FF8C42" }} />}
                 </div>
               </button>
             );
@@ -233,8 +233,8 @@ export function JournalCalendar({ initialDays }: { initialDays: DayEntry[] }) {
       <div className="flex items-center gap-4 mb-4 px-1">
         {[
           { color: "var(--accent)", label: "Notatka" },
-          { color: "#eab308", label: "Zadania w toku" },
-          { color: "#22c55e", label: "Wszystko zrobione" },
+          { color: "#FF8C42", label: "Zadania w toku" },
+          { color: "#FF4C00", label: "Wszystko zrobione" },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5 text-[11.5px]" style={{ color: "var(--muted)" }}>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
@@ -332,7 +332,7 @@ export function JournalCalendar({ initialDays }: { initialDays: DayEntry[] }) {
                           <span
                             className="flex-1 text-[13px] leading-snug cursor-text"
                             style={{
-                              color: state === "done" ? "var(--muted)" : state === "waiting" ? "#eab308" : "var(--text)",
+                              color: state === "done" ? "var(--muted)" : state === "waiting" ? "#FF8C42" : "var(--text)",
                               textDecoration: state === "done" ? "line-through" : "none",
                             }}
                             onDoubleClick={() => state !== "done" && (setEditingTodoId(t.id), setEditTodoText(t.text))}
@@ -341,7 +341,7 @@ export function JournalCalendar({ initialDays }: { initialDays: DayEntry[] }) {
                           </span>
                         )}
                         {state === "done" && t.completed_at && <span className="text-[11px] shrink-0" style={{ color: "var(--muted)" }}>{formatTime(t.completed_at)}</span>}
-                        {state === "waiting" && <span className="text-[11px] shrink-0" style={{ color: "#eab308" }}>oczekuje</span>}
+                        {state === "waiting" && <span className="text-[11px] shrink-0" style={{ color: "#FF8C42" }}>oczekuje</span>}
                         <button onClick={() => deleteTodo(t.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] px-1 shrink-0" style={{ color: "var(--muted)" }}>✕</button>
                       </div>
                     );

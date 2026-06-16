@@ -50,7 +50,7 @@ export function PageSelector({
       {error && (
         <div
           className="text-sm px-3 py-2 rounded-lg"
-          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+          style={{ color: "var(--danger)", background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.16)" }}
         >
           {error}
         </div>

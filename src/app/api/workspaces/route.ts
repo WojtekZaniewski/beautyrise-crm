@@ -6,10 +6,10 @@ import { invalidatePipelines, invalidateStages } from "@/lib/pipeline";
 
 const DEFAULT_STAGES = [
   { name: "Nowy", color: "#ff4c00", order: 0 },
-  { name: "W kontakcie", color: "#3b82f6", order: 1 },
-  { name: "Kwalifikacja", color: "#eab308", order: 2 },
-  { name: "Wygrany", color: "#22c55e", order: 3 },
-  { name: "Przegrany", color: "#ef4444", order: 4 },
+  { name: "W kontakcie", color: "#FF4C00", order: 1 },
+  { name: "Kwalifikacja", color: "#FF8C42", order: 2 },
+  { name: "Wygrany", color: "#FF4C00", order: 3 },
+  { name: "Przegrany", color: "#1C1917", order: 4 },
 ];
 
 export async function GET() {

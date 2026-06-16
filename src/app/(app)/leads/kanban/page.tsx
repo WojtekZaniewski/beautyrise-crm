@@ -70,12 +70,12 @@ export default async function KanbanPage({
   // Ensure pipeline has exactly these 5 stages in this order (cleans up duplicates)
   const TARGET_STAGES = [
     { name: "Nowy",                              color: "#ff4c00", order: 0 },
-    { name: "W kontakcie",                       color: "#3b82f6", order: 1 },
-    { name: "Wysłany link do calla",             color: "#06b6d4", order: 2 },
-    { name: "Umówiony na call",                  color: "#a855f7", order: 3 },
-    { name: "Po rozmowie",                       color: "#f59e0b", order: 4 },
-    { name: "Zamknięty",                         color: "#22c55e", order: 5 },
-    { name: "Lidy przekazane do prawnika",       color: "#6366f1", order: 6 },
+    { name: "W kontakcie",                       color: "#FF4C00", order: 1 },
+    { name: "Wysłany link do calla",             color: "#FF4C00", order: 2 },
+    { name: "Umówiony na call",                  color: "#FF4C00", order: 3 },
+    { name: "Po rozmowie",                       color: "#FF8C42", order: 4 },
+    { name: "Zamknięty",                         color: "#FF4C00", order: 5 },
+    { name: "Lidy przekazane do prawnika",       color: "#FF4C00", order: 6 },
   ];
   const targetNames = new Set(TARGET_STAGES.map((t) => t.name));
   const stagesCorrect =

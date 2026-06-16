@@ -45,7 +45,7 @@ export default async function MetaIntegrationPage({
       {error && (
         <div
           className="mb-4 text-sm px-3 py-2 rounded-lg"
-          style={{ color: "var(--danger)", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.16)" }}
+          style={{ color: "var(--danger)", background: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.16)" }}
         >
           {error}
         </div>
@@ -53,7 +53,7 @@ export default async function MetaIntegrationPage({
 
       <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-6 flex flex-col gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 rounded-xl bg-[#FF4C00] flex items-center justify-center text-xl font-bold">
             f
           </div>
           <div>
@@ -66,8 +66,8 @@ export default async function MetaIntegrationPage({
             className="ml-auto text-xs border px-2 py-1 rounded-full"
             style={
               isConnected
-                ? { color: "var(--success)", background: "rgba(22,163,74,0.08)", borderColor: "rgba(22,163,74,0.2)" }
-                : { color: "var(--warning)", background: "rgba(202,138,4,0.08)", borderColor: "rgba(202,138,4,0.2)" }
+                ? { color: "var(--success)", background: "rgba(255,76,0,0.08)", borderColor: "rgba(255,76,0,0.2)" }
+                : { color: "var(--warning)", background: "rgba(255,140,66,0.08)", borderColor: "rgba(255,140,66,0.2)" }
             }
           >
             {isConnected ? "Podłączone" : "Niepodłączone"}
@@ -77,7 +77,7 @@ export default async function MetaIntegrationPage({
         {!metaConfigured && (
           <div
             className="rounded-lg p-4 text-sm"
-            style={{ background: "rgba(202,138,4,0.06)", border: "1px solid rgba(202,138,4,0.2)" }}
+            style={{ background: "rgba(255,140,66,0.06)", border: "1px solid rgba(255,140,66,0.2)" }}
           >
             <div className="font-medium mb-1" style={{ color: "var(--warning)" }}>
               Brak konfiguracji Meta App
@@ -138,8 +138,8 @@ export default async function MetaIntegrationPage({
             href="/api/integrations/meta/oauth"
             className={`flex-1 text-center rounded-lg py-2.5 text-sm font-semibold transition-opacity ${
               metaConfigured
-                ? "bg-blue-600 hover:opacity-90"
-                : "bg-blue-600/40 cursor-not-allowed pointer-events-none"
+                ? "bg-[#FF4C00] hover:opacity-90"
+                : "bg-[#FF4C00]/40 cursor-not-allowed pointer-events-none"
             }`}
           >
             {isConnected ? "Połącz ponownie" : "Połącz przez OAuth"}

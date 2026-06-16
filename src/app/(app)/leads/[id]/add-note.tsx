@@ -76,7 +76,7 @@ export function AddNote({
             <button
               key={c.id}
               type="button"
-              style={btnActive(contextType === "email" && campaignId === c.id, "#8b5cf6")}
+              style={btnActive(contextType === "email" && campaignId === c.id, "#FF4C00")}
               onClick={() => selectCampaign("email", c.id, c.name)}
             >
               📧 {c.name}
@@ -86,7 +86,7 @@ export function AddNote({
             <button
               key={c.id}
               type="button"
-              style={btnActive(contextType === "sms" && campaignId === c.id, "#22c55e")}
+              style={btnActive(contextType === "sms" && campaignId === c.id, "#FF4C00")}
               onClick={() => selectCampaign("sms", c.id, c.name)}
             >
               ✉ {c.name}

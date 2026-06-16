@@ -95,7 +95,7 @@ export const pipelineStages = pgTable("pipeline_stages", {
     .notNull()
     .references(() => pipelines.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  color: text("color").notNull().default("#7c5cff"),
+  color: text("color").notNull().default("#FF4C00"),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -146,7 +146,7 @@ export const tags = pgTable("tags", {
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  color: text("color").notNull().default("#8b8d9a"),
+  color: text("color").notNull().default("#78716C"),
 });
 
 export const leadTags = pgTable("lead_tags", {

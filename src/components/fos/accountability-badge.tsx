@@ -4,7 +4,7 @@ interface Props {
 }
 
 export function AccountabilityBadge({ score, size = "md" }: Props) {
-  const color = score >= 80 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444";
+  const color = score >= 80 ? "#FF4C00" : score >= 50 ? "#FF8C42" : "#1C1917";
   return (
     <span
       className={`inline-flex items-center font-semibold rounded-full tabular-nums ${

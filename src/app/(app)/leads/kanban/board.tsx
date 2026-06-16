@@ -40,10 +40,10 @@ type Lead = {
 const sourceConfig: Record<string, { label: string; color: string; bg: string }> = {
   manual: { label: "Ręcznie", color: "#f97316", bg: "rgba(249,115,22,0.10)" },
   import: { label: "Import", color: "#6b7280", bg: "rgba(107,114,128,0.10)" },
-  meta_ads: { label: "Meta Ads", color: "#3b82f6", bg: "rgba(59,130,246,0.10)" },
-  webhook: { label: "Webhook", color: "#14b8a6", bg: "rgba(20,184,166,0.10)" },
-  sms: { label: "SMS", color: "#22c55e", bg: "rgba(34,197,94,0.10)" },
-  email: { label: "E-mail", color: "#8b5cf6", bg: "rgba(139,92,246,0.10)" },
+  meta_ads: { label: "Meta Ads", color: "#FF4C00", bg: "rgba(255,76,0,0.10)" },
+  webhook: { label: "Webhook", color: "#FF4C00", bg: "rgba(255,76,0,0.10)" },
+  sms: { label: "SMS", color: "#FF4C00", bg: "rgba(255,76,0,0.10)" },
+  email: { label: "E-mail", color: "#FF4C00", bg: "rgba(255,76,0,0.10)" },
 };
 
 function pln(value: number): string {
@@ -92,24 +92,24 @@ function MetaStatsBar({
   ];
 
   const highlightStyle = {
-    green: { bg: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e" },
-    blue: { bg: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.2)", color: "#3b82f6" },
-    red: { bg: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" },
+    green: { bg: "rgba(255,76,0,0.06)", border: "1px solid rgba(255,76,0,0.2)", color: "#FF4C00" },
+    blue: { bg: "rgba(255,76,0,0.06)", border: "1px solid rgba(255,76,0,0.2)", color: "#FF4C00" },
+    red: { bg: "rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.2)", color: "#1C1917" },
   };
 
   return (
     <div
       className="flex flex-wrap gap-3 mb-5 p-4 rounded-xl items-center"
-      style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.18)" }}
+      style={{ background: "rgba(255,76,0,0.04)", border: "1px solid rgba(255,76,0,0.18)" }}
     >
       <div className="flex items-center gap-1.5 mr-1 self-start pt-1">
         <div
           className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
-          style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
+          style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}
         >
           f
         </div>
-        <span className="text-[11px] font-semibold" style={{ color: "#3b82f6" }}>
+        <span className="text-[11px] font-semibold" style={{ color: "#FF4C00" }}>
           Meta Ads
         </span>
       </div>
@@ -300,7 +300,7 @@ function KanbanDeleteButton({
           onClick={handleDelete}
           disabled={pending}
           className="text-[11px] font-semibold px-2 py-0.5 rounded"
-          style={{ background: "#ef4444", color: "#fff", opacity: pending ? 0.6 : 1 }}
+          style={{ background: "#1C1917", color: "#fff", opacity: pending ? 0.6 : 1 }}
         >
           {pending ? "…" : "Usuń"}
         </button>
@@ -324,8 +324,8 @@ function KanbanDeleteButton({
       className="flex items-center justify-center w-6 h-6 rounded transition-colors"
       style={{ border: "1px solid var(--border-strong)", color: "var(--muted)", background: "transparent" }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.color = "#ef4444";
-        (e.currentTarget as HTMLElement).style.borderColor = "#ef4444";
+        (e.currentTarget as HTMLElement).style.color = "#1C1917";
+        (e.currentTarget as HTMLElement).style.borderColor = "#1C1917";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.color = "var(--muted)";
@@ -393,7 +393,7 @@ function ClosingPriceEdit({
           onClick={save}
           disabled={saving}
           className="text-[11px] font-medium px-2 py-0.5 rounded"
-          style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
+          style={{ background: "rgba(255,76,0,0.12)", color: "#FF4C00" }}
         >
           {saving ? "…" : "OK"}
         </button>
@@ -415,9 +415,9 @@ function ClosingPriceEdit({
       onDragStart={(e) => e.stopPropagation()}
       className="flex items-center gap-1 mt-2 text-xs rounded px-2 py-1 w-full transition-colors"
       style={{
-        background: numericValue != null ? "rgba(34,197,94,0.08)" : "var(--ba-4)",
-        border: numericValue != null ? "1px solid rgba(34,197,94,0.2)" : "1px solid var(--border)",
-        color: numericValue != null ? "#22c55e" : "var(--muted)",
+        background: numericValue != null ? "rgba(255,76,0,0.08)" : "var(--ba-4)",
+        border: numericValue != null ? "1px solid rgba(255,76,0,0.2)" : "1px solid var(--border)",
+        color: numericValue != null ? "#FF4C00" : "var(--muted)",
       }}
     >
       <span className="font-medium">
@@ -531,9 +531,9 @@ function LeadQuickViewModal({
           disabled={toggling}
           className="w-full py-2.5 rounded-lg text-[13px] font-semibold transition-all mb-3"
           style={{
-            background: needsCall ? "rgba(34,197,94,0.12)" : "rgba(249,115,22,0.10)",
-            border: needsCall ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(249,115,22,0.3)",
-            color: needsCall ? "#22c55e" : "#f97316",
+            background: needsCall ? "rgba(255,76,0,0.12)" : "rgba(249,115,22,0.10)",
+            border: needsCall ? "1px solid rgba(255,76,0,0.3)" : "1px solid rgba(249,115,22,0.3)",
+            color: needsCall ? "#FF4C00" : "#f97316",
           }}
         >
           {needsCall ? "✓ Call zaplanowany" : "📞 Umów call sprzedażowy"}
@@ -606,7 +606,7 @@ function LeadCard({
       className="bg-[var(--surface)] rounded-lg p-3 cursor-grab active:cursor-grabbing select-none shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all"
       style={{
         border: isClosedStage
-          ? "1px solid rgba(34,197,94,0.35)"
+          ? "1px solid rgba(255,76,0,0.35)"
           : "1px solid var(--border)",
         opacity: isDragging ? 0.4 : 1,
       }}
@@ -633,7 +633,7 @@ function LeadCard({
         {isClosedStage && (
           <span
             className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5"
-            style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
+            style={{ background: "rgba(255,76,0,0.12)", color: "#FF4C00" }}
           >
             Zamknięty
           </span>
@@ -695,7 +695,7 @@ function LeadCard({
           {hasCost && (
             <span
               className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-              style={{ background: "rgba(59,130,246,0.08)", color: "#3b82f6" }}
+              style={{ background: "rgba(255,76,0,0.08)", color: "#FF4C00" }}
             >
               ~{pln(lead.acquisition_cost!)}
             </span>
@@ -751,9 +751,9 @@ const MAIN_FILTERS: { key: FilterMode; label: string }[] = [
 ];
 
 const FILTER_COLOR: Record<FilterMode, string> = {
-  spend: "#3b82f6", revenue: "#22c55e", both: "#3b82f6",
-  cpl: "#f97316", cpc: "#8b5cf6", ctr: "#ec4899",
-  clicks: "#f59e0b", leads: "#06b6d4", impressions: "#6b7280",
+  spend: "#FF4C00", revenue: "#FF4C00", both: "#FF4C00",
+  cpl: "#f97316", cpc: "#FF4C00", ctr: "#FF4C00",
+  clicks: "#FF8C42", leads: "#FF4C00", impressions: "#6b7280",
 };
 
 const PLN_MODES = new Set<FilterMode>(["spend", "revenue", "both", "cpl", "cpc"]);
@@ -838,9 +838,9 @@ function KanbanFinancialPanel({
   }, [leads, closedStageId, dailyMetrics, fromDate, toDate]);
 
   const summary = [
-    { label: "Wydatki",  value: pln(totalSpend),   color: "#3b82f6" },
-    { label: "Przychód", value: pln(totalRevenue),  color: "#22c55e" },
-    { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#22c55e" : "#ef4444" },
+    { label: "Wydatki",  value: pln(totalSpend),   color: "#FF4C00" },
+    { label: "Przychód", value: pln(totalRevenue),  color: "#FF4C00" },
+    { label: profit >= 0 ? "Zysk" : "Strata", value: pln(Math.abs(profit)), color: profit >= 0 ? "#FF4C00" : "#1C1917" },
   ];
 
   type StatItem = { key: FilterMode; label: string; value: string };
@@ -866,10 +866,10 @@ function KanbanFinancialPanel({
       {(emailStats || smsStats) && (
         <div className="flex flex-col gap-2">
           {emailStats && (
-            <div className="rounded-lg px-3 py-2.5" style={{ background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.14)" }}>
+            <div className="rounded-lg px-3 py-2.5" style={{ background: "rgba(255,76,0,0.04)", border: "1px solid rgba(255,76,0,0.14)" }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
-                <span className="text-[10.5px] font-semibold" style={{ color: "#8b5cf6" }}>E-mail (30 dni)</span>
+                <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}>@</div>
+                <span className="text-[10.5px] font-semibold" style={{ color: "#FF4C00" }}>E-mail (30 dni)</span>
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {[
@@ -886,10 +886,10 @@ function KanbanFinancialPanel({
             </div>
           )}
           {smsStats && (
-            <div className="rounded-lg px-3 py-2.5" style={{ background: "rgba(34,197,94,0.04)", border: "1px solid rgba(34,197,94,0.14)" }}>
+            <div className="rounded-lg px-3 py-2.5" style={{ background: "rgba(255,76,0,0.04)", border: "1px solid rgba(255,76,0,0.14)" }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
-                <span className="text-[10.5px] font-semibold" style={{ color: "#22c55e" }}>SMS (30 dni)</span>
+                <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}>✉</div>
+                <span className="text-[10.5px] font-semibold" style={{ color: "#FF4C00" }}>SMS (30 dni)</span>
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {[
@@ -912,16 +912,16 @@ function KanbanFinancialPanel({
       {metaItems.length > 0 && (
         <div
           className="rounded-lg p-3"
-          style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.14)" }}
+          style={{ background: "rgba(255,76,0,0.04)", border: "1px solid rgba(255,76,0,0.14)" }}
         >
           <div className="flex items-center gap-1.5 mb-2.5">
             <div
               className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold"
-              style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}
+              style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}
             >
               f
             </div>
-            <span className="text-[10.5px] font-semibold" style={{ color: "#3b82f6" }}>
+            <span className="text-[10.5px] font-semibold" style={{ color: "#FF4C00" }}>
               Meta Ads — kliknij wskaźnik
             </span>
           </div>
@@ -984,12 +984,12 @@ function KanbanFinancialPanel({
         <AreaChart data={chartData} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="kGradA" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              <stop offset="5%" stopColor="#FF4C00" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="kGradB" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+              <stop offset="5%" stopColor="#FF4C00" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="kGradMeta" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.18} />
@@ -1009,10 +1009,10 @@ function KanbanFinancialPanel({
             contentStyle={{ fontSize: 11, background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, padding: "4px 8px" }}
           />
           {(filter === "spend" || filter === "both") && (
-            <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#3b82f6" fill="url(#kGradA)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#FF4C00" fill="url(#kGradA)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
           )}
           {(filter === "revenue" || filter === "both") && (
-            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#kGradB)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+            <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#FF4C00" fill="url(#kGradB)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
           )}
           {!isFinancial && (
             <Area
@@ -1045,7 +1045,7 @@ function KanbanEmailPanel({
 }) {
   type EFilter = "sent" | "opened" | "clicked";
   const [filter, setFilter] = useState<EFilter>("sent");
-  const colorMap: Record<EFilter, string> = { sent: "#8b5cf6", opened: "#3b82f6", clicked: "#22c55e" };
+  const colorMap: Record<EFilter, string> = { sent: "#FF4C00", opened: "#FF4C00", clicked: "#FF4C00" };
   const labelMap: Record<EFilter, string> = { sent: "Wysłane", opened: "Otwarte", clicked: "Kliknięte" };
   const color = colorMap[filter];
 
@@ -1055,8 +1055,8 @@ function KanbanEmailPanel({
     { key: "clicked", label: "Kliknięte", value: emailStats.totalClicked.toLocaleString("pl-PL") },
   ];
   const rateCards = [
-    { label: "Open Rate",  value: `${emailStats.openRate.toFixed(1)}%`,  color: "#3b82f6" },
-    { label: "Click Rate", value: `${emailStats.clickRate.toFixed(1)}%`, color: "#22c55e" },
+    { label: "Open Rate",  value: `${emailStats.openRate.toFixed(1)}%`,  color: "#FF4C00" },
+    { label: "Click Rate", value: `${emailStats.clickRate.toFixed(1)}%`, color: "#FF4C00" },
   ];
   const periodCards = [
     { label: "Dziś",  value: emailStats.totalToday },
@@ -1071,7 +1071,7 @@ function KanbanEmailPanel({
     >
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
-          style={{ background: "rgba(139,92,246,0.15)", color: "#8b5cf6" }}>@</div>
+          style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}>@</div>
         <span className="text-[13px] font-semibold tracking-tight">
           E-mail ({rangeLabel}){campaignName ? ` — ${campaignName}` : ""}
         </span>
@@ -1092,7 +1092,7 @@ function KanbanEmailPanel({
           <div key={p.label} className="rounded-lg px-2.5 py-2 text-center"
             style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
             <div className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{p.label}</div>
-            <div className="text-[18px] font-semibold tabular-nums" style={{ color: "#8b5cf6" }}>{p.value}</div>
+            <div className="text-[18px] font-semibold tabular-nums" style={{ color: "#FF4C00" }}>{p.value}</div>
           </div>
         ))}
       </div>
@@ -1147,17 +1147,17 @@ function KanbanSmsPanel({
 }) {
   type SmsFilter = "sent" | "replied";
   const [filter, setFilter] = useState<SmsFilter>("sent");
-  const colorMap: Record<SmsFilter, string> = { sent: "#22c55e", replied: "#f97316" };
+  const colorMap: Record<SmsFilter, string> = { sent: "#FF4C00", replied: "#f97316" };
   const labelMap: Record<SmsFilter, string> = { sent: "Wysłane", replied: "Odpowiedzi" };
   const color = colorMap[filter];
 
   const statCards: { key: SmsFilter; label: string; value: string; color: string }[] = [
-    { key: "sent",    label: "Wysłane (30 dni)", value: smsStats.totalSent.toLocaleString("pl-PL"),    color: "#22c55e" },
+    { key: "sent",    label: "Wysłane (30 dni)", value: smsStats.totalSent.toLocaleString("pl-PL"),    color: "#FF4C00" },
     { key: "replied", label: "Odpowiedzi",        value: smsStats.totalReplied.toLocaleString("pl-PL"), color: "#f97316" },
   ];
   const rateCards = [
     { label: "Reply Rate", value: `${smsStats.replyRate.toFixed(1)}%`, color: "#f97316" },
-    { label: "Kampanie",   value: String(smsStats.campaignCount),      color: "#22c55e" },
+    { label: "Kampanie",   value: String(smsStats.campaignCount),      color: "#FF4C00" },
   ];
   const periodCards = [
     { label: "Dziś",  value: smsStats.totalToday },
@@ -1172,7 +1172,7 @@ function KanbanSmsPanel({
     >
       <div className="flex items-center gap-2">
         <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold"
-          style={{ background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>✉</div>
+          style={{ background: "rgba(255,76,0,0.15)", color: "#FF4C00" }}>✉</div>
         <span className="text-[13px] font-semibold tracking-tight">
           SMS ({rangeLabel}){campaignName ? ` — ${campaignName}` : ""}
         </span>
@@ -1193,7 +1193,7 @@ function KanbanSmsPanel({
           <div key={p.label} className="rounded-lg px-2.5 py-2 text-center"
             style={{ background: "var(--ba-2)", border: "1px solid var(--border)" }}>
             <div className="text-[9.5px] mb-0.5" style={{ color: "var(--muted)" }}>{p.label}</div>
-            <div className="text-[18px] font-semibold tabular-nums" style={{ color: "#22c55e" }}>{p.value}</div>
+            <div className="text-[18px] font-semibold tabular-nums" style={{ color: "#FF4C00" }}>{p.value}</div>
           </div>
         ))}
       </div>
@@ -1413,8 +1413,8 @@ export function KanbanBoard({
                   {pct !== null && (
                     <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
                       style={{
-                        background: pct >= 50 ? "rgba(34,197,94,0.12)" : pct >= 25 ? "rgba(234,179,8,0.12)" : "rgba(239,68,68,0.12)",
-                        color: pct >= 50 ? "#22c55e" : pct >= 25 ? "#ca8a04" : "#ef4444",
+                        background: pct >= 50 ? "rgba(255,76,0,0.12)" : pct >= 25 ? "rgba(255,140,66,0.12)" : "rgba(0,0,0,0.12)",
+                        color: pct >= 50 ? "#FF4C00" : pct >= 25 ? "#FF8C42" : "#1C1917",
                       }}>
                       {pct}%
                     </span>
@@ -1455,9 +1455,9 @@ export function KanbanBoard({
               style={{
                 background: isOver ? "var(--bg-3, var(--bg-2))" : "var(--bg-2)",
                 border: isOver
-                  ? `2px solid ${isClosed ? "#22c55e" : stage.color}`
+                  ? `2px solid ${isClosed ? "#FF4C00" : stage.color}`
                   : "1px solid var(--border)",
-                borderTopColor: isClosed ? "#22c55e" : stage.color,
+                borderTopColor: isClosed ? "#FF4C00" : stage.color,
                 borderTopWidth: 3,
               }}
               onDragEnter={(e) => {
@@ -1496,7 +1496,7 @@ export function KanbanBoard({
                   {isClosed && (
                     <span
                       className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e" }}
+                      style={{ background: "rgba(255,76,0,0.12)", color: "#FF4C00" }}
                     >
                       Konwersja
                     </span>
@@ -1567,20 +1567,20 @@ export function KanbanBoard({
                 <div
                   className="mx-3 mb-3 px-3 py-2.5 rounded-lg text-xs"
                   style={{
-                    background: "rgba(34,197,94,0.05)",
-                    border: "1px solid rgba(34,197,94,0.15)",
+                    background: "rgba(255,76,0,0.05)",
+                    border: "1px solid rgba(255,76,0,0.15)",
                   }}
                 >
                   <div className="flex justify-between mb-1">
                     <span style={{ color: "var(--muted)" }}>Zamknięte</span>
-                    <span className="font-semibold" style={{ color: "#22c55e" }}>
+                    <span className="font-semibold" style={{ color: "#FF4C00" }}>
                       {stageLeads.length}
                     </span>
                   </div>
                   {columnRevenue > 0 && (
                     <div className="flex justify-between mb-1">
                       <span style={{ color: "var(--muted)" }}>Przychód</span>
-                      <span className="font-semibold tabular-nums" style={{ color: "#22c55e" }}>
+                      <span className="font-semibold tabular-nums" style={{ color: "#FF4C00" }}>
                         {pln(columnRevenue)}
                       </span>
                     </div>
@@ -1589,7 +1589,7 @@ export function KanbanBoard({
                     <>
                       <div className="flex justify-between mb-1">
                         <span style={{ color: "var(--muted)" }}>Koszt pozysk. (Meta)</span>
-                        <span className="font-semibold tabular-nums" style={{ color: "#3b82f6" }}>
+                        <span className="font-semibold tabular-nums" style={{ color: "#FF4C00" }}>
                           {pln(columnMetaSpend)}
                         </span>
                       </div>
@@ -1598,7 +1598,7 @@ export function KanbanBoard({
                           <span style={{ color: "var(--muted)" }}>Zysk</span>
                           <span
                             className="font-semibold tabular-nums"
-                            style={{ color: columnRevenue - columnMetaSpend >= 0 ? "#22c55e" : "#ef4444" }}
+                            style={{ color: columnRevenue - columnMetaSpend >= 0 ? "#FF4C00" : "#1C1917" }}
                           >
                             {pln(columnRevenue - columnMetaSpend)}
                           </span>

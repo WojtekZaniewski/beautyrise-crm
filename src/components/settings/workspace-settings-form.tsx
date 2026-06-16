@@ -118,7 +118,7 @@ export function WorkspaceSettingsForm({
               {saving ? "Zapisywanie…" : "Zapisz zmiany"}
             </button>
             {success && (
-              <span className="text-[12.5px]" style={{ color: "var(--success, #22c55e)" }}>
+              <span className="text-[12.5px]" style={{ color: "var(--success, #FF4C00)" }}>
                 Zapisano ✓
               </span>
             )}

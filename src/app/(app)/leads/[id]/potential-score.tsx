@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 function scoreColor(s: number): string {
-  if (s <= 3) return "#ef4444";
-  if (s <= 6) return "#f59e0b";
-  return "#16a34a";
+  if (s <= 3) return "#1C1917";
+  if (s <= 6) return "#FF8C42";
+  return "#FF4C00";
 }
 
 export function PotentialScore({

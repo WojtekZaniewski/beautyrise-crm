@@ -26,9 +26,9 @@ const panelStyle = {
 };
 
 const INT_COLOR: Record<string, string> = {
-  meta_ads: "#3b82f6",
-  email:    "#8b5cf6",
-  sms:      "#22c55e",
+  meta_ads: "#FF4C00",
+  email:    "#FF4C00",
+  sms:      "#FF4C00",
 };
 
 export default async function LeadDetailPage({
@@ -287,11 +287,11 @@ export default async function LeadDetailPage({
                           <span style={{ color: "var(--muted)" }}>Kliknął link:</span>
                           {clickedEvent ? (
                             <>
-                              <span style={{ color: "#16a34a", fontWeight: 700 }}>✓ Tak</span>
+                              <span style={{ color: "#FF4C00", fontWeight: 700 }}>✓ Tak</span>
                               <span style={{ color: "var(--muted)" }}>— {fmt(clickedEvent.created_at)}</span>
                             </>
                           ) : (
-                            <span style={{ color: "#dc2626", fontWeight: 700 }}>✗ Nie</span>
+                            <span style={{ color: "#1C1917", fontWeight: 700 }}>✗ Nie</span>
                           )}
                         </div>
                       </div>

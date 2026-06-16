@@ -31,7 +31,7 @@ export function EmailCampaignChart({ data }: { data: EmailDailyPoint[] }) {
           />
           <Legend wrapperStyle={{ fontSize: 12, color: "var(--muted)" }} />
           <Line type="monotone" dataKey="opens" name="Otwarcia" stroke="#FF4C00" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="clicks" name="Kliknięcia" stroke="#3b82f6" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="clicks" name="Kliknięcia" stroke="#FF4C00" strokeWidth={2} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>

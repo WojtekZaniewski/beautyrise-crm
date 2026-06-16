@@ -115,26 +115,26 @@ const CHART_STYLE = {
 
 const META_FILTER_COLOR: Record<MetaFilter, string> = {
   spend:       "#FF4C00",
-  revenue:     "#22c55e",
+  revenue:     "#1C1917",
   both:        "#FF4C00",
   cpl:         "#FF8C42",
-  cpc:         "#f59e0b",
-  ctr:         "#fbbf24",
+  cpc:         "#FF8C42",
+  ctr:         "#FF8C42",
   clicks:      "#FF6B35",
   leads:       "#FF4C00",
   impressions: "#a3a3a3",
 };
 
-const EMAIL_COLOR: Record<EmailFilter, string> = { sent: "#FF4C00", opened: "#FF8C42", clicked: "#fbbf24" };
+const EMAIL_COLOR: Record<EmailFilter, string> = { sent: "#FF4C00", opened: "#FF8C42", clicked: "#FF8C42" };
 const EMAIL_LABEL: Record<EmailFilter, string> = { sent: "Wysłane", opened: "Otwarte", clicked: "Kliknięte" };
-const SMS_COLOR: Record<SmsFilter, string> = { sent: "#FF4C00", replied: "#22c55e" };
+const SMS_COLOR: Record<SmsFilter, string> = { sent: "#FF4C00", replied: "#1C1917" };
 const SMS_LABEL: Record<SmsFilter, string> = { sent: "Wysłane", replied: "Odpowiedzi" };
 
 const INTEGRATIONS: { key: Integration; label: string; color: string }[] = [
   { key: "combined", label: "Łączne",   color: "#FF4C00" },
   { key: "meta",     label: "Meta Ads", color: "#FF4C00" },
   { key: "email",    label: "E-mail",   color: "#FF8C42" },
-  { key: "sms",      label: "SMS",      color: "#fbbf24" },
+  { key: "sms",      label: "SMS",      color: "#FF8C42" },
 ];
 
 function CampaignSelect({
@@ -236,11 +236,11 @@ export function UnifiedCampaignChart({
         <>
           <div className="flex flex-wrap gap-3 mb-5">
             <StatCard label={`Wydatki Meta (${rangeLabel})`} value={pln(totalSpend)} color="#FF4C00" />
-            <StatCard label={`Przychód (${rangeLabel})`}     value={pln(totalRevenue)} color="#22c55e" />
+            <StatCard label={`Przychód (${rangeLabel})`}     value={pln(totalRevenue)} color="#1C1917" />
             <StatCard
               label={profit >= 0 ? "Zysk" : "Strata"}
               value={pln(Math.abs(profit))}
-              color={profit >= 0 ? "#22c55e" : "#ef4444"}
+              color={profit >= 0 ? "#1C1917" : "#1C1917"}
             />
             <StatCard label="E-maile wysłane" value={emailTotalSent.toLocaleString("pl-PL")} color="#FF8C42" />
             <StatCard label="SMS wysłane"      value={smsTotalSent.toLocaleString("pl-PL")}   color="#f97316" />
@@ -257,8 +257,8 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="ucGrRv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.18} />
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                      <stop offset="5%"  stopColor="#1C1917" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#1C1917" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
@@ -271,7 +271,7 @@ export function UnifiedCampaignChart({
                       label={{ value: "śr.", fill: "#FF4C00", fontSize: 9, position: "right" }} />
                   )}
                   <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#FF4C00" fill="url(#ucGrSp)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
-                  <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#ucGrRv)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
+                  <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#1C1917" fill="url(#ucGrRv)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                 </AreaChart>
               </ResponsiveContainer>
             );
@@ -300,11 +300,11 @@ export function UnifiedCampaignChart({
           {selectedMeta ? (
             <div className="flex flex-wrap gap-3">
               <StatCard label="Wydatki"     value={pln(selectedMeta.spend)}                           color="#FF4C00" />
-              <StatCard label="Kliknięcia"  value={selectedMeta.clicks.toLocaleString("pl-PL")}      color="#f59e0b" />
+              <StatCard label="Kliknięcia"  value={selectedMeta.clicks.toLocaleString("pl-PL")}      color="#FF8C42" />
               <StatCard label="Leady"       value={selectedMeta.leads.toLocaleString("pl-PL")}       color="#FF6B35" />
               <StatCard label="Wyświetlenia" value={selectedMeta.impressions.toLocaleString("pl-PL")} color="#6b7280" />
               {selectedMeta.cpl != null && <StatCard label="Śr. CPL" value={pln(selectedMeta.cpl)} color="#f97316" />}
-              {selectedMeta.ctr != null && <StatCard label="CTR" value={`${(selectedMeta.ctr * 100).toFixed(2)}%`} color="#fbbf24" />}
+              {selectedMeta.ctr != null && <StatCard label="CTR" value={`${(selectedMeta.ctr * 100).toFixed(2)}%`} color="#FF8C42" />}
             </div>
           ) : (
             <>
@@ -364,8 +364,8 @@ export function UnifiedCampaignChart({
               {(metaFilter === "spend" || metaFilter === "revenue" || metaFilter === "both") && (
                 <div className="flex flex-wrap gap-3 mb-5">
                   <StatCard label={`Wydatki (${rangeLabel})`}  value={pln(totalSpend)}        color="#FF4C00" />
-                  <StatCard label={`Przychód (${rangeLabel})`} value={pln(totalRevenue)}       color="#22c55e" />
-                  <StatCard label={profit >= 0 ? "Zysk" : "Strata"} value={pln(Math.abs(profit))} color={profit >= 0 ? "#22c55e" : "#ef4444"} />
+                  <StatCard label={`Przychód (${rangeLabel})`} value={pln(totalRevenue)}       color="#1C1917" />
+                  <StatCard label={profit >= 0 ? "Zysk" : "Strata"} value={pln(Math.abs(profit))} color={profit >= 0 ? "#1C1917" : "#1C1917"} />
                 </div>
               )}
 
@@ -377,7 +377,7 @@ export function UnifiedCampaignChart({
                         <stop offset="5%" stopColor="#FF4C00" stopOpacity={0.20} /><stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="mGrB" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.18} /><stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#1C1917" stopOpacity={0.18} /><stop offset="95%" stopColor="#1C1917" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="mGrM" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={META_FILTER_COLOR[metaFilter]} stopOpacity={0.20} />
@@ -409,7 +409,7 @@ export function UnifiedCampaignChart({
                       <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#FF4C00" fill="url(#mGrA)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                     )}
                     {(metaFilter === "revenue" || metaFilter === "both") && (
-                      <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#mGrB)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
+                      <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#1C1917" fill="url(#mGrB)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                     )}
                     {!["spend", "revenue", "both"].includes(metaFilter) && (
                       <Area type="monotone" dataKey={metaFilter} name={metaFilter} stroke={META_FILTER_COLOR[metaFilter]} fill="url(#mGrM)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
@@ -445,24 +445,24 @@ export function UnifiedCampaignChart({
               <div className="flex flex-wrap gap-3 mb-5">
                 <StatCard label="Wysłane"    value={selectedEmail.sent.toLocaleString("pl-PL")}    color="#FF8C42" />
                 <StatCard label="Otwarte"    value={selectedEmail.opened.toLocaleString("pl-PL")}  color="#FF4C00" />
-                <StatCard label="Kliknięcia" value={selectedEmail.clicked.toLocaleString("pl-PL")} color="#22c55e" />
-                <StatCard label="Odpowiedzi" value={selectedEmail.replied.toLocaleString("pl-PL")} color="#f59e0b" />
+                <StatCard label="Kliknięcia" value={selectedEmail.clicked.toLocaleString("pl-PL")} color="#1C1917" />
+                <StatCard label="Odpowiedzi" value={selectedEmail.replied.toLocaleString("pl-PL")} color="#FF8C42" />
                 <StatCard label="Open Rate"  value={`${selectedEmail.openRate.toFixed(1)}%`}       color="#FF4C00" />
-                <StatCard label="Click Rate" value={`${selectedEmail.clickRate.toFixed(1)}%`}      color="#22c55e" />
-                <StatCard label="Reply Rate" value={`${selectedEmail.replyRate.toFixed(1)}%`}      color="#f59e0b" />
+                <StatCard label="Click Rate" value={`${selectedEmail.clickRate.toFixed(1)}%`}      color="#1C1917" />
+                <StatCard label="Reply Rate" value={`${selectedEmail.replyRate.toFixed(1)}%`}      color="#FF8C42" />
                 {selectedEmail.leadsWon > 0 && (
                   <StatCard label="Leady zamknięte" value={selectedEmail.leadsWon.toLocaleString("pl-PL")} color="#FF6B35" />
                 )}
                 {selectedEmail.revenue > 0 && (
-                  <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#22c55e" />
+                  <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#1C1917" />
                 )}
               </div>
               {(() => {
                 const bars = [
                   { name: "Wysłane",    value: selectedEmail.sent,    color: "#FF8C42" },
                   { name: "Otwarte",    value: selectedEmail.opened,  color: "#FF4C00" },
-                  { name: "Kliknięcia", value: selectedEmail.clicked, color: "#22c55e" },
-                  { name: "Odpowiedzi", value: selectedEmail.replied, color: "#f59e0b" },
+                  { name: "Kliknięcia", value: selectedEmail.clicked, color: "#1C1917" },
+                  { name: "Odpowiedzi", value: selectedEmail.replied, color: "#FF8C42" },
                   ...(selectedEmail.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedEmail.leadsWon, color: "#FF6B35" }] : []),
                 ];
                 return (
@@ -490,7 +490,7 @@ export function UnifiedCampaignChart({
             <>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <RateCard label="Open Rate"  value={`${emailOpenRate.toFixed(1)}%`}  color="#FF4C00" />
-                <RateCard label="Click Rate" value={`${emailClickRate.toFixed(1)}%`} color="#22c55e" />
+                <RateCard label="Click Rate" value={`${emailClickRate.toFixed(1)}%`} color="#1C1917" />
               </div>
 
               <div className="flex gap-1.5 mb-4">
@@ -550,19 +550,19 @@ export function UnifiedCampaignChart({
           {selectedSms ? (
             <>
               <div className="flex flex-wrap gap-3 mb-5">
-                <StatCard label="Wysłane"    value={selectedSms.sent.toLocaleString("pl-PL")}    color="#22c55e" />
+                <StatCard label="Wysłane"    value={selectedSms.sent.toLocaleString("pl-PL")}    color="#1C1917" />
                 <StatCard label="Odpowiedzi" value={selectedSms.replied.toLocaleString("pl-PL")} color="#f97316" />
                 <StatCard label="Reply Rate" value={`${selectedSms.replyRate.toFixed(1)}%`}      color="#f97316" />
                 {selectedSms.leadsWon > 0 && (
                   <StatCard label="Leady zamknięte" value={selectedSms.leadsWon.toLocaleString("pl-PL")} color="#FF6B35" />
                 )}
                 {selectedSms.revenue > 0 && (
-                  <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#22c55e" />
+                  <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#1C1917" />
                 )}
               </div>
               {(() => {
                 const bars = [
-                  { name: "Wysłane",    value: selectedSms.sent,    color: "#22c55e" },
+                  { name: "Wysłane",    value: selectedSms.sent,    color: "#1C1917" },
                   { name: "Odpowiedzi", value: selectedSms.replied, color: "#f97316" },
                   ...(selectedSms.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedSms.leadsWon, color: "#FF6B35" }] : []),
                 ];
@@ -591,7 +591,7 @@ export function UnifiedCampaignChart({
             <>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <RateCard label="Reply Rate" value={`${smsReplyRate.toFixed(1)}%`}      color="#f97316" />
-                <RateCard label="Kampanie"   value={String(smsCampaigns.length)}        color="#22c55e" />
+                <RateCard label="Kampanie"   value={String(smsCampaigns.length)}        color="#1C1917" />
               </div>
 
               <div className="flex gap-1.5 mb-4">

@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 type Tag = { id: string; name: string; color: string };
 
 const PALETTE = [
-  "#ff4c00", "#3b82f6", "#22c55e", "#f59e0b",
-  "#ef4444", "#ec4899", "#8b5cf6", "#14b8a6",
+  "#ff4c00", "#FF4C00", "#FF4C00", "#FF8C42",
+  "#1C1917", "#FF4C00", "#FF4C00", "#FF4C00",
 ];
 
 export function TagsManager({

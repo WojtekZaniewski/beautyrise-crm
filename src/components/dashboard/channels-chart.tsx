@@ -30,11 +30,11 @@ export function ChannelsChart({
   const [emailFilter, setEmailFilter] = useState<EmailFilter>("sent");
   const [smsFilter,   setSmsFilter]   = useState<SmsFilter>("sent");
 
-  const emailColorMap: Record<EmailFilter, string> = { sent: "#8b5cf6", opened: "#3b82f6", clicked: "#22c55e" };
+  const emailColorMap: Record<EmailFilter, string> = { sent: "#FF4C00", opened: "#FF4C00", clicked: "#1C1917" };
   const emailLabelMap: Record<EmailFilter, string> = { sent: "Wysłane", opened: "Otwarte", clicked: "Kliknięte" };
   const emailColor = emailColorMap[emailFilter];
 
-  const smsColorMap: Record<SmsFilter, string> = { sent: "#22c55e", replied: "#f97316" };
+  const smsColorMap: Record<SmsFilter, string> = { sent: "#1C1917", replied: "#f97316" };
   const smsLabelMap: Record<SmsFilter, string> = { sent: "Wysłane", replied: "Odpowiedzi" };
   const smsColor = smsColorMap[smsFilter];
 
@@ -48,8 +48,8 @@ export function ChannelsChart({
         <h2 className="text-[13.5px] font-semibold tracking-tight">Kanały komunikacji ({rangeLabel})</h2>
         <div className="flex gap-1">
           {([
-            { key: "email" as Tab, label: "E-mail", color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.3)" },
-            { key: "sms"   as Tab, label: "SMS",    color: "#22c55e", bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.3)" },
+            { key: "email" as Tab, label: "E-mail", color: "#FF4C00", bg: "rgba(255,76,0,0.12)", border: "rgba(255,76,0,0.3)" },
+            { key: "sms"   as Tab, label: "SMS",    color: "#1C1917", bg: "rgba(28,25,23,0.12)",  border: "rgba(28,25,23,0.3)" },
           ] as const).map((t) => (
             <button
               key={t.key}
@@ -73,8 +73,8 @@ export function ChannelsChart({
           {/* Big rate cards */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             {[
-              { label: "Open Rate",  value: `${emailOpenRate.toFixed(1)}%`,  color: "#3b82f6" },
-              { label: "Click Rate", value: `${emailClickRate.toFixed(1)}%`, color: "#22c55e" },
+              { label: "Open Rate",  value: `${emailOpenRate.toFixed(1)}%`,  color: "#FF4C00" },
+              { label: "Click Rate", value: `${emailClickRate.toFixed(1)}%`, color: "#1C1917" },
             ].map((r) => (
               <div key={r.label} className="rounded-lg px-4 py-3"
                 style={{ background: `${r.color}08`, border: `1px solid ${r.color}25` }}>
@@ -132,7 +132,7 @@ export function ChannelsChart({
           <div className="grid grid-cols-2 gap-2 mb-3">
             {[
               { label: "Reply Rate", value: `${smsReplyRate.toFixed(1)}%`, color: "#f97316" },
-              { label: "Kampanie",   value: String(smsCampaignCount),      color: "#22c55e" },
+              { label: "Kampanie",   value: String(smsCampaignCount),      color: "#1C1917" },
             ].map((r) => (
               <div key={r.label} className="rounded-lg px-4 py-3"
                 style={{ background: `${r.color}08`, border: `1px solid ${r.color}25` }}>

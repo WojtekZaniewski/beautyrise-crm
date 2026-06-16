@@ -440,7 +440,7 @@ export function EmailPanel({ accountId, accountEmail }: { accountId: string; acc
               </div>
 
               {replyError && (
-                <div className="px-4 text-xs text-red-500 mb-2">{replyError}</div>
+                <div className="px-4 text-xs text-[#1C1917] mb-2">{replyError}</div>
               )}
 
               <textarea

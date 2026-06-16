@@ -165,7 +165,7 @@ export default function SmsCampaignsPage() {
                               onClick={() => handleDelete(c.id)}
                               disabled={isDeleting}
                               className="text-[11px] px-2 py-0.5 rounded font-medium transition-colors"
-                              style={{ background: "#ef44441a", color: "#dc2626", border: "1px solid #ef444430" }}
+                              style={{ background: "#1C19171a", color: "#1C1917", border: "1px solid #1C191730" }}
                             >
                               {isDeleting ? "…" : "Tak, usuń"}
                             </button>

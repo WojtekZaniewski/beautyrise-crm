@@ -22,8 +22,8 @@ const CHANNEL_LABEL: Record<"messenger" | "instagram", string> = {
 };
 
 const CHANNEL_COLOR: Record<"messenger" | "instagram", string> = {
-  messenger: "#0084ff",
-  instagram: "#e1306c",
+  messenger: "#FF4C00",
+  instagram: "#FF4C00",
 };
 
 function formatTime(iso: string) {

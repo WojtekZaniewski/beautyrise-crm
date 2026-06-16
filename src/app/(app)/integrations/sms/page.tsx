@@ -31,9 +31,9 @@ function Input({ label, value, onChange, type = "text", placeholder = "", hint }
 }
 
 const STATUS_MAP: Record<string, [string, string, string]> = {
-  sent:    ["#22c55e1a", "#16a34a", "Wysłany"],
+  sent:    ["#FF4C001a", "#FF4C00", "Wysłany"],
   pending: ["rgba(0,0,0,0.05)", "#78716C", "Oczekuje"],
-  failed:  ["#ef44441a", "#dc2626", "Błąd"],
+  failed:  ["#1C19171a", "#1C1917", "Błąd"],
 };
 function StatusBadge({ status }: { status: string }) {
   const [bg, color, label] = STATUS_MAP[status] ?? STATUS_MAP.pending;
@@ -90,8 +90,8 @@ function ConfigTab({ onChanged }: { onChanged: () => void }) {
           <div className="text-xs text-[var(--muted)]">smsmobileapi.com · Twój telefon jako bramka SMS</div>
           {config?.configured ? (
             <div className="flex items-center gap-2 mt-2">
-              <span className="w-2 h-2 rounded-full" style={{ background: "#22c55e" }} />
-              <span className="text-xs" style={{ color: "#16a34a" }}>Połączono</span>
+              <span className="w-2 h-2 rounded-full" style={{ background: "#FF4C00" }} />
+              <span className="text-xs" style={{ color: "#FF4C00" }}>Połączono</span>
               {config.apikey_hint && <span className="text-xs text-[var(--muted)]">klucz: {config.apikey_hint}</span>}
             </div>
           ) : (
@@ -103,7 +103,7 @@ function ConfigTab({ onChanged }: { onChanged: () => void }) {
         </div>
         {config?.configured && (
           <button onClick={disconnect} className="text-xs shrink-0 transition-colors" style={{ color: "var(--muted)" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")}
+            onMouseEnter={e => (e.currentTarget.style.color = "#1C1917")}
             onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}>Odłącz</button>
         )}
       </Panel>
@@ -121,8 +121,8 @@ function ConfigTab({ onChanged }: { onChanged: () => void }) {
       <Panel className="p-5 flex flex-col gap-4">
         <div className="font-medium text-sm">{config?.configured ? "Zmień API Key" : "Podłącz bramkę SMS"}</div>
         <Input label="API Key" value={apikey} onChange={setApikey} type="password" placeholder="Wklej klucz z SMSMobileAPI Dashboard" hint="Klucz jest szyfrowany przed zapisem" />
-        {error && <p className="text-sm" style={{ color: "#dc2626" }}>{error}</p>}
-        {success && <p className="text-sm" style={{ color: "#16a34a" }}>{success}</p>}
+        {error && <p className="text-sm" style={{ color: "#1C1917" }}>{error}</p>}
+        {success && <p className="text-sm" style={{ color: "#FF4C00" }}>{success}</p>}
         <button onClick={save} disabled={saving || !apikey.trim()} className="rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--accent)" }}>
           {saving ? "Zapisywanie…" : config?.configured ? "Zaktualizuj klucz" : "Połącz"}
         </button>
@@ -173,7 +173,7 @@ function SendTab({ configured }: { configured: boolean }) {
             style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)", outline: "none" }} />
           <div className="text-xs text-[var(--muted)] mt-1 text-right">{message.length} / 160 znaków</div>
         </div>
-        {result && <p className="text-sm" style={{ color: result.ok ? "#16a34a" : "#dc2626" }}>{result.msg}</p>}
+        {result && <p className="text-sm" style={{ color: result.ok ? "#FF4C00" : "#1C1917" }}>{result.msg}</p>}
         <button onClick={send} disabled={sending || !to.trim() || !message.trim()} className="rounded-lg py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--accent)" }}>
           {sending ? "Wysyłanie…" : "Wyślij SMS →"}
         </button>
@@ -185,12 +185,12 @@ function SendTab({ configured }: { configured: boolean }) {
 // ─── Campaign Tab ─────────────────────────────────────────────────────────────
 
 const SMS_CAMPAIGN_TYPES: { value: string; label: string; color: string }[] = [
-  { value: "outreach",  label: "Outreach",      color: "#3b82f6" },
-  { value: "followup",  label: "Follow-up",     color: "#8b5cf6" },
-  { value: "promo",     label: "Promocja",      color: "#f59e0b" },
-  { value: "reminder",  label: "Przypomnienie", color: "#22c55e" },
+  { value: "outreach",  label: "Outreach",      color: "#FF4C00" },
+  { value: "followup",  label: "Follow-up",     color: "#FF4C00" },
+  { value: "promo",     label: "Promocja",      color: "#FF8C42" },
+  { value: "reminder",  label: "Przypomnienie", color: "#FF4C00" },
   { value: "info",      label: "Informacja",    color: "#6b7280" },
-  { value: "other",     label: "Inne",          color: "#94a3b8" },
+  { value: "other",     label: "Inne",          color: "#A8A29E" },
 ];
 
 type Recipient = { phone: string; name: string; email: string; lead_id?: string };
@@ -527,9 +527,9 @@ function CampaignTab({ configured }: { configured: boolean }) {
           />
           <div className="flex items-center justify-between mt-1.5">
             <div className="text-xs" style={{ color: "var(--muted)" }}>
-              {smsCount > 1 && <span className="mr-2" style={{ color: "#f59e0b" }}>⚠ {smsCount} SMS-y na odbiorcę</span>}
+              {smsCount > 1 && <span className="mr-2" style={{ color: "#FF8C42" }}>⚠ {smsCount} SMS-y na odbiorcę</span>}
             </div>
-            <div className="text-xs" style={{ color: charCount > 160 ? "#f59e0b" : "var(--muted)" }}>
+            <div className="text-xs" style={{ color: charCount > 160 ? "#FF8C42" : "var(--muted)" }}>
               {charCount} znaków
             </div>
           </div>
@@ -624,8 +624,8 @@ function CampaignTab({ configured }: { configured: boolean }) {
                   </span>
                   <button
                     onClick={() => { setCsvRecipients([]); setCsvFileName(""); }}
-                    className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded transition-colors hover:bg-red-50"
-                    style={{ color: "#dc2626" }}
+                    className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded transition-colors hover:bg-[#1C1917]"
+                    style={{ color: "#1C1917" }}
                     title="Usuń listę"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -655,7 +655,7 @@ function CampaignTab({ configured }: { configured: boolean }) {
         )}
 
         {recipients.length > 0 && (
-          <div className="text-sm font-medium" style={{ color: "#16a34a" }}>
+          <div className="text-sm font-medium" style={{ color: "#FF4C00" }}>
             ✓ {recipients.length} {recipients.length === 1 ? "odbiorca" : recipients.length < 5 ? "odbiorców" : "odbiorców"} gotowych
           </div>
         )}
@@ -704,17 +704,17 @@ function CampaignTab({ configured }: { configured: boolean }) {
                       })()}
                 </span>
                 {sending && (
-                  <button onClick={() => { stopRef.current = true; }} className="text-xs px-2.5 py-1 rounded-lg" style={{ background: "#ef44441a", color: "#dc2626", border: "1px solid #ef444430" }}>
+                  <button onClick={() => { stopRef.current = true; }} className="text-xs px-2.5 py-1 rounded-lg" style={{ background: "#1C19171a", color: "#1C1917", border: "1px solid #1C191730" }}>
                     Zatrzymaj
                   </button>
                 )}
               </div>
               <div className="w-full rounded-full h-1.5" style={{ background: "var(--ba-8)" }}>
-                <div className="h-1.5 rounded-full transition-all" style={{ width: `${(progress.done / progress.total) * 100}%`, background: progress.failed > 0 ? "#f59e0b" : "var(--accent)" }} />
+                <div className="h-1.5 rounded-full transition-all" style={{ width: `${(progress.done / progress.total) * 100}%`, background: progress.failed > 0 ? "#FF8C42" : "var(--accent)" }} />
               </div>
               {done && progress.failed === 0 && (
                 <div className="flex items-center gap-3">
-                  <p className="text-sm" style={{ color: "#16a34a" }}>✓ Wszystkie SMS-y wysłane pomyślnie.</p>
+                  <p className="text-sm" style={{ color: "#FF4C00" }}>✓ Wszystkie SMS-y wysłane pomyślnie.</p>
                   {sentCampaignId && (
                     <a href={`/sms-campaigns/${sentCampaignId}`}
                       className="text-sm font-medium underline"
@@ -1055,7 +1055,7 @@ function KorespondencjaTab({ configured }: { configured: boolean }) {
 
               {/* Error */}
               {replyError && (
-                <div className="px-5 py-2 text-xs shrink-0" style={{ background: "rgba(220,38,38,0.06)", color: "var(--danger)", borderTop: "1px solid rgba(220,38,38,0.15)" }}>
+                <div className="px-5 py-2 text-xs shrink-0" style={{ background: "rgba(0,0,0,0.06)", color: "var(--danger)", borderTop: "1px solid rgba(0,0,0,0.15)" }}>
                   {replyError}
                   <button className="ml-2 underline opacity-70" onClick={() => setReplyError("")}>Zamknij</button>
                 </div>

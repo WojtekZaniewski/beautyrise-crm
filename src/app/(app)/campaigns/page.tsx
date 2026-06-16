@@ -153,11 +153,11 @@ export default async function CampaignsPage() {
                           style={{
                             background:
                               c.status === "ACTIVE"
-                                ? "rgba(22,163,74,0.08)"
+                                ? "rgba(255,76,0,0.08)"
                                 : "var(--ba-4)",
                             color:
                               c.status === "ACTIVE" ? "var(--success)" : "var(--muted)",
-                            border: `1px solid ${c.status === "ACTIVE" ? "rgba(22,163,74,0.2)" : "var(--border)"}`,
+                            border: `1px solid ${c.status === "ACTIVE" ? "rgba(255,76,0,0.2)" : "var(--border)"}`,
                           }}
                         >
                           {c.status}

@@ -36,8 +36,8 @@ export function ExecutionMetrics() {
             key={key}
             className="rounded-lg p-4"
             style={{
-              background: isDangerous ? "#ef444410" : "var(--panel-solid)",
-              border: `1px solid ${isDangerous ? "#ef444430" : "var(--border)"}`,
+              background: isDangerous ? "#1C191710" : "var(--panel-solid)",
+              border: `1px solid ${isDangerous ? "#1C191730" : "var(--border)"}`,
             }}
           >
             <div
@@ -48,7 +48,7 @@ export function ExecutionMetrics() {
             </div>
             <div
               className="text-[22px] font-semibold leading-none tabular-nums"
-              style={{ color: isDangerous ? "#ef4444" : "inherit" }}
+              style={{ color: isDangerous ? "#1C1917" : "inherit" }}
             >
               {val == null ? "—" : `${val}${suffix ?? ""}`}
             </div>

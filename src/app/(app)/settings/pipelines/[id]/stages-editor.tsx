@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Stage = { id: string; name: string; color: string; order: number };
 
-const COLORS = ["#ff4c00", "#3b82f6", "#22c55e", "#eab308", "#ef4444", "#f97316", "#a855f7"];
+const COLORS = ["#ff4c00", "#FF4C00", "#FF4C00", "#FF8C42", "#1C1917", "#f97316", "#FF4C00"];
 
 export function StagesEditor({
   pipelineId,

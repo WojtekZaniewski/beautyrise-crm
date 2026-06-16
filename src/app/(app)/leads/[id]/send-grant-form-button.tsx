@@ -40,9 +40,9 @@ export function SendGrantFormButton({ leadId, hasEmail }: { leadId: string; hasE
         fontSize: "13px",
         fontWeight: 600,
         cursor: state === "sending" || state === "sent" ? "default" : "pointer",
-        border: state === "sent" ? "1px solid #16a34a40" : "1px solid #ff6b0040",
-        background: state === "sent" ? "#f0fdf4" : "#fff7f0",
-        color: state === "sent" ? "#16a34a" : "#ff6b00",
+        border: state === "sent" ? "1px solid #FF4C0040" : "1px solid #ff6b0040",
+        background: state === "sent" ? "#FFF7F0" : "#fff7f0",
+        color: state === "sent" ? "#FF4C00" : "#ff6b00",
         transition: "all 0.15s",
         opacity: state === "sending" ? 0.7 : 1,
       }}

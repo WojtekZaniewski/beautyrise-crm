@@ -95,14 +95,14 @@ export function MessagesSyncButton() {
         <div className="flex items-center gap-2">
           <span
             className="text-[12px] leading-snug"
-            style={{ color: "var(--warning, #f59e0b)" }}
+            style={{ color: "var(--warning, #FF8C42)" }}
           >
             Token wygasł — wymagane ponowne połączenie
           </span>
           <Link
             href="/integrations/meta"
             className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-opacity hover:opacity-80"
-            style={{ background: "#1877f2", color: "#fff" }}
+            style={{ background: "#FF4C00", color: "#fff" }}
           >
             Połącz ponownie
           </Link>
@@ -110,7 +110,7 @@ export function MessagesSyncButton() {
       ) : msg ? (
         <span
           className="text-[12px] max-w-[340px] text-right leading-snug"
-          style={{ color: hasError ? "var(--warning, #f59e0b)" : "var(--muted)" }}
+          style={{ color: hasError ? "var(--warning, #FF8C42)" : "var(--muted)" }}
         >
           {msg}
         </span>
