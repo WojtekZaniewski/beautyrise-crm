@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { toPaletteColor } from "@/lib/palette";
 
 type Tag = { id: string; name: string; color: string };
 
@@ -51,7 +52,7 @@ export function LeadTags({
               key={t.id}
               onClick={() => toggle(t.id)}
               className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs hover:opacity-70"
-              style={{ backgroundColor: t.color + "20", color: t.color }}
+              style={{ backgroundColor: toPaletteColor(t.color) + "20", color: toPaletteColor(t.color) }}
               title="Usuń tag"
             >
               {t.name} <span>×</span>
@@ -75,7 +76,7 @@ export function LeadTags({
                   key={t.id}
                   onClick={() => toggle(t.id)}
                   className="inline-flex px-2 py-0.5 rounded-full text-xs border border-[var(--border)] hover:border-[var(--accent)] transition-colors"
-                  style={{ color: t.color }}
+                  style={{ color: toPaletteColor(t.color) }}
                 >
                   + {t.name}
                 </button>

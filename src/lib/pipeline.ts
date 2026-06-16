@@ -2,6 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
+import { toPaletteColor } from "@/lib/palette";
 
 export type Pipeline = {
   id: string;
@@ -60,7 +61,7 @@ const fetchStagesForPipeline = unstable_cache(
       .select("id, pipeline_id, name, color, order")
       .eq("pipeline_id", pipelineId)
       .order("order");
-    return data ?? [];
+    return (data ?? []).map((s) => ({ ...s, color: toPaletteColor(s.color) }));
   },
   ["stages-by-pipeline"],
   { tags: [STAGES_TAG], revalidate: 300 },

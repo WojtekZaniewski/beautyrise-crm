@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { toPaletteColor } from "@/lib/palette";
 
 type Tag = { id: string; name: string; color: string };
 
 const PALETTE = [
-  "#ff4c00", "#FF4C00", "#FF4C00", "#FF8C42",
-  "#1C1917", "#FF4C00", "#FF4C00", "#FF4C00",
+  "#FF4C00", "#FF6B35", "#FF8C42", "#FFA76B",
+  "#C2410C", "#9A3412", "#1C1917", "#78716C",
 ];
 
 export function TagsManager({

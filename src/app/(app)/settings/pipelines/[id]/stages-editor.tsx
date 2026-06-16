@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toPaletteColor } from "@/lib/palette";
 
 type Stage = { id: string; name: string; color: string; order: number };
 
-const COLORS = ["#ff4c00", "#FF4C00", "#FF4C00", "#FF8C42", "#1C1917", "#f97316", "#FF4C00"];
+const COLORS = ["#FF4C00", "#FF6B35", "#FF8C42", "#FFA76B", "#C2410C", "#9A3412", "#1C1917"];
 
 export function StagesEditor({
   pipelineId,
@@ -148,7 +149,7 @@ export function StagesEditor({
               >
                 <div
                   className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: stage.color }}
+                  style={{ backgroundColor: toPaletteColor(stage.color) }}
                 />
                 <div className="flex-1 font-medium text-sm text-[var(--text)]">{stage.name}</div>
                 <div className="flex gap-1">
@@ -156,7 +157,7 @@ export function StagesEditor({
                     <button
                       key={c}
                       onClick={() => recolor(stage.id, c)}
-                      className={`w-5 h-5 rounded-full border-2 transition-all ${stage.color === c ? "border-[var(--text)]" : "border-transparent"}`}
+                      className={`w-5 h-5 rounded-full border-2 transition-all ${toPaletteColor(stage.color) === c ? "border-[var(--text)]" : "border-transparent"}`}
                       style={{ backgroundColor: c }}
                       title={c}
                     />

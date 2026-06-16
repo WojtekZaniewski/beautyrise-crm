@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { toPaletteColor } from "@/lib/palette";
 import { StageSelect } from "./stage-select";
 import { LeadTimeline } from "./lead-timeline";
 import { LeadTags } from "./tags";
@@ -164,7 +165,7 @@ export default async function LeadDetailPage({
               {stage && (
                 <span
                   className="px-2.5 py-1 rounded-full text-[12px] font-medium"
-                  style={{ backgroundColor: stage.color + "18", color: stage.color, border: `1px solid ${stage.color}30` }}
+                  style={{ backgroundColor: toPaletteColor(stage.color) + "18", color: toPaletteColor(stage.color), border: `1px solid ${toPaletteColor(stage.color)}30` }}
                 >
                   {stage.name}
                 </span>

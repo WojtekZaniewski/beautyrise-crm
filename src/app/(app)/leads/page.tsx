@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import { sourceLabel } from "@/lib/constants";
+import { toPaletteColor } from "@/lib/palette";
 import Link from "next/link";
 import { LeadsFilters } from "./filters";
 import { DateRangePicker } from "@/components/date-range-picker";
@@ -280,9 +281,9 @@ export default async function LeadsPage({
                         <span
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium"
                           style={{
-                            backgroundColor: stageData.color + "18",
-                            color: stageData.color,
-                            border: `1px solid ${stageData.color}30`,
+                            backgroundColor: toPaletteColor(stageData.color) + "18",
+                            color: toPaletteColor(stageData.color),
+                            border: `1px solid ${toPaletteColor(stageData.color)}30`,
                           }}
                         >
                           {stageData.name}
@@ -298,9 +299,9 @@ export default async function LeadsPage({
                             key={t.id}
                             className="inline-flex px-2 py-0.5 rounded-full text-[11.5px] font-medium"
                             style={{
-                              backgroundColor: t.color + "18",
-                              color: t.color,
-                              border: `1px solid ${t.color}30`,
+                              backgroundColor: toPaletteColor(t.color) + "18",
+                              color: toPaletteColor(t.color),
+                              border: `1px solid ${toPaletteColor(t.color)}30`,
                             }}
                           >
                             {t.name}

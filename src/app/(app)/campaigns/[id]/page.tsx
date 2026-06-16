@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MetricsChart } from "@/components/campaigns/metrics-chart";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { toPaletteColor } from "@/lib/palette";
 
 export default async function CampaignDetailPage({
   params,
@@ -156,7 +157,7 @@ export default async function CampaignDetailPage({
                     {stage && (
                       <span
                         className="px-2 py-0.5 rounded-full text-xs"
-                        style={{ backgroundColor: stage.color + "20", color: stage.color }}
+                        style={{ backgroundColor: toPaletteColor(stage.color) + "20", color: toPaletteColor(stage.color) }}
                       >
                         {stage.name}
                       </span>
