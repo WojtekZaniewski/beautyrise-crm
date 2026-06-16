@@ -164,11 +164,23 @@ function CompanyGoalCard({
   priorities,
   onToggle,
   onDelete,
+  onRename,
 }: {
   priorities: FosWeeklyPriority[];
   onToggle: (p: FosWeeklyPriority) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
 }) {
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const editRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (editId) editRef.current?.focus(); }, [editId]);
+  function startEdit(p: FosWeeklyPriority) { setEditId(p.id); setDraft(p.title); }
+  function commitEdit(orig: FosWeeklyPriority) {
+    const t = draft.trim();
+    setEditId(null);
+    if (t && t !== orig.title) onRename(orig.id, t);
+  }
   const goals = priorities.filter((p) => p.is_company_goal);
   if (goals.length === 0) return null;
   // only tasks owned by this goal (tasks that share the week, not company goals)
@@ -188,10 +200,21 @@ function CompanyGoalCard({
                 style={{ borderColor: g.status === "completed" ? "#FF4C00" : "rgba(255,76,0,0.4)", background: g.status === "completed" ? "#FF4C00" : "transparent" }}>
                 {g.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
               </button>
-              <span className="text-[14px] font-semibold leading-snug flex-1 min-w-0"
-                style={{ textDecoration: g.status === "completed" ? "line-through" : "none", opacity: g.status === "completed" ? 0.5 : 1 }}>
-                {g.title}
-              </span>
+              {editId === g.id ? (
+                <input ref={editRef} value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => commitEdit(g)}
+                  onKeyDown={(e) => { if (e.key === "Enter") commitEdit(g); if (e.key === "Escape") setEditId(null); }}
+                  className="text-[14px] font-semibold leading-snug flex-1 min-w-0 bg-transparent outline-none border-b"
+                  style={{ borderColor: "var(--accent)", color: "var(--text)" }}
+                />
+              ) : (
+                <span onClick={() => startEdit(g)} title="Kliknij, aby edytować cel"
+                  className="text-[14px] font-semibold leading-snug flex-1 min-w-0 cursor-text hover:opacity-70 transition-opacity"
+                  style={{ textDecoration: g.status === "completed" ? "line-through" : "none", opacity: g.status === "completed" ? 0.5 : 1 }}>
+                  {g.title}
+                </span>
+              )}
               <button onClick={() => onDelete(g.id)} className="opacity-0 group-hover:opacity-100 shrink-0 text-[11px] transition-opacity mt-0.5"
                 style={{ color: "rgba(255,76,0,0.5)" }} title="Usuń cel">✕</button>
             </div>
@@ -205,7 +228,18 @@ function CompanyGoalCard({
                     style={{ borderColor: t.status === "completed" ? "#FF4C00" : "rgba(0,0,0,0.2)", background: t.status === "completed" ? "#FF4C00" : "transparent" }}>
                     {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
                   </button>
-                  <span className={`text-[12px] flex-1 min-w-0 truncate ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
+                  {editId === t.id ? (
+                    <input ref={editRef} value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onBlur={() => commitEdit(t)}
+                      onKeyDown={(e) => { if (e.key === "Enter") commitEdit(t); if (e.key === "Escape") setEditId(null); }}
+                      className="text-[12px] flex-1 min-w-0 bg-transparent outline-none border-b"
+                      style={{ borderColor: "var(--accent)", color: "var(--text)" }}
+                    />
+                  ) : (
+                    <span onClick={() => startEdit(t)} title="Kliknij, aby edytować"
+                      className={`text-[12px] flex-1 min-w-0 truncate cursor-text hover:opacity-70 transition-opacity ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
+                  )}
                   {t.owner_label && <span className="text-[10px]" style={{ color: "rgba(0,0,0,0.35)" }}>{t.owner_label}</span>}
                   <button onClick={() => onDelete(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0"
                     style={{ color: "rgba(255,76,0,0.4)" }}>✕</button>
@@ -613,6 +647,11 @@ export default function FosCommandCenter() {
     await fetch(`/api/fos/priorities/${id}`, { method: "DELETE" });
   }, []);
 
+  const renameTask = useCallback(async (id: string, title: string) => {
+    setPriorities((prev) => prev.map((x) => (x.id === id ? { ...x, title } : x)));
+    await patchPriority(id, { title });
+  }, []);
+
   // ── Decisions actions ────────────────────────────────────────────────────────
   const addDecision = useCallback(async (title: string) => {
     const tempId = `tmp-${Date.now()}`;
@@ -693,7 +732,7 @@ export default function FosCommandCenter() {
       </div>
 
       {/* Company Goal with steps */}
-      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} />
+      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} onRename={renameTask} />
 
       {/* Two-person columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
