@@ -3,7 +3,7 @@ import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getCurrentPipelineId, getStagesForPipeline } from "@/lib/pipeline";
 import Link from "next/link";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
-import { CompanyFocusBanner } from "@/components/fos/company-focus-banner";
+import { DashboardFosSection } from "@/components/fos/dashboard-fos-section";
 import {
   UnifiedCampaignChart,
   type DayPoint,
@@ -428,12 +428,23 @@ export default async function Dashboard({
 
   return (
     <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page">
-      <CompanyFocusBanner />
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-y-3 heat-glow -mx-4 sm:-mx-7 -mt-4 sm:-mt-7 px-4 sm:px-7 pt-4 sm:pt-7 pb-5 mb-6">
+      <DashboardFosSection />
+
+      {/* CRM section header */}
+      <div
+        className="flex flex-wrap items-center justify-between gap-y-3 pt-5 pb-5 mb-5 -mx-4 sm:-mx-7 px-4 sm:px-7"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
         <div>
-          <h1 className="text-[20px] sm:text-[22px] font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-[13px] text-[var(--muted)] mt-0.5">Przegląd aktywności</p>
+          <div className="flex items-center gap-2 mb-0.5">
+            <span
+              className="text-[11px] uppercase tracking-widest font-bold"
+              style={{ color: "var(--muted)" }}
+            >
+              CRM
+            </span>
+          </div>
+          <h1 className="text-[18px] font-semibold tracking-tight">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
           <DateRangePicker from={fromDate} to={toDate} />
