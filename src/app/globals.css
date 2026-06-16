@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  /* Core palette — BeautyRise (czarno-pomarańczowo-biały) */
-  --bg: #FFFFFF;
-  --bg-2: #F5F5F4;
+  /* Core palette — BeautyRise light */
+  --bg: #FAFAF9;
+  --bg-2: #F4F3F1;
   --surface: #FFFFFF;
   --surface-raised: #FFFFFF;
   --panel: rgba(255, 255, 255, 0.85);
@@ -15,15 +15,6 @@
   --border-muted: rgba(0, 0, 0, 0.05);
   --muted: #78716C;
   --text: #0C0A08;
-
-  /* Sidebar — brand black */
-  --sidebar-bg: #0C0A08;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-text: rgba(255, 255, 255, 0.70);
-  --sidebar-text-active: #FFFFFF;
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
-  --sidebar-active-bg: rgba(255, 76, 0, 0.18);
-  --sidebar-section: rgba(255, 255, 255, 0.40);
 
   /* Accent — heat (BeautyRise orange) */
   --accent: #FF4C00;

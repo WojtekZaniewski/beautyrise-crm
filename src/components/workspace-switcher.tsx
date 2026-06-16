@@ -53,8 +53,8 @@ export function WorkspaceSwitcher({
       <button
         onClick={() => setOpen(!open)}
         disabled={switching}
-        className="w-full flex items-center gap-3 px-3.5 py-3.5 hover:bg-[var(--sidebar-hover-bg)] transition-colors"
-        style={{ borderBottom: "1px solid var(--sidebar-border)" }}
+        className="w-full flex items-center gap-3 px-3.5 py-3.5 hover:bg-[var(--ba-4)] transition-colors"
+        style={{ borderBottom: "1px solid var(--border)" }}
       >
         <Image
           src="/logo.png"
@@ -64,10 +64,10 @@ export function WorkspaceSwitcher({
           className="shrink-0 object-contain"
         />
         <div className="flex-1 text-left min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--sidebar-section)] font-semibold">
+          <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]/60 font-semibold">
             Workspace
           </div>
-          <div className="text-[13px] font-semibold leading-tight truncate text-[var(--sidebar-text-active)]">
+          <div className="text-[13px] font-semibold leading-tight truncate text-[var(--text)]">
             {current?.name ?? "—"}
           </div>
         </div>
@@ -76,7 +76,7 @@ export function WorkspaceSwitcher({
           height="12"
           viewBox="0 0 12 12"
           fill="none"
-          className="shrink-0 text-[var(--sidebar-text)]"
+          className="shrink-0 text-[var(--muted)]/60"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 150ms" }}
           aria-hidden
         >

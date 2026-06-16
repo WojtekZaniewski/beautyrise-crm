@@ -198,8 +198,8 @@ function NavLink({
       prefetch
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
         active
-          ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-text-active)]"
-          : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)]"
+          ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
+          : "text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)]"
       }`}
     >
       <span className="shrink-0">{icon}</span>
@@ -218,7 +218,7 @@ function NavLink({
 
 function Section({ label }: { label: string }) {
   return (
-    <div className="text-[10px] uppercase tracking-[0.11em] text-[var(--sidebar-section)] px-3 pt-5 pb-1 font-semibold">
+    <div className="text-[10px] uppercase tracking-[0.11em] text-[var(--muted)]/60 px-3 pt-5 pb-1 font-semibold">
       {label}
     </div>
   );
@@ -334,14 +334,14 @@ export function Sidebar({
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
       `}
       style={{
-        borderRight: "1px solid var(--sidebar-border)",
-        background: "var(--sidebar-bg)",
+        borderRight: "1px solid var(--border)",
+        background: "var(--surface)",
       }}
     >
       {/* Mobile close button */}
       <button
-        className="lg:hidden absolute top-3 right-3 z-10 p-1.5 rounded-md transition-colors hover:bg-[var(--sidebar-hover-bg)]"
-        style={{ color: "var(--sidebar-text)" }}
+        className="lg:hidden absolute top-3 right-3 z-10 p-1.5 rounded-md transition-colors hover:bg-[var(--ba-4)]"
+        style={{ color: "var(--muted)" }}
         onClick={() => setOpen(false)}
         aria-label="Zamknij menu"
       >
@@ -390,18 +390,18 @@ export function Sidebar({
 
       <div
         className="px-2.5 pb-3 pt-2"
-        style={{ borderTop: "1px solid var(--sidebar-border)" }}
+        style={{ borderTop: "1px solid var(--border)" }}
       >
         <form action="/api/auth/signout" method="POST">
           <button
             type="submit"
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)] transition-all"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)] transition-all"
           >
             <span className="shrink-0">{Icons.signout}</span>
             <span className="tracking-tight">Wyloguj</span>
           </button>
         </form>
-        <p className="text-[10px] text-[var(--sidebar-section)] px-3 pt-1">v1.0.0</p>
+        <p className="text-[10px] text-[var(--muted)]/40 px-3 pt-1">v1.0.0</p>
       </div>
     </aside>
     </>
