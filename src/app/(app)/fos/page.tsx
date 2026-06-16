@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FosSprint, FosWeeklyPriority, FosPriorityStatus } from "@/lib/fos-types";
 import { getWeekStart } from "@/lib/fos-types";
@@ -14,12 +15,24 @@ function getTodayStr() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function FosCommandCenter() {
+  const router = useRouter();
   const [sprint, setSprint] = useState<FosSprint | null>(null);
   const [priorities, setPriorities] = useState<FosWeeklyPriority[]>([]);
   const [loading, setLoading] = useState(true);
   const [eodOpen, setEodOpen] = useState(false);
   const weekStart = getWeekStart();
   const today = getTodayStr();
+
+  // Auto-refresh at midnight — new day starts, today's tasks reset
+  useEffect(() => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setDate(now.getDate() + 1);
+    midnight.setHours(0, 0, 0, 0);
+    const ms = midnight.getTime() - now.getTime();
+    const t = setTimeout(() => router.refresh(), ms);
+    return () => clearTimeout(t);
+  }, [router]);
 
   const load = useCallback(async () => {
     setLoading(true);

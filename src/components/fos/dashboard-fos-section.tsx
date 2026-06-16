@@ -50,7 +50,7 @@ export async function DashboardFosSection() {
   const accountabilityScore =
     completed.length > 0 ? Math.round((onTime.length / completed.length) * 100) : 100;
 
-  const goalItem = priorities.find((p) => p.is_company_goal);
+  const goalItems = priorities.filter((p) => p.is_company_goal);
   const majorItems = priorities.filter((p) => !p.is_company_goal);
 
   const daysLeft = sprint
@@ -91,8 +91,8 @@ export async function DashboardFosSection() {
         </Link>
       </div>
 
-      {/* Company Goal + Tasks — interactive client component */}
-      <DashboardFosInteractive initialGoal={goalItem ?? null} initialTasks={majorItems} />
+      {/* Company Goals + Tasks — interactive client component */}
+      <DashboardFosInteractive initialGoals={goalItems} initialTasks={majorItems} />
 
       {/* Sprint card */}
       <div
