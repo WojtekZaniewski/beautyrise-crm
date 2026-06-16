@@ -26,6 +26,9 @@ export function WeeklyReviewForm() {
   const [saved, setSaved] = useState(false);
   const [allReviews, setAllReviews] = useState<FosWeeklyReview[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  // Weekly review odblokowane tylko w niedzielę (getDay() === 0).
+  // Liczone po mount, żeby uniknąć rozjazdu hydracji (serwer vs. lokalna strefa czasowa).
+  const [isSunday, setIsSunday] = useState<boolean | null>(null);
 
   const loadWeek = (w: string) => {
     fetch(`/api/fos/reviews?week=${w}`)
@@ -55,6 +58,7 @@ export function WeeklyReviewForm() {
 
   useEffect(() => { loadWeek(week); }, [week]);
   useEffect(() => { if (showHistory) loadAll(); }, [showHistory]);
+  useEffect(() => { setIsSunday(new Date().getDay() === 0); }, []);
 
   const save = async () => {
     setSaving(true); setSaved(false);
@@ -110,37 +114,52 @@ export function WeeklyReviewForm() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {QUESTIONS.map(({ key, label, placeholder }) => (
-          <div key={key}>
-            <label className="text-[12px] font-medium block mb-1.5">{label}</label>
-            <textarea
-              value={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-              placeholder={placeholder}
-              rows={3}
-              className="w-full rounded-lg px-3 py-2 text-[13px] outline-none resize-none"
-              style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center gap-3 mt-4">
-        <button
-          onClick={save}
-          disabled={saving}
-          className="px-5 py-2 rounded-lg text-[13px] font-medium text-white disabled:opacity-50"
-          style={{ background: "var(--accent)" }}
+      {isSunday === false ? (
+        <div
+          className="rounded-lg p-8 text-center"
+          style={{ background: "var(--ba-4)", border: "1px dashed var(--border)" }}
         >
-          {saving ? "Zapisuję..." : "Zapisz review"}
-        </button>
-        {saved && (
-          <span className="text-[12px] font-medium" style={{ color: "#FF4C00" }}>
-            ✓ Zapisano
-          </span>
-        )}
-      </div>
+          <div className="text-[28px] mb-2">🔒</div>
+          <p className="text-[13px] font-medium">Weekly Review robimy tylko w niedzielę</p>
+          <p className="text-[12px] mt-1" style={{ color: "var(--muted)" }}>
+            Poczekaj na następną niedzielę.
+          </p>
+        </div>
+      ) : isSunday === true ? (
+        <>
+          <div className="space-y-4">
+            {QUESTIONS.map(({ key, label, placeholder }) => (
+              <div key={key}>
+                <label className="text-[12px] font-medium block mb-1.5">{label}</label>
+                <textarea
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  placeholder={placeholder}
+                  rows={3}
+                  className="w-full rounded-lg px-3 py-2 text-[13px] outline-none resize-none"
+                  style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={save}
+              disabled={saving}
+              className="px-5 py-2 rounded-lg text-[13px] font-medium text-white disabled:opacity-50"
+              style={{ background: "var(--accent)" }}
+            >
+              {saving ? "Zapisuję..." : "Zapisz review"}
+            </button>
+            {saved && (
+              <span className="text-[12px] font-medium" style={{ color: "#FF4C00" }}>
+                ✓ Zapisano
+              </span>
+            )}
+          </div>
+        </>
+      ) : null}
 
       {showHistory && allReviews.length > 0 && (
         <div className="mt-5 space-y-3 pt-4" style={{ borderTop: "1px solid var(--border)" }}>

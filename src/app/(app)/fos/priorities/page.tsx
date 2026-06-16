@@ -6,7 +6,7 @@ export default function PrioritiesPage() {
       <div className="mb-6">
         <h1 className="text-[20px] font-semibold">Weekly Priorities</h1>
         <p className="text-[13px] mt-0.5" style={{ color: "var(--muted)" }}>
-          Maks. 1 Company Goal + 3 Major Priorities na tydzień.
+          Maks. 3 priorytety na tydzień. Cel tygodnia ustawiasz w sprincie.
         </p>
       </div>
       <WeeklyPrioritiesClient />

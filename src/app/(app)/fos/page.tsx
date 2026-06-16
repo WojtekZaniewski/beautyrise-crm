@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
+import { WeeklyProductivity } from "@/components/fos/weekly-productivity";
+import { WeekCalendar } from "@/components/fos/week-calendar";
 import type {
   FosSprint,
   FosWeeklyPriority,
@@ -211,13 +213,19 @@ function CompanyGoalCard({
   const goals = priorities.filter((p) => p.is_company_goal);
   if (goals.length === 0) return null;
   const tasks = priorities.filter((p) => !p.is_company_goal);
-  const done = tasks.filter((p) => p.status === "completed").length;
+  // Ring reflects week task completion; with no supporting tasks it falls back
+  // to the goal's own status (check the goal → 100%), so it never sticks at 0/0.
+  const hasTasks = tasks.length > 0;
+  const total = hasTasks ? tasks.length : goals.length;
+  const done = hasTasks
+    ? tasks.filter((p) => p.status === "completed").length
+    : goals.filter((p) => p.status === "completed").length;
 
   return (
     <div className="rounded-xl px-4 py-4 mb-3"
       style={{ background: "linear-gradient(135deg, rgba(255,76,0,0.08) 0%, rgba(255,255,255,0.97) 100%)", border: "2px solid rgba(255,76,0,0.25)" }}>
       <div className="flex gap-4">
-        <CircleProgress done={done} total={tasks.length} size={60} />
+        <CircleProgress done={done} total={total} size={60} />
         <div className="flex-1 min-w-0">
           <div className="text-[9.5px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--accent)" }}>Cel tygodnia</div>
           {goals.map((g) => (
@@ -291,20 +299,50 @@ function FireTasksSection({ tasks, onToggle, onUnfire }: {
 }
 
 // ─── Task Row (used inside TaskSection) ───────────────────────────────────────
-function TaskRow({ task, onToggle, onDelete, onSetFire }: {
+function TaskRow({ task, today, onToggle, onDelete, onSetFire, onSetDeadline }: {
   task: FosWeeklyPriority;
+  today: string;
   onToggle: (p: FosWeeklyPriority) => void;
   onDelete: (id: string) => void;
   onSetFire: (id: string) => void;
+  onSetDeadline: (id: string, date: string | null) => void;
 }) {
   const done = task.status === "completed";
+  const overdue = !done && !!task.deadline && task.deadline < today;
+  const [editingDate, setEditingDate] = useState(false);
+
+  function commitDate(value: string) {
+    setEditingDate(false);
+    onSetDeadline(task.id, value || null);
+  }
+
   return (
     <div className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
       <button onClick={() => onToggle(task)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
-        style={{ borderColor: done ? "#22c55e" : "var(--border)", background: done ? "#22c55e" : "transparent" }}>
+        style={{ borderColor: done ? "#22c55e" : overdue ? "#ef4444" : "var(--border)", background: done ? "#22c55e" : "transparent" }}>
         {done && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
       </button>
-      <span className={`text-[12px] flex-1 min-w-0 truncate ${done ? "line-through opacity-40" : ""}`}>{task.title}</span>
+      <span className={`text-[12px] flex-1 min-w-0 truncate ${done ? "line-through opacity-40" : ""}`}
+        style={{ color: overdue ? "#ef4444" : "inherit" }}>{task.title}</span>
+      {editingDate ? (
+        <input type="date" autoFocus defaultValue={task.deadline ?? ""}
+          onBlur={(e) => commitDate(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commitDate((e.target as HTMLInputElement).value);
+            if (e.key === "Escape") setEditingDate(false);
+          }}
+          className="text-[10px] px-1 py-0.5 rounded outline-none shrink-0"
+          style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }} />
+      ) : task.deadline ? (
+        <button onClick={() => setEditingDate(true)} title="Zmień deadline"
+          className="text-[10px] tabular-nums shrink-0 px-1 rounded transition-colors hover:bg-[var(--ba-6)]"
+          style={{ color: overdue ? "#ef4444" : "var(--muted)", fontWeight: overdue ? 600 : 400 }}>
+          {formatDate(task.deadline)}
+        </button>
+      ) : (
+        <button onClick={() => setEditingDate(true)} title="Ustaw deadline"
+          className="opacity-0 group-hover:opacity-100 text-[10px] shrink-0 transition-opacity" style={{ color: "var(--muted)" }}>📅</button>
+      )}
       <button onClick={() => onSetFire(task.id)}
         className="opacity-0 group-hover:opacity-60 shrink-0 text-[10px] transition-opacity hover:opacity-100"
         title="Oznacz jako krytyczne" style={{ color: "var(--accent)" }}>🔥</button>
@@ -314,22 +352,25 @@ function TaskRow({ task, onToggle, onDelete, onSetFire }: {
 }
 
 // ─── Task Section (ghost input) ────────────────────────────────────────────────
-function TaskSection({ label, tasks, owner, scope, onToggle, onDelete, onAdd, onSetFire, autoFocus }: {
-  label: string; tasks: FosWeeklyPriority[]; owner: Owner; scope: "today" | "week";
+function TaskSection({ label, tasks, owner, scope, today, onToggle, onDelete, onAdd, onSetFire, onSetDeadline, autoFocus }: {
+  label: string; tasks: FosWeeklyPriority[]; owner: Owner; scope: "today" | "week"; today: string;
   onToggle: (p: FosWeeklyPriority) => void; onDelete: (id: string) => void;
-  onAdd: (owner: Owner, scope: "today" | "week", title: string) => void;
+  onAdd: (owner: Owner, scope: "today" | "week", title: string, deadline?: string) => void;
   onSetFire: (id: string) => void;
+  onSetDeadline: (id: string, date: string | null) => void;
   autoFocus?: boolean;
 }) {
   const [draft, setDraft] = useState("");
+  const [draftDeadline, setDraftDeadline] = useState("");
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (autoFocus) inputRef.current?.focus(); }, [autoFocus]);
 
   function submit() {
-    if (draft.trim()) onAdd(owner, scope, draft.trim());
+    if (draft.trim()) onAdd(owner, scope, draft.trim(), draftDeadline || undefined);
     setDraft("");
+    setDraftDeadline("");
   }
 
   const pending = tasks.filter((t) => t.status !== "completed");
@@ -339,15 +380,20 @@ function TaskSection({ label, tasks, owner, scope, onToggle, onDelete, onAdd, on
     <div className="mb-3">
       <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--muted)" }}>{label}</div>
       <div className="space-y-0.5">
-        {pending.map((t) => <TaskRow key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onSetFire={onSetFire} />)}
-        {completed.map((t) => <TaskRow key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onSetFire={onSetFire} />)}
+        {pending.map((t) => <TaskRow key={t.id} task={t} today={today} onToggle={onToggle} onDelete={onDelete} onSetFire={onSetFire} onSetDeadline={onSetDeadline} />)}
+        {completed.map((t) => <TaskRow key={t.id} task={t} today={today} onToggle={onToggle} onDelete={onDelete} onSetFire={onSetFire} onSetDeadline={onSetDeadline} />)}
       </div>
-      <input ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") submit(); if (e.key === "Escape") setDraft(""); }}
-        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        placeholder="+ Dodaj task..."
-        className="mt-1 w-full text-[11.5px] px-2 py-1 rounded-lg outline-none transition-all"
-        style={{ background: focused || draft ? "var(--ba-4)" : "transparent", border: focused || draft ? "1px solid var(--accent)" : "1px solid transparent", color: "var(--text)" }} />
+      <div className="mt-1 flex gap-1">
+        <input ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); if (e.key === "Escape") { setDraft(""); setDraftDeadline(""); } }}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          placeholder="+ Dodaj task..."
+          className="flex-1 text-[11.5px] px-2 py-1 rounded-lg outline-none transition-all"
+          style={{ background: focused || draft ? "var(--ba-4)" : "transparent", border: focused || draft ? "1px solid var(--accent)" : "1px solid transparent", color: "var(--text)" }} />
+        <input type="date" value={draftDeadline} onChange={(e) => setDraftDeadline(e.target.value)} title="Deadline (opcjonalnie)"
+          className="shrink-0 text-[10px] px-1 py-1 rounded-lg outline-none transition-all"
+          style={{ background: draftDeadline ? "var(--ba-4)" : "transparent", border: draftDeadline ? "1px solid var(--accent)" : "1px solid var(--border)", color: "var(--muted)" }} />
+      </div>
     </div>
   );
 }
@@ -418,11 +464,12 @@ function FounderJournal({ owner, today, initialData }: {
 }
 
 // ─── Person Panel ──────────────────────────────────────────────────────────────
-function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, onSetFire, journal, isFirst }: {
+function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, onSetFire, onSetDeadline, journal, isFirst }: {
   owner: Owner; tasks: FosWeeklyPriority[]; today: string;
   onToggle: (p: FosWeeklyPriority) => void; onDelete: (id: string) => void;
-  onAdd: (owner: Owner, scope: "today" | "week", title: string) => void;
+  onAdd: (owner: Owner, scope: "today" | "week", title: string, deadline?: string) => void;
   onSetFire: (id: string) => void;
+  onSetDeadline: (id: string, date: string | null) => void;
   journal: FosFounderJournal | null; isFirst?: boolean;
 }) {
   const todayTasks = tasks.filter((t) => t.deadline === today);
@@ -441,8 +488,8 @@ function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, onSetFire
           {tasks.length === 0 ? "0" : done === tasks.length ? "✓" : tasks.length - done}
         </div>
       </div>
-      <TaskSection label="DZIŚ" tasks={todayTasks} owner={owner} scope="today" onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} onSetFire={onSetFire} autoFocus={isFirst} />
-      <TaskSection label="TEN TYDZIEŃ" tasks={weekTasks} owner={owner} scope="week" onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} onSetFire={onSetFire} />
+      <TaskSection label="DZIŚ" tasks={todayTasks} owner={owner} scope="today" today={today} onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} onSetFire={onSetFire} onSetDeadline={onSetDeadline} autoFocus={isFirst} />
+      <TaskSection label="TEN TYDZIEŃ" tasks={weekTasks} owner={owner} scope="week" today={today} onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} onSetFire={onSetFire} onSetDeadline={onSetDeadline} />
       <FounderJournal owner={owner} today={today} initialData={journal} />
     </div>
   );
@@ -770,6 +817,7 @@ export default function FosCommandCenter() {
   const [waiting, setWaiting] = useState<FosWaitingFor[]>([]);
   const [journals, setJournals] = useState<Record<string, FosFounderJournal | null>>({});
   const [history, setHistory] = useState<FosWeekHistory[]>([]);
+  const [businessMath, setBusinessMath] = useState<{ months: { month: string; income: number }[]; avgMonthlyRevenue: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const weekStart = getWeekStart();
   const today = getTodayStr();
@@ -786,7 +834,7 @@ export default function FosCommandCenter() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes, historyRes] =
+    const [sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes, historyRes, bmRes] =
       await Promise.all([
         fetch("/api/fos/sprints").then((r) => r.json()),
         fetch(`/api/fos/priorities?week=${weekStart}`).then((r) => r.json()),
@@ -798,6 +846,7 @@ export default function FosCommandCenter() {
         fetch("/api/fos/waiting").then((r) => r.json()),
         fetch(`/api/fos/journal?date=${today}`).then((r) => r.json()),
         fetch("/api/fos/history").then((r) => r.json()),
+        fetch("/api/fos/business-math").then((r) => r.json()).catch(() => null),
       ]);
     const active = (sprintRes.data ?? []).find((s: FosSprint) => s.status === "active") ?? null;
     setSprint(active);
@@ -812,6 +861,7 @@ export default function FosCommandCenter() {
     for (const entry of journalRes.data ?? []) j[entry.author_label] = entry;
     setJournals(j);
     setHistory(historyRes.data ?? []);
+    setBusinessMath(bmRes && Array.isArray(bmRes.months) ? bmRes : null);
     setLoading(false);
   }, [weekStart, today]);
 
@@ -843,12 +893,12 @@ export default function FosCommandCenter() {
     await patchPriority(id, { is_fire: false });
   }, []);
 
-  const addTask = useCallback(async (owner: Owner, scope: "today" | "week", title: string) => {
-    const deadline = scope === "today" ? today : undefined;
+  const addTask = useCallback(async (owner: Owner | "", scope: "today" | "week", title: string, deadlineArg?: string) => {
+    const deadline = deadlineArg ?? (scope === "today" ? today : undefined);
     const tempId = `tmp-${Date.now()}`;
     const optimistic: FosWeeklyPriority = {
       id: tempId, workspace_id: "", sprint_id: sprint?.id ?? null, week_start: weekStart,
-      title, description: null, owner_id: null, owner_label: owner, deadline: deadline ?? null,
+      title, description: null, owner_id: null, owner_label: owner || null, deadline: deadline ?? null,
       status: "not_started", is_company_goal: false, is_fire: false, completed_at: null,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
@@ -856,7 +906,7 @@ export default function FosCommandCenter() {
     const res = await fetch("/api/fos/priorities", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, week_start: weekStart, owner_label: owner, deadline, sprint_id: sprint?.id ?? null }),
+      body: JSON.stringify({ title, week_start: weekStart, owner_label: owner || null, deadline, sprint_id: sprint?.id ?? null }),
     });
     const data = await res.json();
     if (data.data) setPriorities((prev) => prev.map((x) => (x.id === tempId ? data.data : x)));
@@ -865,6 +915,11 @@ export default function FosCommandCenter() {
   const deleteTask = useCallback(async (id: string) => {
     setPriorities((prev) => prev.filter((x) => x.id !== id));
     await fetch(`/api/fos/priorities/${id}`, { method: "DELETE" });
+  }, []);
+
+  const setDeadline = useCallback(async (id: string, date: string | null) => {
+    setPriorities((prev) => prev.map((x) => (x.id === id ? { ...x, deadline: date } : x)));
+    await patchPriority(id, { deadline: date });
   }, []);
 
   // ── Pending Decision actions ──────────────────────────────────────────────────
@@ -989,6 +1044,9 @@ export default function FosCommandCenter() {
         {metrics ? <ExecutionMetrics metrics={metrics} history={history} /> : <div className="h-32 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />}
       </div>
 
+      {/* Productivity: done vs not-done, stats, budget */}
+      <WeeklyProductivity priorities={priorities} history={history} businessMath={businessMath} today={today} />
+
       {/* Company Goal + Journal Today */}
       {priorities.some((p) => p.is_company_goal) ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
@@ -1016,11 +1074,23 @@ export default function FosCommandCenter() {
             onDelete={deleteTask}
             onAdd={addTask}
             onSetFire={setFire}
+            onSetDeadline={setDeadline}
             journal={journals[owner] ?? null}
             isFirst={i === 0}
           />
         ))}
       </div>
+
+      {/* Week plan calendar */}
+      <WeekCalendar
+        priorities={priorities}
+        today={today}
+        weekStart={weekStart}
+        onToggle={toggleStatus}
+        onDelete={deleteTask}
+        onAdd={addTask}
+        onSetDeadline={setDeadline}
+      />
 
       {/* Unassigned tasks */}
       {(() => {
@@ -1031,7 +1101,7 @@ export default function FosCommandCenter() {
             <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Bez właściciela</div>
             <div className="space-y-0.5">
               {unassigned.map((t) => (
-                <TaskRow key={t.id} task={t} onToggle={toggleStatus} onDelete={deleteTask} onSetFire={setFire} />
+                <TaskRow key={t.id} task={t} today={today} onToggle={toggleStatus} onDelete={deleteTask} onSetFire={setFire} onSetDeadline={setDeadline} />
               ))}
             </div>
           </div>

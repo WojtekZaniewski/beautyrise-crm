@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { displayName } from "@/app/api/me/route";
 
 export async function GET(req: NextRequest) {
   const supabase = createServiceClient();
@@ -20,12 +21,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
+
+  // Owner is ALWAYS the authenticated account — never taken from the client,
+  // so nobody can attribute a task to someone else.
+  const userClient = await createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const ownerName = displayName(user);
+
   const body = await req.json();
   const {
     title,
     description,
-    owner_id,
-    owner_label,
     deadline,
     week_start,
     is_company_goal,
@@ -68,8 +75,8 @@ export async function POST(req: NextRequest) {
       workspace_id: workspaceId,
       title,
       description: description ?? null,
-      owner_id: owner_id ?? null,
-      owner_label: owner_label ?? null,
+      owner_id: is_company_goal ? null : user.id,
+      owner_label: is_company_goal ? null : ownerName,
       deadline: deadline ?? null,
       week_start,
       is_company_goal: is_company_goal ?? false,

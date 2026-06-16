@@ -36,7 +36,6 @@ export function WeeklyPrioritiesClient() {
     description: "",
     owner_label: "",
     deadline: "",
-    is_company_goal: false,
   });
 
   const load = (w = week) => {
@@ -58,12 +57,12 @@ export function WeeklyPrioritiesClient() {
     });
     const json = await res.json();
     if (!res.ok) {
-      if (json.code === "LIMIT_EXCEEDED" || json.code === "GOAL_LIMIT") {
+      if (json.code === "LIMIT_EXCEEDED") {
         setLimitWarning(json.error);
       }
       setSaving(false); return;
     }
-    setForm({ title: "", description: "", owner_label: "", deadline: "", is_company_goal: false });
+    setForm({ title: "", description: "", owner_label: "", deadline: "" });
     setShowForm(false); setSaving(false); load();
   };
 
@@ -81,8 +80,7 @@ export function WeeklyPrioritiesClient() {
     load();
   };
 
-  const goalItem = priorities.find((p) => p.is_company_goal);
-  const majorItems = priorities.filter((p) => !p.is_company_goal);
+  const items = priorities;
 
   // Compute simple accountability per owner
   const ownerScores: Record<string, { done: number; total: number }> = {};
@@ -147,25 +145,6 @@ export function WeeklyPrioritiesClient() {
           className="rounded-xl p-4 mb-4 space-y-3"
           style={{ background: "var(--ba-4)", border: "1px solid var(--border)" }}
         >
-          <div className="flex gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.is_company_goal}
-                onChange={(e) => setForm({ ...form, is_company_goal: e.target.checked })}
-                className="rounded"
-              />
-              <span
-                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}
-              >
-                Company Goal
-              </span>
-            </label>
-            <span className="text-[11px] text-[var(--muted)] self-center">
-              (max 1 goal + 3 priorities)
-            </span>
-          </div>
           <input
             placeholder="Tytuł priorytetu *"
             value={form.title}
@@ -222,51 +201,29 @@ export function WeeklyPrioritiesClient() {
           Ładowanie...
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* Company Goal */}
-          {goalItem ? (
-            <div>
-              <div className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: "var(--muted)" }}>
-                Company Goal
-              </div>
-              <PriorityRow
-                p={goalItem}
-                onStatusChange={updateStatus}
-                onDelete={deletePriority}
-                ownerScore={goalItem.owner_label ? ownerScores[goalItem.owner_label] : undefined}
-              />
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: "var(--muted)" }}>
+              Priorytety ({items.length}/3)
+            </div>
+          </div>
+          {items.length === 0 ? (
+            <div className="text-[12px] py-3 px-4 rounded-lg text-center" style={{ background: "var(--ba-4)", color: "var(--muted)" }}>
+              Brak priorytetów na ten tydzień
             </div>
           ) : (
-            <div className="text-[12px] py-3 px-4 rounded-lg text-center" style={{ background: "var(--ba-4)", color: "var(--muted)" }}>
-              Brak Company Goal na ten tydzień
+            <div className="space-y-2">
+              {items.map((p) => (
+                <PriorityRow
+                  key={p.id}
+                  p={p}
+                  onStatusChange={updateStatus}
+                  onDelete={deletePriority}
+                  ownerScore={p.owner_label ? ownerScores[p.owner_label] : undefined}
+                />
+              ))}
             </div>
           )}
-
-          {/* Major Priorities */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: "var(--muted)" }}>
-                Major Priorities ({majorItems.length}/3)
-              </div>
-            </div>
-            {majorItems.length === 0 ? (
-              <div className="text-[12px] py-3 px-4 rounded-lg text-center" style={{ background: "var(--ba-4)", color: "var(--muted)" }}>
-                Brak priorytetów na ten tydzień
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {majorItems.map((p) => (
-                  <PriorityRow
-                    key={p.id}
-                    p={p}
-                    onStatusChange={updateStatus}
-                    onDelete={deletePriority}
-                    ownerScore={p.owner_label ? ownerScores[p.owner_label] : undefined}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>

@@ -50,12 +50,8 @@ export async function DashboardFosSection() {
   const accountabilityScore =
     completed.length > 0 ? Math.round((onTime.length / completed.length) * 100) : 100;
 
-  const goalItems = priorities.filter((p) => p.is_company_goal);
+  // Cel tygodnia = aktywny sprint (jedno źródło prawdy). Zadania = pozostałe priorytety.
   const majorItems = priorities.filter((p) => !p.is_company_goal);
-
-  const daysLeft = sprint
-    ? Math.max(0, Math.ceil((new Date(sprint.end_date).getTime() - Date.now()) / 86400000))
-    : 0;
 
   const metrics = [
     { label: "Ukończone", value: tasksCompletedThisWeek, suffix: "" },
@@ -91,97 +87,8 @@ export async function DashboardFosSection() {
         </Link>
       </div>
 
-      {/* Company Goals + Tasks — interactive client component */}
-      <DashboardFosInteractive initialGoals={goalItems} initialTasks={majorItems} />
-
-      {/* Sprint card */}
-      <div
-        className="glass-card rounded-xl px-5 py-4 mb-3"
-        style={sprint ? {
-          borderLeft: "3px solid var(--accent)",
-        } : undefined}
-      >
-        {!sprint ? (
-          <div className="flex items-center justify-between">
-            <div>
-              <div
-                className="text-[13px] font-medium mb-0.5"
-                style={{ color: "var(--muted)" }}
-              >
-                Brak aktywnego sprintu
-              </div>
-              <div className="text-[12px]" style={{ color: "var(--muted)" }}>
-                Zdefiniuj sprint, aby śledzić postępy i egzekucję.
-              </div>
-            </div>
-            <Link
-              href="/fos/sprints"
-              className="px-4 py-2 rounded-lg text-[12px] font-semibold text-white shrink-0"
-              style={{ background: "var(--accent)" }}
-            >
-              + Utwórz sprint
-            </Link>
-          </div>
-        ) : (
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: "var(--accent)" }}
-                >
-                  {sprint.name}
-                </span>
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: "#FF4C0015", color: "#FF4C00", border: "1px solid #FF4C0030" }}
-                >
-                  Aktywny
-                </span>
-              </div>
-              <div className="text-[17px] font-semibold leading-snug mb-3 line-clamp-2">
-                {sprint.goal}
-              </div>
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex-1 h-2 rounded-full overflow-hidden max-w-xs"
-                  style={{ background: "var(--border)" }}
-                >
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${sprintPct}%`, background: "var(--accent)" }}
-                  />
-                </div>
-                <span
-                  className="text-[11px] tabular-nums shrink-0"
-                  style={{ color: "var(--muted)" }}
-                >
-                  {sprint.start_date.slice(5).replace("-", ".")} –{" "}
-                  {sprint.end_date.slice(5).replace("-", ".")}
-                </span>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <div
-                className="text-[36px] font-bold leading-none tabular-nums"
-                style={{ color: "var(--accent)" }}
-              >
-                {sprintPct}%
-              </div>
-              <div className="text-[11px] mt-0.5 tabular-nums" style={{ color: "var(--muted)" }}>
-                {daysLeft === 0 ? "Kończy się dziś" : `${daysLeft} dni`}
-              </div>
-              <Link
-                href="/fos/sprints"
-                className="text-[10px] hover:underline mt-1 block"
-                style={{ color: "var(--accent)" }}
-              >
-                Edytuj
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Cel tygodnia (sprint) + Tasks — interactive client component */}
+      <DashboardFosInteractive sprint={sprint} initialTasks={majorItems} />
 
       {/* Execution Metrics */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
