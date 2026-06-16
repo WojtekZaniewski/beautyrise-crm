@@ -10,7 +10,7 @@ export async function PATCH(
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
   const body = await req.json();
-  const allowed = ["title", "description", "owner_id", "owner_label", "deadline", "status"];
+  const allowed = ["title", "description", "owner_id", "owner_label", "deadline", "status", "is_fire"];
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const k of allowed) if (k in body) update[k] = body[k];
   if (body.status === "completed" && !body.completed_at)

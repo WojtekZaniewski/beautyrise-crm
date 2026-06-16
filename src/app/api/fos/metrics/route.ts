@@ -51,13 +51,16 @@ export async function GET() {
   const weekPriorities = prioritiesRes.data ?? [];
   const allPriorities = allPrioritiesRes.data ?? [];
 
-  const tasksCompletedThisWeek = weekPriorities.filter((p) => p.status === "completed").length;
-  const tasksOverdue = weekPriorities.filter(
+  const nonGoalWeek = weekPriorities.filter((p) => !p.is_company_goal);
+  const tasksCompletedThisWeek = nonGoalWeek.filter((p) => p.status === "completed").length;
+  const tasksOverdue = nonGoalWeek.filter(
     (p) => p.status !== "completed" && p.deadline && p.deadline < todayStr,
   ).length;
-  const blockedTasks = weekPriorities.filter((p) => p.status === "blocked").length;
-  const activeProjects = weekPriorities.filter((p) => p.status === "in_progress").length;
+  const blockedTasks = nonGoalWeek.filter((p) => p.status === "blocked").length;
+  const activeProjects = nonGoalWeek.filter((p) => p.status === "in_progress").length;
   const sprintCompletionRate = sprint?.completion_pct ?? 0;
+  const commitmentScore =
+    nonGoalWeek.length > 0 ? Math.round((tasksCompletedThisWeek / nonGoalWeek.length) * 100) : 100;
   const leadsThisWeek = leadsRes.count ?? 0;
   const hasWeeklyReview = (reviewRes.count ?? 0) > 0;
 
@@ -83,6 +86,7 @@ export async function GET() {
     tasksOverdue,
     sprintCompletionRate,
     accountabilityScore,
+    commitmentScore,
     activeProjects,
     blockedTasks,
     leadsThisWeek,

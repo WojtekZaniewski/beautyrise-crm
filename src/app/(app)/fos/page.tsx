@@ -12,7 +12,7 @@ import type {
   FosActivityItem,
   FosDecision,
   FosWaitingFor,
-  FosDailyNote,
+  FosFounderJournal,
 } from "@/lib/fos-types";
 import { getWeekStart } from "@/lib/fos-types";
 
@@ -42,7 +42,7 @@ function CircleProgress({ done, total, size = 56 }: { done: number; total: numbe
   const circ = 2 * Math.PI * r;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   const offset = circ - (pct / 100) * circ;
-  const color = pct === 100 ? "#FF4C00" : "var(--accent)";
+  const color = pct === 100 ? "#22c55e" : "var(--accent)";
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
@@ -64,60 +64,44 @@ function WeeklyScoreboard({ metrics }: { metrics: FosMetrics | null }) {
   if (!metrics) return <div className="h-10 rounded-xl mb-3 animate-pulse" style={{ background: "var(--ba-2)" }} />;
   const items = [
     { label: "Ukończone", value: metrics.tasksCompletedThisWeek, danger: false },
+    { label: "Commitment", value: `${metrics.commitmentScore}%`, danger: metrics.commitmentScore < 70 },
     { label: "Nowe leady", value: metrics.leadsThisWeek, danger: false },
     { label: "Zaległe", value: metrics.tasksOverdue, danger: metrics.tasksOverdue > 0 },
     { label: "Zablokowane", value: metrics.blockedTasks, danger: metrics.blockedTasks > 0 },
     { label: "Accountability", value: `${metrics.accountabilityScore}%`, danger: metrics.accountabilityScore < 70 },
   ];
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl mb-3 flex-wrap" style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}>
+    <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl mb-3 flex-wrap"
+      style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}>
       <span className="text-[9.5px] font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--muted)" }}>Ten tydzień</span>
       <div className="w-px h-3 shrink-0" style={{ background: "var(--border)" }} />
       {items.map(({ label, value, danger }) => (
         <div key={label} className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px]" style={{ color: "var(--muted)" }}>{label}</span>
-          <span className="text-[13px] font-bold tabular-nums" style={{ color: danger ? "#1C1917" : "inherit" }}>{value}</span>
+          <span className="text-[13px] font-bold tabular-nums" style={{ color: danger ? "#ef4444" : "inherit" }}>{value}</span>
         </div>
       ))}
     </div>
   );
 }
 
-// ─── Health Score ──────────────────────────────────────────────────────────────
-function computeHealth(metrics: FosMetrics, sprint: FosSprint | null) {
-  const focus = sprint ? Math.round(sprint.completion_pct / 10) : 0;
-  const execution = Math.round(metrics.accountabilityScore / 10);
-  const communication = metrics.hasWeeklyReview ? 9 : 4;
-  const consistency = Math.max(0, 10 - metrics.sprintGoalChanges * 3);
-  const overall = ((focus + execution + communication + consistency) / 4);
-  return { focus, execution, communication, consistency, overall: overall.toFixed(1) };
-}
-
-function HealthScore({ metrics, sprint }: { metrics: FosMetrics; sprint: FosSprint | null }) {
-  const h = computeHealth(metrics, sprint);
-  const overall = parseFloat(h.overall);
-  const color = overall >= 7 ? "#FF4C00" : overall >= 5 ? "#FF8C42" : "#1C1917";
-  const dims = [
-    { label: "Focus", value: h.focus },
-    { label: "Execution", value: h.execution },
-    { label: "Communication", value: h.communication },
-    { label: "Consistency", value: h.consistency },
+// ─── Execution Metrics (replaces Health Score) ────────────────────────────────
+function ExecutionMetrics({ metrics }: { metrics: FosMetrics }) {
+  const items = [
+    { label: "Accountability", value: `${metrics.accountabilityScore}%`, ok: metrics.accountabilityScore >= 80 },
+    { label: "Commitment", value: `${metrics.commitmentScore}%`, ok: metrics.commitmentScore >= 70 },
+    { label: "Zaległe", value: String(metrics.tasksOverdue), ok: metrics.tasksOverdue === 0 },
+    { label: "Zablokowane", value: String(metrics.blockedTasks), ok: metrics.blockedTasks === 0 },
   ];
   return (
     <div className="glass-card rounded-xl px-4 py-4 h-full">
-      <div className="flex items-start justify-between mb-3">
-        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Health Score</div>
-        <div className="text-[28px] font-bold leading-none tabular-nums" style={{ color }}>{h.overall}</div>
-      </div>
-      <div className="space-y-1.5">
-        {dims.map(({ label, value }) => (
-          <div key={label} className="flex items-center gap-2">
-            <span className="text-[10px] w-24 shrink-0" style={{ color: "var(--muted)" }}>{label}</span>
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${value * 10}%`, background: value >= 7 ? "#FF4C00" : value >= 5 ? "#FF8C42" : "#1C1917" }} />
-            </div>
-            <span className="text-[10px] tabular-nums w-4 text-right" style={{ color: "var(--muted)" }}>{value}</span>
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: "var(--muted)" }}>Execution</div>
+      <div className="grid grid-cols-2 gap-3">
+        {items.map(({ label, value, ok }) => (
+          <div key={label} className="rounded-lg px-3 py-2.5" style={{ background: "var(--ba-2)" }}>
+            <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>{label}</div>
+            <div className="text-[22px] font-bold tabular-nums leading-none"
+              style={{ color: ok ? "#22c55e" : "#ef4444" }}>{value}</div>
           </div>
         ))}
       </div>
@@ -161,29 +145,14 @@ function SprintCard({ sprint }: { sprint: FosSprint | null }) {
 
 // ─── Company Goal Card ─────────────────────────────────────────────────────────
 function CompanyGoalCard({
-  priorities,
-  onToggle,
-  onDelete,
-  onRename,
+  priorities, onToggle, onDelete,
 }: {
   priorities: FosWeeklyPriority[];
   onToggle: (p: FosWeeklyPriority) => void;
   onDelete: (id: string) => void;
-  onRename: (id: string, title: string) => void;
 }) {
-  const [editId, setEditId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const editRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { if (editId) editRef.current?.focus(); }, [editId]);
-  function startEdit(p: FosWeeklyPriority) { setEditId(p.id); setDraft(p.title); }
-  function commitEdit(orig: FosWeeklyPriority) {
-    const t = draft.trim();
-    setEditId(null);
-    if (t && t !== orig.title) onRename(orig.id, t);
-  }
   const goals = priorities.filter((p) => p.is_company_goal);
   if (goals.length === 0) return null;
-  // only tasks owned by this goal (tasks that share the week, not company goals)
   const tasks = priorities.filter((p) => !p.is_company_goal);
   const done = tasks.filter((p) => p.status === "completed").length;
 
@@ -200,46 +169,23 @@ function CompanyGoalCard({
                 style={{ borderColor: g.status === "completed" ? "#FF4C00" : "rgba(255,76,0,0.4)", background: g.status === "completed" ? "#FF4C00" : "transparent" }}>
                 {g.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
               </button>
-              {editId === g.id ? (
-                <input ref={editRef} value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onBlur={() => commitEdit(g)}
-                  onKeyDown={(e) => { if (e.key === "Enter") commitEdit(g); if (e.key === "Escape") setEditId(null); }}
-                  className="text-[14px] font-semibold leading-snug flex-1 min-w-0 bg-transparent outline-none border-b"
-                  style={{ borderColor: "var(--accent)", color: "var(--text)" }}
-                />
-              ) : (
-                <span onClick={() => startEdit(g)} title="Kliknij, aby edytować cel"
-                  className="text-[14px] font-semibold leading-snug flex-1 min-w-0 cursor-text hover:opacity-70 transition-opacity"
-                  style={{ textDecoration: g.status === "completed" ? "line-through" : "none", opacity: g.status === "completed" ? 0.5 : 1 }}>
-                  {g.title}
-                </span>
-              )}
+              <span className="text-[14px] font-semibold leading-snug flex-1 min-w-0"
+                style={{ textDecoration: g.status === "completed" ? "line-through" : "none", opacity: g.status === "completed" ? 0.5 : 1 }}>
+                {g.title}
+              </span>
               <button onClick={() => onDelete(g.id)} className="opacity-0 group-hover:opacity-100 shrink-0 text-[11px] transition-opacity mt-0.5"
-                style={{ color: "rgba(255,76,0,0.5)" }} title="Usuń cel">✕</button>
+                style={{ color: "rgba(255,76,0,0.5)" }}>✕</button>
             </div>
           ))}
           {tasks.length > 0 && (
             <div className="space-y-1 mt-1 pt-2" style={{ borderTop: "1px solid rgba(255,76,0,0.15)" }}>
               {tasks.map((t) => (
                 <div key={t.id} className="flex items-center gap-2 group">
-                  <button onClick={() => onToggle(t)}
-                    className="shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
+                  <button onClick={() => onToggle(t)} className="shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
                     style={{ borderColor: t.status === "completed" ? "#FF4C00" : "rgba(0,0,0,0.2)", background: t.status === "completed" ? "#FF4C00" : "transparent" }}>
                     {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
                   </button>
-                  {editId === t.id ? (
-                    <input ref={editRef} value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onBlur={() => commitEdit(t)}
-                      onKeyDown={(e) => { if (e.key === "Enter") commitEdit(t); if (e.key === "Escape") setEditId(null); }}
-                      className="text-[12px] flex-1 min-w-0 bg-transparent outline-none border-b"
-                      style={{ borderColor: "var(--accent)", color: "var(--text)" }}
-                    />
-                  ) : (
-                    <span onClick={() => startEdit(t)} title="Kliknij, aby edytować"
-                      className={`text-[12px] flex-1 min-w-0 truncate cursor-text hover:opacity-70 transition-opacity ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
-                  )}
+                  <span className={`text-[12px] flex-1 min-w-0 truncate ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
                   {t.owner_label && <span className="text-[10px]" style={{ color: "rgba(0,0,0,0.35)" }}>{t.owner_label}</span>}
                   <button onClick={() => onDelete(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0"
                     style={{ color: "rgba(255,76,0,0.4)" }}>✕</button>
@@ -253,13 +199,70 @@ function CompanyGoalCard({
   );
 }
 
+// ─── Fire Tasks Section ────────────────────────────────────────────────────────
+function FireTasksSection({ tasks, onToggle, onUnfire }: {
+  tasks: FosWeeklyPriority[];
+  onToggle: (p: FosWeeklyPriority) => void;
+  onUnfire: (id: string) => void;
+}) {
+  if (tasks.length === 0) return null;
+  return (
+    <div className="rounded-xl px-4 py-3 mb-3" style={{ background: "#FF4C0008", border: "2px solid rgba(255,76,0,0.3)" }}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--accent)" }}>🔥 Krytyczne dziś</span>
+        {tasks.length >= 3 && (
+          <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,76,0,0.15)", color: "var(--accent)" }}>max 3 — skup się</span>
+        )}
+      </div>
+      <div className="space-y-1">
+        {tasks.map((t) => (
+          <div key={t.id} className="flex items-center gap-2.5">
+            <button onClick={() => onToggle(t)} className="shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
+              style={{ borderColor: t.status === "completed" ? "#22c55e" : "var(--accent)", background: t.status === "completed" ? "#22c55e" : "transparent" }}>
+              {t.status === "completed" && <span className="text-white" style={{ fontSize: 9 }}>✓</span>}
+            </button>
+            <span className={`text-[13px] font-medium flex-1 min-w-0 truncate ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
+            {t.owner_label && (
+              <span className="text-[10px] shrink-0 px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,76,0,0.1)", color: "var(--accent)" }}>{t.owner_label}</span>
+            )}
+            <button onClick={() => onUnfire(t.id)} title="Usuń z krytycznych" className="shrink-0 text-[11px] transition-opacity hover:opacity-70" style={{ color: "var(--muted)" }}>🔥</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Task Row (used inside TaskSection) ───────────────────────────────────────
+function TaskRow({ task, onToggle, onDelete, onSetFire }: {
+  task: FosWeeklyPriority;
+  onToggle: (p: FosWeeklyPriority) => void;
+  onDelete: (id: string) => void;
+  onSetFire: (id: string) => void;
+}) {
+  const done = task.status === "completed";
+  return (
+    <div className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
+      <button onClick={() => onToggle(task)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
+        style={{ borderColor: done ? "#22c55e" : "var(--border)", background: done ? "#22c55e" : "transparent" }}>
+        {done && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
+      </button>
+      <span className={`text-[12px] flex-1 min-w-0 truncate ${done ? "line-through opacity-40" : ""}`}>{task.title}</span>
+      <button onClick={() => onSetFire(task.id)}
+        className="opacity-0 group-hover:opacity-60 shrink-0 text-[10px] transition-opacity hover:opacity-100"
+        title="Oznacz jako krytyczne" style={{ color: "var(--accent)" }}>🔥</button>
+      <button onClick={() => onDelete(task.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0" style={{ color: "var(--muted)" }}>✕</button>
+    </div>
+  );
+}
+
 // ─── Task Section (ghost input) ────────────────────────────────────────────────
-function TaskSection({
-  label, tasks, owner, scope, onToggle, onDelete, onAdd, autoFocus,
-}: {
+function TaskSection({ label, tasks, owner, scope, onToggle, onDelete, onAdd, onSetFire, autoFocus }: {
   label: string; tasks: FosWeeklyPriority[]; owner: Owner; scope: "today" | "week";
   onToggle: (p: FosWeeklyPriority) => void; onDelete: (id: string) => void;
-  onAdd: (owner: Owner, scope: "today" | "week", title: string) => void; autoFocus?: boolean;
+  onAdd: (owner: Owner, scope: "today" | "week", title: string) => void;
+  onSetFire: (id: string) => void;
+  autoFocus?: boolean;
 }) {
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
@@ -279,24 +282,8 @@ function TaskSection({
     <div className="mb-3">
       <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--muted)" }}>{label}</div>
       <div className="space-y-0.5">
-        {pending.map((t) => (
-          <div key={t.id} className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
-            <button onClick={() => onToggle(t)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
-              style={{ borderColor: "var(--border)", background: "transparent" }} />
-            <span className="text-[12px] flex-1 min-w-0 truncate">{t.title}</span>
-            <button onClick={() => onDelete(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0" style={{ color: "var(--muted)" }}>✕</button>
-          </div>
-        ))}
-        {completed.map((t) => (
-          <div key={t.id} className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
-            <button onClick={() => onToggle(t)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
-              style={{ borderColor: "#FF4C00", background: "#FF4C00" }}>
-              <span className="text-white" style={{ fontSize: 8 }}>✓</span>
-            </button>
-            <span className="text-[12px] flex-1 min-w-0 truncate line-through opacity-40">{t.title}</span>
-            <button onClick={() => onDelete(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0" style={{ color: "var(--muted)" }}>✕</button>
-          </div>
-        ))}
+        {pending.map((t) => <TaskRow key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onSetFire={onSetFire} />)}
+        {completed.map((t) => <TaskRow key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onSetFire={onSetFire} />)}
       </div>
       <input ref={inputRef} value={draft} onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") submit(); if (e.key === "Escape") setDraft(""); }}
@@ -308,47 +295,78 @@ function TaskSection({
   );
 }
 
-// ─── Daily Notes ───────────────────────────────────────────────────────────────
-function DailyNotes({ owner, today, initialContent, workspaceId }: { owner: Owner; today: string; initialContent: string; workspaceId?: string }) {
-  const [content, setContent] = useState(initialContent);
+// ─── Founder Journal ───────────────────────────────────────────────────────────
+function FounderJournal({ owner, today, initialData }: {
+  owner: Owner; today: string; initialData: FosFounderJournal | null;
+}) {
+  const [data, setData] = useState({
+    went_well: initialData?.went_well ?? "",
+    problem: initialData?.problem ?? "",
+    biggest_win: initialData?.biggest_win ?? "",
+  });
+  const [expanded, setExpanded] = useState(
+    !!(initialData?.went_well || initialData?.problem || initialData?.biggest_win)
+  );
   const [saving, setSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function handleChange(val: string) {
-    setContent(val);
+  function save(next: typeof data) {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
       setSaving(true);
-      await fetch("/api/fos/daily-notes", {
+      await fetch("/api/fos/journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner_label: owner, date: today, content: val }),
+        body: JSON.stringify({ author_label: owner, date: today, ...next }),
       });
       setSaving(false);
     }, 800);
   }
 
+  function update(field: keyof typeof data, val: string) {
+    const next = { ...data, [field]: val };
+    setData(next);
+    save(next);
+  }
+
+  const FIELDS: { key: keyof typeof data; label: string; placeholder: string }[] = [
+    { key: "went_well", label: "Co poszło dobrze?", placeholder: "..." },
+    { key: "problem", label: "Co było problemem?", placeholder: "..." },
+    { key: "biggest_win", label: "Jaka 1 rzecz daje największy zwrot?", placeholder: "..." },
+  ];
+
   return (
     <div className="mt-2">
-      <div className="flex items-center justify-between mb-1">
-        <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Notatki dnia</div>
-        {saving && <span className="text-[9px]" style={{ color: "var(--muted)" }}>zapisuję...</span>}
-      </div>
-      <textarea value={content} onChange={(e) => handleChange(e.target.value)}
-        placeholder="Co obserwujesz? Jakie wnioski?"
-        rows={3}
-        className="w-full text-[12px] px-2.5 py-2 rounded-lg outline-none resize-none transition-all"
-        style={{ background: "var(--ba-2)", border: "1px solid var(--border)", color: "var(--text)", lineHeight: "1.5" }} />
+      <button onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 w-full text-left mb-1.5 group">
+        <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>📔 Dziennik</span>
+        <span className="text-[9px] transition-transform" style={{ color: "var(--muted)", transform: expanded ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+        {saving && <span className="text-[9px] ml-auto" style={{ color: "var(--muted)" }}>zapisuję...</span>}
+      </button>
+      {expanded && (
+        <div className="space-y-2">
+          {FIELDS.map(({ key, label, placeholder }) => (
+            <div key={key}>
+              <div className="text-[9px] mb-0.5" style={{ color: "var(--muted)" }}>{label}</div>
+              <textarea value={data[key]} onChange={(e) => update(key, e.target.value)}
+                placeholder={placeholder} rows={2}
+                className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none resize-none transition-all"
+                style={{ background: "var(--ba-2)", border: "1px solid var(--border)", color: "var(--text)", lineHeight: "1.5" }} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Person Panel ──────────────────────────────────────────────────────────────
-function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, dailyNote, isFirst }: {
+function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, onSetFire, journal, isFirst }: {
   owner: Owner; tasks: FosWeeklyPriority[]; today: string;
   onToggle: (p: FosWeeklyPriority) => void; onDelete: (id: string) => void;
   onAdd: (owner: Owner, scope: "today" | "week", title: string) => void;
-  dailyNote: string; isFirst?: boolean;
+  onSetFire: (id: string) => void;
+  journal: FosFounderJournal | null; isFirst?: boolean;
 }) {
   const todayTasks = tasks.filter((t) => t.deadline === today);
   const weekTasks = tasks.filter((t) => t.deadline !== today);
@@ -362,13 +380,13 @@ function PersonPanel({ owner, tasks, today, onToggle, onDelete, onAdd, dailyNote
           <div className="text-[10px]" style={{ color: "var(--muted)" }}>{done}/{tasks.length} ukończone</div>
         </div>
         <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold"
-          style={{ background: tasks.length === 0 ? "var(--ba-2)" : done === tasks.length && tasks.length > 0 ? "#FF4C0020" : "var(--accent-subtle)", color: tasks.length === 0 ? "var(--muted)" : done === tasks.length && tasks.length > 0 ? "#FF4C00" : "var(--accent)" }}>
+          style={{ background: tasks.length === 0 ? "var(--ba-2)" : done === tasks.length && tasks.length > 0 ? "#22c55e20" : "var(--accent-subtle)", color: tasks.length === 0 ? "var(--muted)" : done === tasks.length && tasks.length > 0 ? "#22c55e" : "var(--accent)" }}>
           {tasks.length === 0 ? "0" : done === tasks.length ? "✓" : tasks.length - done}
         </div>
       </div>
-      <TaskSection label="DZIŚ" tasks={todayTasks} owner={owner} scope="today" onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} autoFocus={isFirst} />
-      <TaskSection label="TEN TYDZIEŃ" tasks={weekTasks} owner={owner} scope="week" onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} />
-      <DailyNotes owner={owner} today={today} initialContent={dailyNote} />
+      <TaskSection label="DZIŚ" tasks={todayTasks} owner={owner} scope="today" onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} onSetFire={onSetFire} autoFocus={isFirst} />
+      <TaskSection label="TEN TYDZIEŃ" tasks={weekTasks} owner={owner} scope="week" onToggle={onToggle} onDelete={onDelete} onAdd={onAdd} onSetFire={onSetFire} />
+      <FounderJournal owner={owner} today={today} initialData={journal} />
     </div>
   );
 }
@@ -379,8 +397,8 @@ function BlockersSection({ priorities, onUnblock }: { priorities: FosWeeklyPrior
   if (blockers.length === 0) return null;
   const byOwner = OWNERS.map((o) => ({ owner: o, items: blockers.filter((p) => p.owner_label === o) })).filter((g) => g.items.length > 0);
   return (
-    <div className="rounded-xl px-4 py-3 mb-3" style={{ background: "#1C191708", border: "1px solid #1C191730" }}>
-      <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#1C1917" }}>🚨 Blockers</div>
+    <div className="rounded-xl px-4 py-3 mb-3" style={{ background: "#ef444408", border: "1px solid #ef444430" }}>
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#ef4444" }}>🚨 Blockers</div>
       <div className="space-y-2">
         {byOwner.map(({ owner, items }) => (
           <div key={owner}>
@@ -389,13 +407,86 @@ function BlockersSection({ priorities, onUnblock }: { priorities: FosWeeklyPrior
               <div key={p.id} className="flex items-center gap-2 py-1">
                 <span className="text-[12px] flex-1 min-w-0 truncate">{p.title}</span>
                 <button onClick={() => onUnblock(p)} className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
-                  style={{ background: "#1C191715", color: "#1C1917", border: "1px solid #1C191730" }}>
+                  style={{ background: "#ef444415", color: "#ef4444", border: "1px solid #ef444430" }}>
                   Odblokuj
                 </button>
               </div>
             ))}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Pending Decisions Section ─────────────────────────────────────────────────
+function PendingDecisionsSection({ decisions, onAdd, onDecide, onDelete }: {
+  decisions: FosDecision[];
+  onAdd: (title: string, author: Owner | "") => void;
+  onDecide: (id: string, reason: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [author, setAuthor] = useState<Owner | "">("");
+  const [focused, setFocused] = useState(false);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [reasonDraft, setReasonDraft] = useState("");
+
+  function submitNew() {
+    if (draft.trim()) { onAdd(draft.trim(), author); setDraft(""); }
+  }
+
+  function confirmDecide(id: string) {
+    onDecide(id, reasonDraft.trim());
+    setDecidingId(null);
+    setReasonDraft("");
+  }
+
+  return (
+    <div className="rounded-xl px-4 py-3 mb-3 glass-card" style={{ borderLeft: "3px solid #f59e0b" }}>
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "#f59e0b" }}>⚠️ Decyzje do podjęcia</div>
+      {decisions.length === 0 && !focused && (
+        <div className="text-[11px] italic mb-2" style={{ color: "var(--muted)" }}>Brak otwartych decyzji</div>
+      )}
+      <div className="space-y-2 mb-2">
+        {decisions.map((d) => (
+          <div key={d.id}>
+            <div className="flex items-start gap-2 group py-0.5">
+              {d.author_label && <span className="text-[10px] font-semibold shrink-0 mt-0.5" style={{ color: "var(--accent)" }}>{d.author_label}</span>}
+              <span className="text-[12px] flex-1 min-w-0">{d.title}</span>
+              <span className="text-[10px] tabular-nums shrink-0 mt-0.5" style={{ color: "var(--muted)" }}>{formatDate(d.decided_at)}</span>
+              <button onClick={() => { setDecidingId(d.id); setReasonDraft(""); }}
+                className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-lg transition-colors hover:opacity-80"
+                style={{ background: "#22c55e15", color: "#22c55e" }}>✓ Podjęto</button>
+              <button onClick={() => onDelete(d.id)} className="opacity-0 group-hover:opacity-100 shrink-0 text-[10px] transition-opacity ml-1" style={{ color: "var(--muted)" }}>✕</button>
+            </div>
+            {decidingId === d.id && (
+              <div className="flex gap-2 mt-1.5 ml-4">
+                <input value={reasonDraft} onChange={(e) => setReasonDraft(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") confirmDecide(d.id); if (e.key === "Escape") { setDecidingId(null); setReasonDraft(""); } }}
+                  placeholder="Dlaczego tak zdecydowaliśmy? (opcjonalnie, Enter aby zapisać)"
+                  className="flex-1 text-[11px] px-2 py-1 rounded-lg outline-none"
+                  style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }} />
+                <button onClick={() => confirmDecide(d.id)} className="shrink-0 text-[11px] font-semibold px-3 py-1 rounded-lg" style={{ background: "var(--accent)", color: "white" }}>Zapisz</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-1.5 flex-wrap">
+        <select value={author} onChange={(e) => setAuthor(e.target.value as Owner | "")}
+          className="text-[11px] px-2 py-1 rounded-lg outline-none"
+          style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)" }}>
+          <option value="">Autor</option>
+          {OWNERS.map((o) => <option key={o}>{o}</option>)}
+        </select>
+        <input value={draft} onChange={(e) => setDraft(e.target.value)}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          onKeyDown={(e) => { if (e.key === "Enter") submitNew(); if (e.key === "Escape") setDraft(""); }}
+          placeholder="+ Decyzja do podjęcia... (Enter)"
+          className="flex-1 min-w-[180px] text-[11px] px-2 py-1 rounded-lg outline-none transition-all"
+          style={{ background: "var(--ba-4)", border: focused ? "1px solid #f59e0b" : "1px solid var(--border)", color: "var(--text)" }} />
       </div>
     </div>
   );
@@ -426,7 +517,7 @@ function WaitingForSection({ items, onResolve, onAdd }: {
             <span className="text-[11px] font-semibold shrink-0">{item.for_label}</span>
             <span className="text-[11px] flex-1 min-w-0 truncate" style={{ color: "var(--muted)" }}>— {item.description}</span>
             <button onClick={() => onResolve(item.id)} className="shrink-0 text-[10px] px-1.5 py-0.5 rounded transition-colors hover:opacity-80"
-              style={{ background: "#FF4C0015", color: "#FF4C00" }}>✓</button>
+              style={{ background: "#22c55e15", color: "#22c55e" }}>✓</button>
           </div>
         ))}
       </div>
@@ -452,26 +543,47 @@ function WaitingForSection({ items, onResolve, onAdd }: {
 }
 
 // ─── Decisions Log ─────────────────────────────────────────────────────────────
-function DecisionsLog({ decisions, onAdd, onDelete }: {
+function DecisionsLog({ decisions, onAdd, onDelete, onUpdateReason }: {
   decisions: FosDecision[];
-  onAdd: (title: string) => void;
+  onAdd: (title: string, reason?: string) => void;
   onDelete: (id: string) => void;
+  onUpdateReason: (id: string, reason: string) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [reasonDraft, setReasonDraft] = useState("");
+  const [step, setStep] = useState<"title" | "reason">("title");
   const [focused, setFocused] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const visible = expanded ? decisions : decisions.slice(0, 5);
+
+  function submitTitle() {
+    if (draft.trim()) setStep("reason");
+  }
+  function submitFinal() {
+    onAdd(draft.trim(), reasonDraft.trim() || undefined);
+    setDraft(""); setReasonDraft(""); setStep("title");
+  }
 
   return (
     <div className="rounded-xl px-4 py-3 mb-3 glass-card">
       <div className="text-[10px] font-bold uppercase tracking-widest mb-2.5" style={{ color: "var(--muted)" }}>📜 Decisions Log</div>
       <div className="space-y-1.5 mb-2">
         {visible.map((d) => (
-          <div key={d.id} className="flex items-start gap-2 group py-0.5">
-            <span className="text-[10px] tabular-nums shrink-0 mt-0.5" style={{ color: "var(--muted)" }}>{formatDate(d.decided_at)}</span>
-            {d.author_label && <span className="text-[10px] shrink-0 font-semibold mt-0.5" style={{ color: "var(--accent)" }}>{d.author_label}</span>}
-            <span className="text-[12px] flex-1 min-w-0">{d.title}</span>
-            <button onClick={() => onDelete(d.id)} className="opacity-0 group-hover:opacity-100 shrink-0 text-[10px] transition-opacity" style={{ color: "var(--muted)" }}>✕</button>
+          <div key={d.id}>
+            <div className="flex items-start gap-2 group py-0.5 cursor-pointer" onClick={() => setExpandedId(expandedId === d.id ? null : d.id)}>
+              <span className="text-[10px] tabular-nums shrink-0 mt-0.5" style={{ color: "var(--muted)" }}>{formatDate(d.decided_at)}</span>
+              {d.author_label && <span className="text-[10px] shrink-0 font-semibold mt-0.5" style={{ color: "var(--accent)" }}>{d.author_label}</span>}
+              <span className="text-[12px] flex-1 min-w-0">{d.title}</span>
+              <span className="text-[10px] shrink-0 mt-0.5 transition-transform" style={{ color: "var(--muted)", transform: expandedId === d.id ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+              <button onClick={(e) => { e.stopPropagation(); onDelete(d.id); }} className="opacity-0 group-hover:opacity-100 shrink-0 text-[10px] transition-opacity" style={{ color: "var(--muted)" }}>✕</button>
+            </div>
+            {expandedId === d.id && (
+              <div className="ml-4 mt-1 mb-1">
+                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: "var(--muted)" }}>Dlaczego</div>
+                <ReasonInput id={d.id} initialValue={d.reason ?? ""} onSave={onUpdateReason} />
+              </div>
+            )}
           </div>
         ))}
         {decisions.length === 0 && <div className="text-[11px] italic" style={{ color: "var(--muted)" }}>Brak zapisanych decyzji</div>}
@@ -481,13 +593,44 @@ function DecisionsLog({ decisions, onAdd, onDelete }: {
           {expanded ? "Zwiń" : `Pokaż wszystkie (${decisions.length})`}
         </button>
       )}
-      <input value={draft} onChange={(e) => setDraft(e.target.value)}
-        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { onAdd(draft.trim()); setDraft(""); } if (e.key === "Escape") setDraft(""); }}
-        placeholder="+ Nowa decyzja... (Enter aby zapisać)"
-        className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none transition-all"
-        style={{ background: focused || draft ? "var(--ba-4)" : "transparent", border: focused || draft ? "1px solid var(--accent)" : "1px solid transparent", color: "var(--text)" }} />
+      {step === "title" ? (
+        <input value={draft} onChange={(e) => setDraft(e.target.value)}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) submitTitle(); if (e.key === "Escape") setDraft(""); }}
+          placeholder="+ Nowa decyzja... (Enter)"
+          className="w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none transition-all"
+          style={{ background: focused || draft ? "var(--ba-4)" : "transparent", border: focused || draft ? "1px solid var(--accent)" : "1px solid transparent", color: "var(--text)" }} />
+      ) : (
+        <div className="flex gap-2">
+          <input value={reasonDraft} onChange={(e) => setReasonDraft(e.target.value)}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter") submitFinal(); if (e.key === "Escape") submitFinal(); }}
+            placeholder={`"${draft}" — dlaczego? (opcjonalnie, Enter aby zapisać)`}
+            className="flex-1 text-[11px] px-2.5 py-1.5 rounded-lg outline-none"
+            style={{ background: "var(--ba-4)", border: "1px solid var(--accent)", color: "var(--text)" }} />
+          <button onClick={submitFinal} className="shrink-0 text-[11px] font-semibold px-3 rounded-lg" style={{ background: "var(--accent)", color: "white" }}>Zapisz</button>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ReasonInput({ id, initialValue, onSave }: { id: string; initialValue: string; onSave: (id: string, reason: string) => void }) {
+  const [value, setValue] = useState(initialValue);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function onChange(v: string) {
+    setValue(v);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => onSave(id, v), 800);
+  }
+
+  return (
+    <textarea value={value} onChange={(e) => onChange(e.target.value)}
+      placeholder="Dlaczego tak zdecydowaliśmy?"
+      rows={2}
+      className="w-full text-[11px] px-2 py-1.5 rounded-lg outline-none resize-none transition-all"
+      style={{ background: "var(--ba-2)", border: "1px solid var(--border)", color: "var(--text)", lineHeight: "1.5" }} />
   );
 }
 
@@ -565,9 +708,10 @@ export default function FosCommandCenter() {
   const [metrics, setMetrics] = useState<FosMetrics | null>(null);
   const [ideas, setIdeas] = useState<FosIdea[]>([]);
   const [activity, setActivity] = useState<FosActivityItem[]>([]);
-  const [decisions, setDecisions] = useState<FosDecision[]>([]);
+  const [pendingDecisions, setPendingDecisions] = useState<FosDecision[]>([]);
+  const [decidedDecisions, setDecidedDecisions] = useState<FosDecision[]>([]);
   const [waiting, setWaiting] = useState<FosWaitingFor[]>([]);
-  const [dailyNotes, setDailyNotes] = useState<Record<string, string>>({});
+  const [journals, setJournals] = useState<Record<string, FosFounderJournal | null>>({});
   const [loading, setLoading] = useState(true);
   const weekStart = getWeekStart();
   const today = getTodayStr();
@@ -584,16 +728,17 @@ export default function FosCommandCenter() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [sprintRes, priRes, metricsRes, ideasRes, activityRes, decisionsRes, waitingRes, notesRes] =
+    const [sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes] =
       await Promise.all([
         fetch("/api/fos/sprints").then((r) => r.json()),
         fetch(`/api/fos/priorities?week=${weekStart}`).then((r) => r.json()),
         fetch("/api/fos/metrics").then((r) => r.json()),
         fetch("/api/fos/ideas?status=backlog").then((r) => r.json()),
         fetch("/api/fos/activity").then((r) => r.json()),
-        fetch("/api/fos/decisions").then((r) => r.json()),
+        fetch("/api/fos/decisions?status=pending").then((r) => r.json()),
+        fetch("/api/fos/decisions?status=decided").then((r) => r.json()),
         fetch("/api/fos/waiting").then((r) => r.json()),
-        fetch(`/api/fos/daily-notes?date=${today}`).then((r) => r.json()),
+        fetch(`/api/fos/journal?date=${today}`).then((r) => r.json()),
       ]);
     const active = (sprintRes.data ?? []).find((s: FosSprint) => s.status === "active") ?? null;
     setSprint(active);
@@ -601,11 +746,12 @@ export default function FosCommandCenter() {
     setMetrics(metricsRes);
     setIdeas(ideasRes.data ?? []);
     setActivity(activityRes.data ?? []);
-    setDecisions(decisionsRes.data ?? []);
+    setPendingDecisions(pendingRes.data ?? []);
+    setDecidedDecisions(decidedRes.data ?? []);
     setWaiting(waitingRes.data ?? []);
-    const notes: Record<string, string> = {};
-    for (const n of notesRes.data ?? []) notes[n.owner_label] = n.content ?? "";
-    setDailyNotes(notes);
+    const j: Record<string, FosFounderJournal | null> = {};
+    for (const entry of journalRes.data ?? []) j[entry.author_label] = entry;
+    setJournals(j);
     setLoading(false);
   }, [weekStart, today]);
 
@@ -623,13 +769,27 @@ export default function FosCommandCenter() {
     await patchPriority(p.id, { status: "in_progress" });
   }, []);
 
+  const setFire = useCallback(async (id: string) => {
+    const task = priorities.find((p) => p.id === id);
+    if (!task) return;
+    const fireTasks = priorities.filter((p) => p.is_fire && !p.is_company_goal && p.status !== "completed");
+    if (fireTasks.length >= 3 && !task.is_fire) return; // enforce max 3
+    setPriorities((prev) => prev.map((x) => (x.id === id ? { ...x, is_fire: true } : x)));
+    await patchPriority(id, { is_fire: true });
+  }, [priorities]);
+
+  const unfire = useCallback(async (id: string) => {
+    setPriorities((prev) => prev.map((x) => (x.id === id ? { ...x, is_fire: false } : x)));
+    await patchPriority(id, { is_fire: false });
+  }, []);
+
   const addTask = useCallback(async (owner: Owner, scope: "today" | "week", title: string) => {
     const deadline = scope === "today" ? today : undefined;
     const tempId = `tmp-${Date.now()}`;
     const optimistic: FosWeeklyPriority = {
       id: tempId, workspace_id: "", sprint_id: sprint?.id ?? null, week_start: weekStart,
       title, description: null, owner_id: null, owner_label: owner, deadline: deadline ?? null,
-      status: "not_started", is_company_goal: false, completed_at: null,
+      status: "not_started", is_company_goal: false, is_fire: false, completed_at: null,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
     setPriorities((prev) => [...prev, optimistic]);
@@ -647,28 +807,64 @@ export default function FosCommandCenter() {
     await fetch(`/api/fos/priorities/${id}`, { method: "DELETE" });
   }, []);
 
-  const renameTask = useCallback(async (id: string, title: string) => {
-    setPriorities((prev) => prev.map((x) => (x.id === id ? { ...x, title } : x)));
-    await patchPriority(id, { title });
-  }, []);
-
-  // ── Decisions actions ────────────────────────────────────────────────────────
-  const addDecision = useCallback(async (title: string) => {
+  // ── Pending Decision actions ──────────────────────────────────────────────────
+  const addPendingDecision = useCallback(async (title: string, author: Owner | "") => {
     const tempId = `tmp-${Date.now()}`;
-    const optimistic: FosDecision = { id: tempId, workspace_id: "", author_label: null, title, description: null, decided_at: today, created_at: new Date().toISOString() };
-    setDecisions((prev) => [optimistic, ...prev]);
+    const optimistic: FosDecision = { id: tempId, workspace_id: "", author_label: author || null, title, description: null, reason: null, status: "pending", decided_at: today, created_at: new Date().toISOString() };
+    setPendingDecisions((prev) => [...prev, optimistic]);
     const res = await fetch("/api/fos/decisions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, decided_at: today }),
+      body: JSON.stringify({ title, author_label: author || null, decided_at: today, status: "pending" }),
     });
     const data = await res.json();
-    if (data.data) setDecisions((prev) => prev.map((x) => (x.id === tempId ? data.data : x)));
+    if (data.data) setPendingDecisions((prev) => prev.map((x) => (x.id === tempId ? data.data : x)));
+  }, [today]);
+
+  const decideDecision = useCallback(async (id: string, reason: string) => {
+    const decision = pendingDecisions.find((d) => d.id === id);
+    if (!decision) return;
+    const decided = { ...decision, status: "decided" as const, reason: reason || null, decided_at: today };
+    setPendingDecisions((prev) => prev.filter((x) => x.id !== id));
+    setDecidedDecisions((prev) => [decided, ...prev]);
+    await fetch(`/api/fos/decisions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "decided", reason: reason || null, decided_at: today }),
+    });
+  }, [pendingDecisions, today]);
+
+  const deletePendingDecision = useCallback(async (id: string) => {
+    setPendingDecisions((prev) => prev.filter((x) => x.id !== id));
+    await fetch(`/api/fos/decisions/${id}`, { method: "DELETE" });
+  }, []);
+
+  // ── Decided Decision actions ──────────────────────────────────────────────────
+  const addDecision = useCallback(async (title: string, reason?: string) => {
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic: FosDecision = { id: tempId, workspace_id: "", author_label: null, title, description: null, reason: reason ?? null, status: "decided", decided_at: today, created_at: new Date().toISOString() };
+    setDecidedDecisions((prev) => [optimistic, ...prev]);
+    const res = await fetch("/api/fos/decisions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, decided_at: today, reason: reason ?? null, status: "decided" }),
+    });
+    const data = await res.json();
+    if (data.data) setDecidedDecisions((prev) => prev.map((x) => (x.id === tempId ? data.data : x)));
   }, [today]);
 
   const deleteDecision = useCallback(async (id: string) => {
-    setDecisions((prev) => prev.filter((x) => x.id !== id));
+    setDecidedDecisions((prev) => prev.filter((x) => x.id !== id));
     await fetch(`/api/fos/decisions/${id}`, { method: "DELETE" });
+  }, []);
+
+  const updateDecisionReason = useCallback(async (id: string, reason: string) => {
+    setDecidedDecisions((prev) => prev.map((x) => (x.id === id ? { ...x, reason } : x)));
+    await fetch(`/api/fos/decisions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
   }, []);
 
   // ── Waiting For actions ──────────────────────────────────────────────────────
@@ -719,20 +915,25 @@ export default function FosCommandCenter() {
     </div>
   );
 
+  const fireTasks = priorities.filter((p) => p.is_fire && !p.is_company_goal);
+
   return (
     <div className="px-4 py-5 sm:px-7 sm:py-6 max-w-5xl mx-auto">
 
       {/* Weekly Scoreboard */}
       <WeeklyScoreboard metrics={metrics} />
 
-      {/* Sprint + Health Score */}
+      {/* Sprint + Execution Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
         <SprintCard sprint={sprint} />
-        {metrics ? <HealthScore metrics={metrics} sprint={sprint} /> : <div className="h-32 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />}
+        {metrics ? <ExecutionMetrics metrics={metrics} /> : <div className="h-32 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />}
       </div>
 
-      {/* Company Goal with steps */}
-      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} onRename={renameTask} />
+      {/* Company Goal */}
+      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} />
+
+      {/* Fire Tasks */}
+      <FireTasksSection tasks={fireTasks} onToggle={toggleStatus} onUnfire={unfire} />
 
       {/* Two-person columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
@@ -745,7 +946,8 @@ export default function FosCommandCenter() {
             onToggle={toggleStatus}
             onDelete={deleteTask}
             onAdd={addTask}
-            dailyNote={dailyNotes[owner] ?? ""}
+            onSetFire={setFire}
+            journal={journals[owner] ?? null}
             isFirst={i === 0}
           />
         ))}
@@ -760,15 +962,7 @@ export default function FosCommandCenter() {
             <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Bez właściciela</div>
             <div className="space-y-0.5">
               {unassigned.map((t) => (
-                <div key={t.id} className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
-                  <button onClick={() => toggleStatus(t)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
-                    style={{ borderColor: t.status === "completed" ? "#22c55e" : "var(--border)", background: t.status === "completed" ? "#22c55e" : "transparent" }}>
-                    {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
-                  </button>
-                  <span className={`text-[12px] flex-1 min-w-0 truncate ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
-                  {t.owner_label && <span className="text-[10px] shrink-0" style={{ color: "var(--muted)" }}>{t.owner_label}</span>}
-                  <button onClick={() => deleteTask(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0" style={{ color: "var(--muted)" }}>✕</button>
-                </div>
+                <TaskRow key={t.id} task={t} onToggle={toggleStatus} onDelete={deleteTask} onSetFire={setFire} />
               ))}
             </div>
           </div>
@@ -778,11 +972,19 @@ export default function FosCommandCenter() {
       {/* Blockers */}
       <BlockersSection priorities={priorities} onUnblock={unblock} />
 
+      {/* Pending Decisions */}
+      <PendingDecisionsSection
+        decisions={pendingDecisions}
+        onAdd={addPendingDecision}
+        onDecide={decideDecision}
+        onDelete={deletePendingDecision}
+      />
+
       {/* Waiting For */}
       <WaitingForSection items={waiting} onResolve={resolveWaiting} onAdd={addWaiting} />
 
       {/* Decisions Log */}
-      <DecisionsLog decisions={decisions} onAdd={addDecision} onDelete={deleteDecision} />
+      <DecisionsLog decisions={decidedDecisions} onAdd={addDecision} onDelete={deleteDecision} onUpdateReason={updateDecisionReason} />
 
       {/* Idea Backlog */}
       <IdeaBacklog ideas={ideas} onAdd={addIdea} onDelete={deleteIdea} />

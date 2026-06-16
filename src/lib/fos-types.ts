@@ -1,6 +1,7 @@
 export type FosSprintStatus = "active" | "completed" | "archived";
 export type FosPriorityStatus = "not_started" | "in_progress" | "completed" | "blocked";
 export type FosIdeaStatus = "backlog" | "under_review" | "approved" | "rejected";
+export type FosDecisionStatus = "pending" | "decided";
 
 export interface FosSprint {
   id: string;
@@ -28,6 +29,7 @@ export interface FosWeeklyPriority {
   deadline: string | null;
   status: FosPriorityStatus;
   is_company_goal: boolean;
+  is_fire: boolean;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -73,6 +75,7 @@ export interface FosMetrics {
   tasksOverdue: number;
   sprintCompletionRate: number;
   accountabilityScore: number;
+  commitmentScore: number;
   activeProjects: number;
   blockedTasks: number;
   leadsThisWeek: number;
@@ -86,6 +89,8 @@ export interface FosDecision {
   author_label: string | null;
   title: string;
   description: string | null;
+  reason: string | null;
+  status: FosDecisionStatus;
   decided_at: string;
   created_at: string;
 }
@@ -106,6 +111,18 @@ export interface FosDailyNote {
   owner_label: string;
   date: string;
   content: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FosFounderJournal {
+  id: string;
+  workspace_id: string;
+  author_label: string;
+  date: string;
+  went_well: string | null;
+  problem: string | null;
+  biggest_win: string | null;
   created_at: string;
   updated_at: string;
 }

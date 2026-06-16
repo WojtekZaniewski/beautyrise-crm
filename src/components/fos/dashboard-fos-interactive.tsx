@@ -187,7 +187,7 @@ export function DashboardFosInteractive({
     const optimistic: FosWeeklyPriority = {
       id: tempId, workspace_id: "", sprint_id: null, week_start: weekStart,
       title, description: null, owner_id: null, owner_label: null,
-      deadline: null, status: "not_started", is_company_goal: true,
+      deadline: null, status: "not_started", is_company_goal: true, is_fire: false,
       completed_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
     setGoals((prev) => [...prev, optimistic]);
