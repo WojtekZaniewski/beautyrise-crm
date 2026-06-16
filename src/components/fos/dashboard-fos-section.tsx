@@ -109,6 +109,68 @@ export async function DashboardFosSection() {
         </Link>
       </div>
 
+      {/* Company Goal — always visible on dashboard */}
+      {goalItem ? (
+        <div
+          className="rounded-xl px-5 py-4 mb-3 flex items-center gap-4"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,76,0,0.1) 0%, rgba(255,255,255,0.95) 100%)",
+            border: "2px solid rgba(255,76,0,0.25)",
+          }}
+        >
+          <div className="shrink-0">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[11px]"
+              style={{
+                background: goalItem.status === "completed" ? "#22c55e" : "var(--accent)",
+                color: "white",
+              }}
+            >
+              {goalItem.status === "completed" ? "✓" : "⭐"}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div
+              className="text-[9.5px] font-bold uppercase tracking-widest mb-0.5"
+              style={{ color: "var(--accent)" }}
+            >
+              Company Goal · ten tydzień
+            </div>
+            <div
+              className={`text-[14px] font-semibold leading-snug ${goalItem.status === "completed" ? "line-through opacity-50" : ""}`}
+            >
+              {goalItem.title}
+            </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-3">
+            <StatusPill status={goalItem.status} />
+            <Link
+              href="/fos"
+              className="text-[11px] font-medium hover:underline"
+              style={{ color: "var(--muted)" }}
+            >
+              Zarządzaj →
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="rounded-xl px-5 py-3 mb-3 flex items-center justify-between"
+          style={{ border: "1px dashed var(--border)", background: "var(--ba-2)" }}
+        >
+          <span className="text-[12px]" style={{ color: "var(--muted)" }}>
+            Brak Company Goal na ten tydzień
+          </span>
+          <Link
+            href="/fos"
+            className="text-[11px] font-semibold hover:underline"
+            style={{ color: "var(--accent)" }}
+          >
+            + Dodaj w FOS
+          </Link>
+        </div>
+      )}
+
       {/* Sprint card */}
       <div
         className="glass-card rounded-xl px-5 py-4 mb-3"

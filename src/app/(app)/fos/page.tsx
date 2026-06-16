@@ -140,13 +140,6 @@ export default function FosCommandCenter() {
               {companyGoal.title}
             </div>
           </div>
-          <Link
-            href="/fos/priorities"
-            className="shrink-0 text-[10px] hover:underline"
-            style={{ color: "var(--muted)" }}
-          >
-            Priorytety →
-          </Link>
         </div>
       )}
 
