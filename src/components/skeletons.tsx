@@ -21,7 +21,7 @@ export function SkeletonTableRow({ cols = 6 }: { cols?: number }) {
 
 export function PageSkeleton({ title }: { title: string }) {
   return (
-    <div className="px-7 py-7 max-w-6xl mx-auto">
+    <div className="px-7 py-7 w-full">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-[22px] font-semibold tracking-tight">{title}</h1>
       </div>

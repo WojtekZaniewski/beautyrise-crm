@@ -102,7 +102,7 @@ export default async function SmsCampaignDetailPage({
   const st = SMS_STATUS[(campaign.status as string)] ?? SMS_STATUS.sent;
 
   return (
-    <div className="px-4 py-4 sm:px-8 sm:py-8 max-w-5xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-8 sm:py-8 w-full anim-page">
       <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
         <Link href="/sms-campaigns" className="hover:text-[var(--text)] transition-colors">
           Kampanie SMS

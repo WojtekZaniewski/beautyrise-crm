@@ -8,7 +8,7 @@ export default async function TeamChatPage() {
 
   if (!user) {
     return (
-      <div className="px-7 py-7 max-w-3xl mx-auto">
+      <div className="px-7 py-7 w-full">
         <p className="text-[13px]" style={{ color: "var(--muted)" }}>
           Musisz być zalogowany, żeby korzystać z czatu zespołu.
         </p>

@@ -64,7 +64,7 @@ export default async function CampaignDetailPage({
   ];
 
   return (
-    <div className="px-4 py-4 sm:px-8 sm:py-8 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-8 sm:py-8 w-full">
       <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
         <Link href="/campaigns" className="hover:text-[var(--text)] transition-colors">Kampanie</Link>
         <span>/</span>

@@ -2,7 +2,7 @@ import { SkeletonBar, SkeletonTableRow } from "@/components/skeletons";
 
 export default function Loading() {
   return (
-    <div className="px-8 py-8 max-w-7xl mx-auto">
+    <div className="px-8 py-8 w-full">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">Leady</h1>
         <div className="flex gap-2">

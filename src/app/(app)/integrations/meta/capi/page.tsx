@@ -153,7 +153,7 @@ export default async function CapiQualityPage() {
     last50.length === 0 ? null : Math.round((last50.filter((l) => l.ok).length / last50.length) * 100);
 
   return (
-    <div className="px-4 py-4 sm:px-8 sm:py-8 max-w-4xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-8 sm:py-8 w-full anim-page">
       <div className="heat-glow -mx-4 sm:-mx-8 -mt-4 sm:-mt-8 px-4 sm:px-8 pt-4 sm:pt-8 pb-5 mb-6">
         <h1 className="text-2xl font-semibold mb-1">CAPI — Jakość danych</h1>
         <p className="text-sm text-[var(--muted)]">

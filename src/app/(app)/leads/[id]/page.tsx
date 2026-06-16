@@ -135,7 +135,7 @@ export default async function LeadDetailPage({
     null;
 
   return (
-    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-5xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 w-full anim-page">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-[12.5px] mb-6" style={{ color: "var(--muted)" }}>
         <Link href="/leads" className="hover:text-[var(--text)] transition-colors">Leady</Link>

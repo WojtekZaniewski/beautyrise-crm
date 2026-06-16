@@ -36,7 +36,7 @@ export default async function MetaAccountsPage() {
 
   if (!integration || accounts.length === 0) {
     return (
-      <div className="px-8 py-8 max-w-2xl mx-auto">
+      <div className="px-8 py-8 w-full">
         <h1 className="text-2xl font-semibold mb-4">Wybór konta reklamowego</h1>
         <div className="bg-[var(--panel)] border border-[var(--border)] rounded-xl p-8 text-center">
           <div className="text-sm text-[var(--muted)] mb-4">
@@ -54,7 +54,7 @@ export default async function MetaAccountsPage() {
   }
 
   return (
-    <div className="px-8 py-8 max-w-2xl mx-auto flex flex-col gap-8">
+    <div className="px-8 py-8 w-full flex flex-col gap-8">
       {/* Ad account selector */}
       <div>
         <h1 className="text-2xl font-semibold mb-2">Wybór konta reklamowego</h1>

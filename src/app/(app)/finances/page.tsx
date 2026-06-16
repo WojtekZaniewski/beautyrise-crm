@@ -143,7 +143,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Sea
   const isCurrentMonth = currentMonth === todayMonth;
 
   return (
-    <div className="finance-colors px-4 py-4 sm:px-8 sm:py-8 max-w-5xl mx-auto anim-page">
+    <div className="finance-colors px-4 py-4 sm:px-8 sm:py-8 w-full anim-page">
       <div className="heat-glow -mx-4 sm:-mx-8 -mt-4 sm:-mt-8 px-4 sm:px-8 pt-4 sm:pt-8 pb-5 mb-6">
         <div className="flex items-center justify-between">
           <div>

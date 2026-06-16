@@ -970,7 +970,7 @@ export default function FosCommandCenter() {
   }, []);
 
   if (loading) return (
-    <div className="px-4 py-5 sm:px-7 sm:py-6 max-w-5xl mx-auto space-y-3">
+    <div className="px-4 py-5 sm:px-7 sm:py-6 w-full space-y-3">
       {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />)}
     </div>
   );
@@ -978,7 +978,7 @@ export default function FosCommandCenter() {
   const fireTasks = priorities.filter((p) => p.is_fire && !p.is_company_goal);
 
   return (
-    <div className="px-4 py-5 sm:px-7 sm:py-6 max-w-5xl mx-auto">
+    <div className="px-4 py-5 sm:px-7 sm:py-6 w-full">
 
       {/* Weekly Scoreboard */}
       <WeeklyScoreboard metrics={metrics} />

@@ -427,7 +427,7 @@ export default async function Dashboard({
   ];
 
   return (
-    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page heat-glow">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 w-full anim-page heat-glow">
       <DashboardFosSection />
 
       {/* CRM section header */}

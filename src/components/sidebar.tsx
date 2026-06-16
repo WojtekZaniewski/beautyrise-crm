@@ -174,6 +174,13 @@ const Icons = {
       <path d="M6 11.5h3M6.5 13h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   ),
+  calc: (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden>
+      <rect x="2" y="1.5" width="11" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M4.5 4.5h2M4.5 7.5h6M4.5 10h1.5M7.5 10h1.5M10.5 10h.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity=".7" />
+      <path d="M9 4l1.5 1.5M10.5 4 9 5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity=".55" />
+    </svg>
+  ),
 };
 
 const fosNav = [
@@ -182,6 +189,7 @@ const fosNav = [
   { href: "/fos/priorities", label: "Priorytety", icon: Icons.priority },
   { href: "/fos/reviews", label: "Weekly Review", icon: Icons.review },
   { href: "/fos/ideas", label: "Idea Backlog", icon: Icons.idea },
+  { href: "/fos/business-math", label: "Business Math", icon: Icons.calc },
 ];
 
 const salesNav = [
@@ -422,6 +430,15 @@ export function Sidebar({
           <span className="text-[13px] font-bold tracking-tight flex-1">Founder OS</span>
           <span className="text-[10px] font-semibold opacity-70">⌘</span>
         </Link>
+
+        {/* FOS sub-nav — visible when inside /fos */}
+        {path.startsWith("/fos") && (
+          <div className="mb-1">
+            {fosNav.filter((item) => item.href !== "/fos").map((item) => (
+              <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
+            ))}
+          </div>
+        )}
 
         <Section label="Sprzedaż" />
         {salesNav.map((item) => (
