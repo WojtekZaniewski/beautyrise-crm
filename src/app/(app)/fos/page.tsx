@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 import type {
   FosSprint,
   FosWeeklyPriority,
@@ -13,6 +14,7 @@ import type {
   FosDecision,
   FosWaitingFor,
   FosFounderJournal,
+  FosWeekHistory,
 } from "@/lib/fos-types";
 import { getWeekStart } from "@/lib/fos-types";
 
@@ -85,25 +87,79 @@ function WeeklyScoreboard({ metrics }: { metrics: FosMetrics | null }) {
   );
 }
 
+// ─── Sparkline ────────────────────────────────────────────────────────────────
+function Sparkline({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null;
+  const chartData = values.map((v) => ({ v }));
+  const gradId = `sg${color.replace(/[^a-z0-9]/gi, "")}`;
+  return (
+    <ResponsiveContainer width="100%" height={30}>
+      <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Tooltip
+          content={({ active, payload }) =>
+            active && payload?.[0] ? (
+              <div className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", color }}>
+                {typeof payload[0].value === "number" ? Math.round(payload[0].value) : payload[0].value}
+              </div>
+            ) : null
+          }
+        />
+        <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.5}
+          fill={`url(#${gradId})`} dot={false} isAnimationActive={false} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
 // ─── Execution Metrics (replaces Health Score) ────────────────────────────────
-function ExecutionMetrics({ metrics }: { metrics: FosMetrics }) {
+function ExecutionMetrics({ metrics, history }: { metrics: FosMetrics; history: FosWeekHistory[] }) {
+  const hasHistory = history.length >= 2;
   const items = [
-    { label: "Accountability", value: `${metrics.accountabilityScore}%`, ok: metrics.accountabilityScore >= 80 },
-    { label: "Commitment", value: `${metrics.commitmentScore}%`, ok: metrics.commitmentScore >= 70 },
-    { label: "Zaległe", value: String(metrics.tasksOverdue), ok: metrics.tasksOverdue === 0 },
-    { label: "Zablokowane", value: String(metrics.blockedTasks), ok: metrics.blockedTasks === 0 },
+    {
+      label: "Accountability",
+      value: `${metrics.accountabilityScore}%`,
+      ok: metrics.accountabilityScore >= 80,
+      sparkValues: hasHistory ? history.map((w) => w.accountability_pct) : [],
+    },
+    {
+      label: "Commitment",
+      value: `${metrics.commitmentScore}%`,
+      ok: metrics.commitmentScore >= 70,
+      sparkValues: hasHistory ? history.map((w) => w.commitment_pct) : [],
+    },
+    {
+      label: "Zaległe",
+      value: String(metrics.tasksOverdue),
+      ok: metrics.tasksOverdue === 0,
+      sparkValues: hasHistory ? history.map((w) => w.overdue) : [],
+    },
+    {
+      label: "Zablokowane",
+      value: String(metrics.blockedTasks),
+      ok: metrics.blockedTasks === 0,
+      sparkValues: hasHistory ? history.map((w) => w.blocked) : [],
+    },
   ];
   return (
     <div className="glass-card rounded-xl px-4 py-4 h-full">
-      <div className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: "var(--muted)" }}>Execution</div>
-      <div className="grid grid-cols-2 gap-3">
-        {items.map(({ label, value, ok }) => (
-          <div key={label} className="rounded-lg px-3 py-2.5" style={{ background: "var(--ba-2)" }}>
-            <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>{label}</div>
-            <div className="text-[22px] font-bold tabular-nums leading-none"
-              style={{ color: ok ? "#22c55e" : "#ef4444" }}>{value}</div>
-          </div>
-        ))}
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>Execution</div>
+      <div className="grid grid-cols-2 gap-2.5">
+        {items.map(({ label, value, ok, sparkValues }) => {
+          const color = ok ? "#22c55e" : "#ef4444";
+          return (
+            <div key={label} className="rounded-lg px-3 pt-2.5 pb-1 overflow-hidden" style={{ background: "var(--ba-2)" }}>
+              <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: "var(--muted)" }}>{label}</div>
+              <div className="text-[22px] font-bold tabular-nums leading-none mb-1" style={{ color }}>{value}</div>
+              <Sparkline values={sparkValues} color={color} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -712,6 +768,7 @@ export default function FosCommandCenter() {
   const [decidedDecisions, setDecidedDecisions] = useState<FosDecision[]>([]);
   const [waiting, setWaiting] = useState<FosWaitingFor[]>([]);
   const [journals, setJournals] = useState<Record<string, FosFounderJournal | null>>({});
+  const [history, setHistory] = useState<FosWeekHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const weekStart = getWeekStart();
   const today = getTodayStr();
@@ -728,7 +785,7 @@ export default function FosCommandCenter() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes] =
+    const [sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes, historyRes] =
       await Promise.all([
         fetch("/api/fos/sprints").then((r) => r.json()),
         fetch(`/api/fos/priorities?week=${weekStart}`).then((r) => r.json()),
@@ -739,6 +796,7 @@ export default function FosCommandCenter() {
         fetch("/api/fos/decisions?status=decided").then((r) => r.json()),
         fetch("/api/fos/waiting").then((r) => r.json()),
         fetch(`/api/fos/journal?date=${today}`).then((r) => r.json()),
+        fetch("/api/fos/history").then((r) => r.json()),
       ]);
     const active = (sprintRes.data ?? []).find((s: FosSprint) => s.status === "active") ?? null;
     setSprint(active);
@@ -752,6 +810,7 @@ export default function FosCommandCenter() {
     const j: Record<string, FosFounderJournal | null> = {};
     for (const entry of journalRes.data ?? []) j[entry.author_label] = entry;
     setJournals(j);
+    setHistory(historyRes.data ?? []);
     setLoading(false);
   }, [weekStart, today]);
 
@@ -926,7 +985,7 @@ export default function FosCommandCenter() {
       {/* Sprint + Execution Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
         <SprintCard sprint={sprint} />
-        {metrics ? <ExecutionMetrics metrics={metrics} /> : <div className="h-32 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />}
+        {metrics ? <ExecutionMetrics metrics={metrics} history={history} /> : <div className="h-32 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />}
       </div>
 
       {/* Company Goal */}

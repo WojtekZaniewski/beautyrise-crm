@@ -127,6 +127,18 @@ export interface FosFounderJournal {
   updated_at: string;
 }
 
+export interface FosWeekHistory {
+  week_start: string;
+  week_label: string;
+  total: number;
+  completed: number;
+  on_time: number;
+  commitment_pct: number;
+  accountability_pct: number;
+  overdue: number;
+  blocked: number;
+}
+
 export interface FosActivityItem {
   id: string;
   type: "priority_completed" | "idea_added" | "review_submitted" | "lead_added" | "sprint_started";
