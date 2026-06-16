@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { JournalWidget } from "@/components/dashboard/journal-widget";
 import type {
   FosSprint,
   FosWeeklyPriority,
@@ -988,8 +989,13 @@ export default function FosCommandCenter() {
         {metrics ? <ExecutionMetrics metrics={metrics} history={history} /> : <div className="h-32 rounded-xl animate-pulse" style={{ background: "var(--ba-2)" }} />}
       </div>
 
-      {/* Company Goal */}
-      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} />
+      {/* Company Goal + Journal Today — side by side on large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+        <div>
+          <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} />
+        </div>
+        <JournalWidget />
+      </div>
 
       {/* Fire Tasks */}
       <FireTasksSection tasks={fireTasks} onToggle={toggleStatus} onUnfire={unfire} />
