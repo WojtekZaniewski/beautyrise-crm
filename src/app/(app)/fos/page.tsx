@@ -163,42 +163,56 @@ function SprintCard({ sprint }: { sprint: FosSprint | null }) {
 function CompanyGoalCard({
   priorities,
   onToggle,
+  onDelete,
 }: {
   priorities: FosWeeklyPriority[];
   onToggle: (p: FosWeeklyPriority) => void;
+  onDelete: (id: string) => void;
 }) {
   const goals = priorities.filter((p) => p.is_company_goal);
-  const tasks = priorities.filter((p) => !p.is_company_goal);
-  const allTasks = [...goals, ...tasks];
-  const done = allTasks.filter((p) => p.status === "completed").length;
   if (goals.length === 0) return null;
+  // only tasks owned by this goal (tasks that share the week, not company goals)
+  const tasks = priorities.filter((p) => !p.is_company_goal);
+  const done = tasks.filter((p) => p.status === "completed").length;
 
   return (
     <div className="rounded-xl px-4 py-4 mb-3"
-      style={{ background: "linear-gradient(135deg, rgba(255,76,0,0.10) 0%, rgba(255,255,255,0.95) 100%)", border: "2px solid rgba(255,76,0,0.25)" }}>
+      style={{ background: "linear-gradient(135deg, rgba(255,76,0,0.08) 0%, rgba(255,255,255,0.97) 100%)", border: "2px solid rgba(255,76,0,0.25)" }}>
       <div className="flex gap-4">
-        <CircleProgress done={done} total={allTasks.length} size={60} />
+        <CircleProgress done={done} total={tasks.length} size={60} />
         <div className="flex-1 min-w-0">
           <div className="text-[9.5px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--accent)" }}>Cel tygodnia</div>
           {goals.map((g) => (
-            <div key={g.id} className="text-[14px] font-semibold mb-2 leading-snug"
-              style={{ textDecoration: g.status === "completed" ? "line-through" : "none", opacity: g.status === "completed" ? 0.5 : 1 }}>
-              {g.title}
+            <div key={g.id} className="flex items-start gap-2 group mb-2">
+              <button onClick={() => onToggle(g)} className="shrink-0 w-4 h-4 mt-0.5 rounded border-2 flex items-center justify-center transition-all"
+                style={{ borderColor: g.status === "completed" ? "#FF4C00" : "rgba(255,76,0,0.4)", background: g.status === "completed" ? "#FF4C00" : "transparent" }}>
+                {g.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
+              </button>
+              <span className="text-[14px] font-semibold leading-snug flex-1 min-w-0"
+                style={{ textDecoration: g.status === "completed" ? "line-through" : "none", opacity: g.status === "completed" ? 0.5 : 1 }}>
+                {g.title}
+              </span>
+              <button onClick={() => onDelete(g.id)} className="opacity-0 group-hover:opacity-100 shrink-0 text-[11px] transition-opacity mt-0.5"
+                style={{ color: "rgba(255,76,0,0.5)" }} title="Usuń cel">✕</button>
             </div>
           ))}
-          <div className="space-y-1">
-            {tasks.map((t) => (
-              <div key={t.id} className="flex items-center gap-2">
-                <button onClick={() => onToggle(t)}
-                  className="shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
-                  style={{ borderColor: t.status === "completed" ? "#FF4C00" : "rgba(255,255,255,0.3)", background: t.status === "completed" ? "#FF4C00" : "transparent" }}>
-                  {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
-                </button>
-                <span className={`text-[12px] ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
-                {t.owner_label && <span className="text-[10px] ml-auto shrink-0" style={{ color: "rgba(255,255,255,0.4)" }}>{t.owner_label}</span>}
-              </div>
-            ))}
-          </div>
+          {tasks.length > 0 && (
+            <div className="space-y-1 mt-1 pt-2" style={{ borderTop: "1px solid rgba(255,76,0,0.15)" }}>
+              {tasks.map((t) => (
+                <div key={t.id} className="flex items-center gap-2 group">
+                  <button onClick={() => onToggle(t)}
+                    className="shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-all"
+                    style={{ borderColor: t.status === "completed" ? "#FF4C00" : "rgba(0,0,0,0.2)", background: t.status === "completed" ? "#FF4C00" : "transparent" }}>
+                    {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
+                  </button>
+                  <span className={`text-[12px] flex-1 min-w-0 truncate ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
+                  {t.owner_label && <span className="text-[10px]" style={{ color: "rgba(0,0,0,0.35)" }}>{t.owner_label}</span>}
+                  <button onClick={() => onDelete(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0"
+                    style={{ color: "rgba(255,76,0,0.4)" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -679,7 +693,7 @@ export default function FosCommandCenter() {
       </div>
 
       {/* Company Goal with steps */}
-      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} />
+      <CompanyGoalCard priorities={priorities} onToggle={toggleStatus} onDelete={deleteTask} />
 
       {/* Two-person columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
@@ -697,6 +711,30 @@ export default function FosCommandCenter() {
           />
         ))}
       </div>
+
+      {/* Unassigned tasks */}
+      {(() => {
+        const unassigned = priorities.filter((p) => !p.is_company_goal && !OWNERS.includes(p.owner_label as Owner));
+        if (unassigned.length === 0) return null;
+        return (
+          <div className="rounded-xl px-4 py-3 mb-3" style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}>
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Bez właściciela</div>
+            <div className="space-y-0.5">
+              {unassigned.map((t) => (
+                <div key={t.id} className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-lg group hover:bg-[var(--ba-4)] transition-colors">
+                  <button onClick={() => toggleStatus(t)} className="shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all"
+                    style={{ borderColor: t.status === "completed" ? "#22c55e" : "var(--border)", background: t.status === "completed" ? "#22c55e" : "transparent" }}>
+                    {t.status === "completed" && <span className="text-white" style={{ fontSize: 8 }}>✓</span>}
+                  </button>
+                  <span className={`text-[12px] flex-1 min-w-0 truncate ${t.status === "completed" ? "line-through opacity-40" : ""}`}>{t.title}</span>
+                  {t.owner_label && <span className="text-[10px] shrink-0" style={{ color: "var(--muted)" }}>{t.owner_label}</span>}
+                  <button onClick={() => deleteTask(t.id)} className="opacity-0 group-hover:opacity-100 text-[10px] transition-opacity shrink-0" style={{ color: "var(--muted)" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Blockers */}
       <BlockersSection priorities={priorities} onUnblock={unblock} />
