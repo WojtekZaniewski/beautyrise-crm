@@ -395,6 +395,31 @@ export function Sidebar({
       />
 
       <nav className="flex-1 px-2.5 py-2.5 flex flex-col gap-0.5 overflow-y-auto">
+
+        {/* ── Founder OS — hero link, na górze ───────────────── */}
+        <Link
+          href="/fos"
+          prefetch
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-1 transition-all"
+          style={
+            path.startsWith("/fos")
+              ? {
+                  background: "var(--accent)",
+                  color: "white",
+                  boxShadow: "0 2px 8px rgba(255,76,0,0.35)",
+                }
+              : {
+                  background: "var(--accent-subtle)",
+                  color: "var(--accent)",
+                  border: "1px solid rgba(255,76,0,0.2)",
+                }
+          }
+        >
+          <span className="shrink-0">{Icons.fos}</span>
+          <span className="text-[13px] font-bold tracking-tight flex-1">Founder OS</span>
+          <span className="text-[10px] font-semibold opacity-70">⌘</span>
+        </Link>
+
         <Section label="Sprzedaż" />
         {salesNav.map((item) => (
           <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
@@ -419,11 +444,6 @@ export function Sidebar({
 
         <Section label="Finanse" />
         {financesNav.map((item) => (
-          <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
-        ))}
-
-        <Section label="Founder OS" />
-        {fosNav.map((item) => (
           <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
         ))}
 

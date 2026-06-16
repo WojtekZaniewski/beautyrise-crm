@@ -170,7 +170,7 @@ export default function FosCommandCenter() {
 
       {/* Two-person columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-        {OWNERS.map((owner) => (
+        {OWNERS.map((owner, i) => (
           <PersonColumn
             key={owner}
             owner={owner}
@@ -179,6 +179,7 @@ export default function FosCommandCenter() {
             onToggle={toggleStatus}
             onDelete={deleteTask}
             onAdd={addTask}
+            isFirst={i === 0}
           />
         ))}
       </div>
@@ -291,6 +292,7 @@ function PersonColumn({
   onToggle,
   onDelete,
   onAdd,
+  isFirst,
 }: {
   owner: Owner;
   tasks: FosWeeklyPriority[];
@@ -298,6 +300,7 @@ function PersonColumn({
   onToggle: (p: FosWeeklyPriority) => void;
   onDelete: (id: string) => void;
   onAdd: (owner: Owner, scope: "today" | "week", title: string) => void;
+  isFirst?: boolean;
 }) {
   const todayTasks = tasks.filter((t) => t.deadline === today);
   const weekTasks = tasks.filter((t) => t.deadline !== today);
@@ -346,6 +349,7 @@ function PersonColumn({
         onToggle={onToggle}
         onDelete={onDelete}
         onAdd={onAdd}
+        autoFocus={isFirst}
       />
 
       {/* TEN TYDZIEŃ */}
@@ -371,6 +375,7 @@ function TaskSection({
   onToggle,
   onDelete,
   onAdd,
+  autoFocus,
 }: {
   label: string;
   tasks: FosWeeklyPriority[];
@@ -379,21 +384,21 @@ function TaskSection({
   onToggle: (p: FosWeeklyPriority) => void;
   onDelete: (id: string) => void;
   onAdd: (owner: Owner, scope: "today" | "week", title: string) => void;
+  autoFocus?: boolean;
 }) {
-  const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (adding) inputRef.current?.focus();
-  }, [adding]);
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
 
   function submit() {
     if (draft.trim()) {
       onAdd(owner, scope, draft.trim());
     }
     setDraft("");
-    setAdding(false);
   }
 
   const pending = tasks.filter((t) => t.status !== "completed");
@@ -415,66 +420,27 @@ function TaskSection({
         {completed.map((t) => (
           <TaskRow key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} />
         ))}
-        {pending.length === 0 && completed.length === 0 && !adding && (
-          <div
-            className="text-[11px] italic py-1"
-            style={{ color: "var(--muted)" }}
-          >
-            Nic zaplanowanego
-          </div>
-        )}
       </div>
 
-      {adding && (
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submit();
-              if (e.key === "Escape") {
-                setAdding(false);
-                setDraft("");
-              }
-            }}
-            placeholder="Wpisz i naciśnij Enter..."
-            className="flex-1 text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
-            style={{
-              background: "var(--ba-4)",
-              border: "1px solid var(--accent)",
-              color: "var(--text)",
-            }}
-          />
-          <button
-            onClick={submit}
-            className="shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-white"
-            style={{ background: "var(--accent)" }}
-          >
-            +
-          </button>
-          <button
-            onClick={() => {
-              setAdding(false);
-              setDraft("");
-            }}
-            className="shrink-0 text-[11px] px-1.5"
-            style={{ color: "var(--muted)" }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {!adding && (
-        <button
-          onClick={() => setAdding(true)}
-          className="mt-1.5 text-[11px] font-medium hover:underline"
-          style={{ color: "var(--accent)" }}
-        >
-          + Dodaj
-        </button>
-      )}
+      {/* Always-visible ghost input — no click required */}
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+          if (e.key === "Escape") setDraft("");
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder="+ Dodaj task..."
+        className="mt-1.5 w-full text-[12px] px-2.5 py-1.5 rounded-lg outline-none transition-all"
+        style={{
+          background: focused || draft ? "var(--ba-4)" : "transparent",
+          border: focused || draft ? "1px solid var(--accent)" : "1px solid transparent",
+          color: "var(--text)",
+        }}
+      />
     </div>
   );
 }
