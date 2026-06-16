@@ -2,26 +2,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { getWeekStart } from "@/lib/fos-types";
 import Link from "next/link";
-import type { FosSprint, FosWeeklyPriority, FosPriorityStatus } from "@/lib/fos-types";
-
-const STATUS_CONFIG: Record<FosPriorityStatus, { label: string; color: string }> = {
-  not_started: { label: "Nie started", color: "#a3a3a3" },
-  in_progress: { label: "W toku", color: "#FF8C42" },
-  completed: { label: "Ukończone", color: "#22c55e" },
-  blocked: { label: "Zablokowane", color: "#ef4444" },
-};
-
-function StatusPill({ status }: { status: FosPriorityStatus }) {
-  const { label, color } = STATUS_CONFIG[status];
-  return (
-    <span
-      className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-      style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}
-    >
-      {label}
-    </span>
-  );
-}
+import type { FosSprint, FosWeeklyPriority } from "@/lib/fos-types";
+import { DashboardFosInteractive } from "./dashboard-fos-interactive";
 
 export async function DashboardFosSection() {
   const supabase = createServiceClient();
@@ -109,73 +91,13 @@ export async function DashboardFosSection() {
         </Link>
       </div>
 
-      {/* Company Goal — always visible on dashboard */}
-      {goalItem ? (
-        <div
-          className="rounded-xl px-5 py-4 mb-3 flex items-center gap-4"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,76,0,0.1) 0%, rgba(255,255,255,0.95) 100%)",
-            border: "2px solid rgba(255,76,0,0.25)",
-          }}
-        >
-          <div className="shrink-0">
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-[11px]"
-              style={{
-                background: goalItem.status === "completed" ? "#22c55e" : "var(--accent)",
-                color: "white",
-              }}
-            >
-              {goalItem.status === "completed" ? "✓" : "⭐"}
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div
-              className="text-[9.5px] font-bold uppercase tracking-widest mb-0.5"
-              style={{ color: "var(--accent)" }}
-            >
-              Company Goal · ten tydzień
-            </div>
-            <div
-              className={`text-[14px] font-semibold leading-snug ${goalItem.status === "completed" ? "line-through opacity-50" : ""}`}
-            >
-              {goalItem.title}
-            </div>
-          </div>
-          <div className="shrink-0 flex items-center gap-3">
-            <StatusPill status={goalItem.status} />
-            <Link
-              href="/fos"
-              className="text-[11px] font-medium hover:underline"
-              style={{ color: "var(--muted)" }}
-            >
-              Zarządzaj →
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div
-          className="rounded-xl px-5 py-3 mb-3 flex items-center justify-between"
-          style={{ border: "1px dashed var(--border)", background: "var(--ba-2)" }}
-        >
-          <span className="text-[12px]" style={{ color: "var(--muted)" }}>
-            Brak Company Goal na ten tydzień
-          </span>
-          <Link
-            href="/fos"
-            className="text-[11px] font-semibold hover:underline"
-            style={{ color: "var(--accent)" }}
-          >
-            + Dodaj w FOS
-          </Link>
-        </div>
-      )}
+      {/* Company Goal + Tasks — interactive client component */}
+      <DashboardFosInteractive initialGoal={goalItem ?? null} initialTasks={majorItems} />
 
       {/* Sprint card */}
       <div
         className="glass-card rounded-xl px-5 py-4 mb-3"
         style={sprint ? {
-          background: "linear-gradient(135deg, rgba(255,76,0,0.08) 0%, rgba(255,255,255,0.92) 60%)",
           borderLeft: "3px solid var(--accent)",
         } : undefined}
       >
@@ -292,82 +214,6 @@ export async function DashboardFosSection() {
         })}
       </div>
 
-      {/* Weekly Priorities preview */}
-      <div className="glass-card rounded-xl px-4 py-3">
-        <div className="flex items-center justify-between mb-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
-            Ten tydzień · Priorytety
-          </span>
-          <Link
-            href="/fos/priorities"
-            className="text-[11px] font-medium hover:underline"
-            style={{ color: "var(--accent)" }}
-          >
-            Zarządzaj →
-          </Link>
-        </div>
-
-        {priorities.length === 0 ? (
-          <div className="py-3 text-center">
-            <span className="text-[12px]" style={{ color: "var(--muted)" }}>
-              Brak priorytetów na ten tydzień.{" "}
-              <Link href="/fos/priorities" className="hover:underline" style={{ color: "var(--accent)" }}>
-                Dodaj
-              </Link>
-            </span>
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {goalItem && (
-              <PriorityRow p={goalItem} isGoal />
-            )}
-            {majorItems.map((p) => (
-              <PriorityRow key={p.id} p={p} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PriorityRow({ p, isGoal }: { p: FosWeeklyPriority; isGoal?: boolean }) {
-  const todayStr = new Date().toISOString().split("T")[0];
-  const isOverdue = p.status !== "completed" && p.deadline && p.deadline < todayStr;
-
-  return (
-    <div
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
-      style={{
-        background: isGoal ? "var(--accent-subtle)" : "var(--ba-4)",
-        border: `1px solid ${isGoal ? "rgba(255, 76, 0, 0.2)" : "var(--border)"}`,
-      }}
-    >
-      <span className="text-[11px] shrink-0" style={{ color: isGoal ? "var(--accent)" : "var(--muted)" }}>
-        {isGoal ? "⭐" : "▸"}
-      </span>
-      <span
-        className={`text-[12px] font-medium flex-1 min-w-0 truncate ${
-          p.status === "completed" ? "line-through opacity-50" : ""
-        }`}
-      >
-        {p.title}
-      </span>
-      {p.owner_label && (
-        <span
-          className="text-[10px] shrink-0 tabular-nums hidden sm:block"
-          style={{ color: "var(--muted)" }}
-        >
-          {p.owner_label}
-        </span>
-      )}
-      {p.deadline && isOverdue && (
-        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-          style={{ background: "#ef444415", color: "#ef4444" }}>
-          Zaległe
-        </span>
-      )}
-      <StatusPill status={p.status} />
     </div>
   );
 }
