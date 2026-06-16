@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  /* Core palette — Firecrawl light */
-  --bg: #FAFAF9;
-  --bg-2: #F4F3F1;
+  /* Core palette — BeautyRise (czarno-pomarańczowo-biały) */
+  --bg: #FFFFFF;
+  --bg-2: #F5F5F4;
   --surface: #FFFFFF;
   --surface-raised: #FFFFFF;
   --panel: rgba(255, 255, 255, 0.85);
@@ -16,7 +16,16 @@
   --muted: #78716C;
   --text: #0C0A08;
 
-  /* Accent — heat (Firecrawl orange) */
+  /* Sidebar — brand black */
+  --sidebar-bg: #0C0A08;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: rgba(255, 255, 255, 0.70);
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: rgba(255, 76, 0, 0.18);
+  --sidebar-section: rgba(255, 255, 255, 0.40);
+
+  /* Accent — heat (BeautyRise orange) */
   --accent: #FF4C00;
   --accent-2: #FF5C14;
   --accent-glow: rgba(255, 76, 0, 0.15);
@@ -38,10 +47,15 @@
   --ba-40: rgba(0, 0, 0, 0.40);
   --ba-56: rgba(0, 0, 0, 0.56);
 
-  /* Status */
+  /* Status — one shade per meaning (semantic, used via StatusBadge) */
   --success: #16a34a;
-  --warning: #ca8a04;
+  --success-bg: rgba(22, 163, 74, 0.12);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.12);
   --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.12);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.12);
 
   /* Shadows — light theme */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);

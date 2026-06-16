@@ -11,6 +11,7 @@ import {
 import { MetaPanel } from "./meta-panel";
 import { SmsPanel } from "./sms-panel";
 import { EmailPanel } from "./email-panel";
+import { ComposeButton } from "../compose-message";
 
 function MessagesHubInner({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
@@ -126,15 +127,24 @@ function MessagesHubInner({ workspaceId }: { workspaceId: string }) {
   };
 
   return (
-    <div className="flex" style={{ height: "calc(100vh - 56px)", overflow: "hidden" }}>
-      <ChannelsSidebar
-        current={channelParam}
-        currentAccountId={accountParam}
-        onSelect={handleSelect}
-        emailAccounts={emailAccounts}
-        summary={summary}
-      />
-      {renderPanel()}
+    <div className="flex flex-col" style={{ height: "calc(100vh - 56px)", overflow: "hidden" }}>
+      <div
+        className="flex items-center justify-between px-4 shrink-0"
+        style={{ height: 52, borderBottom: "1px solid var(--border)", background: "var(--panel-solid)" }}
+      >
+        <h1 className="text-[15px] font-semibold tracking-tight">Skrzynka</h1>
+        <ComposeButton />
+      </div>
+      <div className="flex flex-1 min-h-0">
+        <ChannelsSidebar
+          current={channelParam}
+          currentAccountId={accountParam}
+          onSelect={handleSelect}
+          emailAccounts={emailAccounts}
+          summary={summary}
+        />
+        {renderPanel()}
+      </div>
     </div>
   );
 }

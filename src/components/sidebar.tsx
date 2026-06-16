@@ -146,33 +146,37 @@ const Icons = {
   ),
 };
 
-const primary = [
+const salesNav = [
   { href: "/", label: "Dashboard", icon: Icons.dashboard },
   { href: "/leads", label: "Leady", icon: Icons.leads },
   { href: "/leads/kanban", label: "Kanban", icon: Icons.kanban },
-  { href: "/messages", label: "Wiadomości", icon: Icons.messages, isMessages: true },
+  { href: "/leads/deleted", label: "Kosz", icon: Icons.trash },
+];
+
+const commsNav = [
+  { href: "/messages", label: "Skrzynka", icon: Icons.messages, isMessages: true },
   { href: "/team-chat", label: "Czat zespołu", icon: Icons.teamChat },
   { href: "/journal", label: "Dziennik", icon: Icons.journal },
+];
+
+const marketingNav = [
+  { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
+  { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
+  { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
 ];
 
 const financesNav = [
   { href: "/finances", label: "Finanse", icon: Icons.wallet },
 ];
 
-const integrationsNav = [
-  { href: "/integrations/meta", label: "Meta Ads", icon: Icons.meta },
-  { href: "/integrations/meta/capi", label: "CAPI Quality", icon: Icons.signal },
-  { href: "/campaigns", label: "Kampanie Meta", icon: Icons.campaigns },
-  { href: "/email-campaigns", label: "Kampanie Email", icon: Icons.email },
-  { href: "/sms-campaigns", label: "Kampanie SMS", icon: Icons.sms },
-];
-
 const settingsNav = [
-  { href: "/settings/workspace", label: "Workspace", icon: Icons.workspace },
   { href: "/settings/workspaces", label: "Klienci", icon: Icons.clients },
+  { href: "/settings/workspace", label: "Workspace", icon: Icons.workspace },
   { href: "/settings/pipelines", label: "Pipeline'y", icon: Icons.pipelines },
   { href: "/settings/tags", label: "Tagi", icon: Icons.tags },
-  { href: "/leads/deleted", label: "Usunięte leady", icon: Icons.trash },
+  { href: "/integrations/meta", label: "Integracje", icon: Icons.meta },
+  { href: "/integrations/meta/capi", label: "Jakość CAPI", icon: Icons.signal },
+  { href: "/logs", label: "Logi systemu", icon: Icons.logs },
 ];
 
 function NavLink({
@@ -194,8 +198,8 @@ function NavLink({
       prefetch
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
         active
-          ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
-          : "text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)]"
+          ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-text-active)]"
+          : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)]"
       }`}
     >
       <span className="shrink-0">{icon}</span>
@@ -214,7 +218,7 @@ function NavLink({
 
 function Section({ label }: { label: string }) {
   return (
-    <div className="text-[10px] uppercase tracking-[0.11em] text-[var(--muted)]/60 px-3 pt-5 pb-1 font-semibold">
+    <div className="text-[10px] uppercase tracking-[0.11em] text-[var(--sidebar-section)] px-3 pt-5 pb-1 font-semibold">
       {label}
     </div>
   );
@@ -229,8 +233,14 @@ export function Sidebar({
 }) {
   const path = usePathname();
   const { open: mobileOpen, setOpen } = useNav();
-  const isActive = (href: string) =>
-    href === "/" ? path === "/" : path.startsWith(href);
+
+  // Most-specific match wins, so /leads doesn't light up on /leads/kanban etc.
+  const allHrefs = [...salesNav, ...commsNav, ...marketingNav, ...financesNav, ...settingsNav].map((i) => i.href);
+  const activeHref = allHrefs.reduce((best, href) => {
+    const matches = href === "/" ? path === "/" : path === href || path.startsWith(href + "/");
+    return matches && href.length > best.length ? href : best;
+  }, "");
+  const isActive = (href: string) => href === activeHref;
 
   // Close drawer when navigating
   useEffect(() => { setOpen(false); }, [path, setOpen]);
@@ -324,14 +334,14 @@ export function Sidebar({
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
       `}
       style={{
-        borderRight: "1px solid var(--border)",
-        background: "var(--surface)",
+        borderRight: "1px solid var(--sidebar-border)",
+        background: "var(--sidebar-bg)",
       }}
     >
       {/* Mobile close button */}
       <button
-        className="lg:hidden absolute top-3 right-3 z-10 p-1.5 rounded-md transition-colors hover:bg-[var(--ba-4)]"
-        style={{ color: "var(--muted)" }}
+        className="lg:hidden absolute top-3 right-3 z-10 p-1.5 rounded-md transition-colors hover:bg-[var(--sidebar-hover-bg)]"
+        style={{ color: "var(--sidebar-text)" }}
         onClick={() => setOpen(false)}
         aria-label="Zamknij menu"
       >
@@ -345,7 +355,13 @@ export function Sidebar({
       />
 
       <nav className="flex-1 px-2.5 py-2.5 flex flex-col gap-0.5 overflow-y-auto">
-        {primary.map((item) => (
+        <Section label="Sprzedaż" />
+        {salesNav.map((item) => (
+          <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
+        ))}
+
+        <Section label="Komunikacja" />
+        {commsNav.map((item) => (
           <NavLink
             key={item.href}
             href={item.href}
@@ -356,51 +372,36 @@ export function Sidebar({
           />
         ))}
 
-        <Section label="Finanse" />
-        {financesNav.map((item) => (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            active={isActive(item.href)}
-          />
+        <Section label="Marketing" />
+        {marketingNav.map((item) => (
+          <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
         ))}
 
-        <Section label="Integracje" />
-        {integrationsNav.map((item) => (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            active={isActive(item.href)}
-          />
+        <Section label="Finanse" />
+        {financesNav.map((item) => (
+          <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item.href)} />
         ))}
 
         <Section label="Ustawienia" />
         {settingsNav.map((item) => (
           <NavLink key={item.href} {...item} active={isActive(item.href)} />
         ))}
-
-        <Section label="System" />
-        <NavLink href="/logs" label="Logi" icon={Icons.logs} active={isActive("/logs")} />
       </nav>
 
       <div
         className="px-2.5 pb-3 pt-2"
-        style={{ borderTop: "1px solid var(--border)" }}
+        style={{ borderTop: "1px solid var(--sidebar-border)" }}
       >
         <form action="/api/auth/signout" method="POST">
           <button
             type="submit"
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)] transition-all"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover-bg)] hover:text-[var(--sidebar-text-active)] transition-all"
           >
             <span className="shrink-0">{Icons.signout}</span>
             <span className="tracking-tight">Wyloguj</span>
           </button>
         </form>
-        <p className="text-[10px] text-[var(--muted)]/40 px-3 pt-1">v1.0.0</p>
+        <p className="text-[10px] text-[var(--sidebar-section)] px-3 pt-1">v1.0.0</p>
       </div>
     </aside>
     </>
