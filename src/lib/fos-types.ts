@@ -154,3 +154,18 @@ export function getWeekStart(d: Date = new Date()): string {
   monday.setDate(d.getDate() + diff);
   return monday.toISOString().split("T")[0];
 }
+
+// Weekly review piszemy WYŁĄCZNIE w niedzielę (po całym tygodniu).
+// Dzień tygodnia liczymy w strefie Europe/Warsaw, żeby było spójnie niezależnie
+// od strefy serwera (Vercel = UTC) i klienta. Używane i na froncie (lock UI),
+// i na backendzie (twarda blokada zapisu w /api/fos/reviews).
+export function isWeeklyReviewDay(d: Date = new Date()): boolean {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Warsaw",
+    weekday: "short",
+  }).format(d);
+  return weekday === "Sun";
+}
+
+export const WEEKLY_REVIEW_LOCKED_MESSAGE =
+  "Weekly review piszemy tylko w niedzielę. Poczekaj na następną niedzielę.";

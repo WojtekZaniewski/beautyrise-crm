@@ -16,8 +16,13 @@ interface BizMathData {
   leadsCount: number;
 }
 
-const LS_CLIENTS = "bm_returning_clients";
-const LS_SPEND = "bm_avg_spend";
+interface Client {
+  id: string;
+  name: string;
+  amount: number;
+}
+
+const LS_CLIENTS = "bm_clients_list";
 
 function fmtPln(n: number) {
   return new Intl.NumberFormat("pl-PL", {
@@ -38,73 +43,66 @@ function computeTargets(currentMonthly: number): number[] {
   return [base, base + 5000, base + 10000, base + 20000];
 }
 
-function NumInput({
-  label,
-  value,
-  onChange,
-  suffix,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  suffix?: string;
-  hint?: string;
-}) {
-  const [focused, setFocused] = useState(false);
+function genId() {
+  return `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function parseAmount(v: string): number {
+  const n = parseFloat(v.replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+}
+
+function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div>
-      <label
-        className="text-[11px] font-semibold uppercase tracking-wide block mb-2"
-        style={{ color: "var(--muted)" }}
-      >
+      <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>
         {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="1"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          className="w-28 text-[24px] font-bold text-right rounded-xl px-3 py-2 outline-none transition-all tabular-nums"
-          style={{
-            background: "var(--ba-4)",
-            color: "var(--text)",
-            border: `2px solid ${focused ? "var(--accent)" : "var(--border)"}`,
-          }}
-        />
-        {suffix && (
-          <span className="text-[15px] font-medium" style={{ color: "var(--muted)" }}>
-            {suffix}
-          </span>
-        )}
       </div>
-      {hint && (
-        <div className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>
-          {hint}
-        </div>
-      )}
+      <div className="text-[24px] font-bold tabular-nums" style={{ color: accent ? "var(--accent)" : "var(--text)" }}>
+        {value}
+      </div>
     </div>
   );
 }
 
 export default function BusinessMathPage() {
   const [data, setData] = useState<BizMathData | null>(null);
-  const [clients, setClients] = useState("30");
-  const [spend, setSpend] = useState("300");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
-  const clientsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const spendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [draftAmount, setDraftAmount] = useState("");
 
-  // Load from localStorage
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load saved clients from localStorage
   useEffect(() => {
-    const storedClients = localStorage.getItem(LS_CLIENTS);
-    const storedSpend = localStorage.getItem(LS_SPEND);
-    if (storedClients) setClients(storedClients);
-    if (storedSpend) setSpend(storedSpend);
+    try {
+      const raw = localStorage.getItem(LS_CLIENTS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setClients(
+            parsed
+              .filter((c) => c && typeof c.amount === "number")
+              .map((c) => ({ id: c.id ?? genId(), name: String(c.name ?? ""), amount: Math.max(0, c.amount) })),
+          );
+        }
+      }
+    } catch {
+      /* ignore corrupt storage */
+    }
+    setLoaded(true);
   }, []);
+
+  // Persist (debounced) once initial load is done
+  useEffect(() => {
+    if (!loaded) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      localStorage.setItem(LS_CLIENTS, JSON.stringify(clients));
+    }, 400);
+  }, [clients, loaded]);
 
   // Fetch sparkline data (non-blocking)
   useEffect(() => {
@@ -114,32 +112,38 @@ export default function BusinessMathPage() {
       .catch(() => null);
   }, []);
 
-  function handleClients(val: string) {
-    setClients(val);
-    if (clientsTimer.current) clearTimeout(clientsTimer.current);
-    clientsTimer.current = setTimeout(() => {
-      if (parseInt(val, 10) > 0) localStorage.setItem(LS_CLIENTS, val);
-    }, 500);
+  function addClient() {
+    const amount = parseAmount(draftAmount);
+    if (amount <= 0) return;
+    setClients((prev) => [...prev, { id: genId(), name: draftName.trim(), amount }]);
+    setDraftName("");
+    setDraftAmount("");
   }
 
-  function handleSpend(val: string) {
-    setSpend(val);
-    if (spendTimer.current) clearTimeout(spendTimer.current);
-    spendTimer.current = setTimeout(() => {
-      if (parseInt(val, 10) > 0) localStorage.setItem(LS_SPEND, val);
-    }, 500);
+  function updateClient(id: string, patch: Partial<Client>) {
+    setClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   }
 
-  const numClients = Math.max(0, parseInt(clients, 10) || 0);
-  const numSpend = Math.max(0, parseInt(spend, 10) || 0);
-  const currentMonthly = numClients * numSpend;
-  const targets = computeTargets(currentMonthly);
+  function removeClient(id: string) {
+    setClients((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  const count = clients.length;
+  const totalMonthly = clients.reduce((s, c) => s + (c.amount || 0), 0);
+  const avgSpend = count > 0 ? Math.round(totalMonthly / count) : 0;
+  const targets = computeTargets(totalMonthly);
 
   const chartData = (data?.months ?? []).map((m) => ({
     name: monthShort(m.month),
     income: m.income,
   }));
   const hasChartData = chartData.some((m) => m.income > 0);
+
+  const inputStyle = {
+    background: "var(--ba-4)",
+    color: "var(--text)",
+    border: "1px solid var(--border)",
+  };
 
   return (
     <div className="w-full px-4 py-6 space-y-4">
@@ -153,63 +157,105 @@ export default function BusinessMathPage() {
           ← Founder OS
         </Link>
         <span style={{ color: "var(--border)" }}>·</span>
-        <h1
-          className="text-[18px] font-bold tracking-tight"
-          style={{ color: "var(--text)" }}
-        >
+        <h1 className="text-[18px] font-bold tracking-tight" style={{ color: "var(--text)" }}>
           Business Math
         </h1>
       </div>
 
-      {/* Inputs */}
+      {/* Returning clients list */}
       <div
         className="rounded-2xl px-5 py-5"
-        style={{
-          background: "var(--panel-solid)",
-          border: "1px solid var(--border)",
-        }}
+        style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}
       >
-        <div
-          className="text-[10px] font-semibold uppercase tracking-widest mb-4"
-          style={{ color: "var(--muted)" }}
-        >
-          Twoje dane
-        </div>
-        <div className="flex flex-wrap gap-8">
-          <NumInput
-            label="Powracające klientki / mies."
-            value={clients}
-            onChange={handleClients}
-            suffix="os."
-            hint="Ile klientek wraca co miesiąc"
-          />
-          <NumInput
-            label="Śr. wydatki klientki / mies."
-            value={spend}
-            onChange={handleSpend}
-            suffix="zł"
-            hint="Ile średnio wydaje jedna klientka"
-          />
+        <div className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--muted)" }}>
+          Powracające klientki
         </div>
 
-        {/* Computed current revenue */}
-        {currentMonthly > 0 && (
-          <div
-            className="mt-5 pt-4 flex items-baseline gap-2"
-            style={{ borderTop: "1px solid var(--border)" }}
+        {/* Summary — computed automatically */}
+        <div className="flex flex-wrap gap-8 mb-5">
+          <Stat label="Klientek" value={`${count}`} />
+          <Stat label="Śr. wydatki / klientkę" value={fmtPln(avgSpend)} accent />
+          <Stat label="Przychód / mies." value={fmtPln(totalMonthly)} />
+        </div>
+
+        {/* List */}
+        {count > 0 && (
+          <div className="space-y-2 mb-1">
+            {clients.map((c, i) => (
+              <div key={c.id} className="flex items-center gap-2 group">
+                <span className="text-[11px] w-5 text-right tabular-nums shrink-0" style={{ color: "var(--muted)" }}>
+                  {i + 1}
+                </span>
+                <input
+                  value={c.name}
+                  onChange={(e) => updateClient(c.id, { name: e.target.value })}
+                  placeholder="Imię (np. Ania)"
+                  className="flex-1 min-w-0 text-[14px] rounded-lg px-3 py-2 outline-none transition-all"
+                  style={inputStyle}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  value={c.amount ? String(c.amount) : ""}
+                  onChange={(e) => updateClient(c.id, { amount: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                  placeholder="0"
+                  className="w-24 text-[15px] font-semibold text-right rounded-lg px-3 py-2 outline-none transition-all tabular-nums"
+                  style={inputStyle}
+                />
+                <span className="text-[13px] shrink-0" style={{ color: "var(--muted)" }}>zł</span>
+                <button
+                  onClick={() => removeClient(c.id)}
+                  title="Usuń"
+                  className="shrink-0 text-[13px] w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ color: "var(--muted)" }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add row */}
+        <div
+          className={`flex items-center gap-2 ${count > 0 ? "mt-3 pt-3" : ""}`}
+          style={count > 0 ? { borderTop: "1px solid var(--border)" } : undefined}
+        >
+          <span className="w-5 shrink-0" />
+          <input
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") addClient(); }}
+            placeholder="Imię (np. Ania)"
+            className="flex-1 min-w-0 text-[14px] rounded-lg px-3 py-2 outline-none transition-all"
+            style={inputStyle}
+          />
+          <input
+            type="number"
+            min="0"
+            inputMode="numeric"
+            value={draftAmount}
+            onChange={(e) => setDraftAmount(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") addClient(); }}
+            placeholder="0"
+            className="w-24 text-[15px] font-semibold text-right rounded-lg px-3 py-2 outline-none transition-all tabular-nums"
+            style={inputStyle}
+          />
+          <span className="text-[13px] shrink-0" style={{ color: "var(--muted)" }}>zł</span>
+          <button
+            onClick={addClient}
+            disabled={parseAmount(draftAmount) <= 0}
+            className="shrink-0 text-[13px] font-semibold px-3 py-2 rounded-lg transition-opacity disabled:opacity-40"
+            style={{ background: "var(--accent)", color: "white" }}
           >
-            <span className="text-[12px]" style={{ color: "var(--muted)" }}>
-              Obecny przychód z powracających:
-            </span>
-            <span
-              className="text-[22px] font-bold tabular-nums"
-              style={{ color: "var(--accent)" }}
-            >
-              {fmtPln(currentMonthly)}
-            </span>
-            <span className="text-[12px]" style={{ color: "var(--muted)" }}>
-              / mies.
-            </span>
+            + Dodaj
+          </button>
+        </div>
+
+        {count === 0 && (
+          <div className="text-[12px] italic mt-3" style={{ color: "var(--muted)" }}>
+            Dodaj powracające klientki i ile wydają — średnia policzy się sama.
           </div>
         )}
       </div>
@@ -217,31 +263,22 @@ export default function BusinessMathPage() {
       {/* Goals */}
       <div
         className="rounded-2xl px-5 py-5"
-        style={{
-          background: "var(--panel-solid)",
-          border: "1px solid var(--border)",
-        }}
+        style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}
       >
-        <div
-          className="text-[10px] font-semibold uppercase tracking-widest mb-4"
-          style={{ color: "var(--muted)" }}
-        >
+        <div className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--muted)" }}>
           Ile klientek do celu?
         </div>
 
-        {numSpend <= 0 ? (
-          <div
-            className="text-[13px] italic text-center py-3"
-            style={{ color: "var(--muted)" }}
-          >
-            Wpisz średnie wydatki klientki, żeby zobaczyć cele.
+        {avgSpend <= 0 ? (
+          <div className="text-[13px] italic text-center py-3" style={{ color: "var(--muted)" }}>
+            Dodaj klientki powyżej, żeby zobaczyć cele.
           </div>
         ) : (
           <div className="space-y-5">
             {targets.map((target) => {
-              const needed = Math.ceil(target / numSpend);
-              const progress = numClients > 0 ? Math.min(1, numClients / needed) : 0;
-              const gap = Math.max(0, needed - numClients);
+              const needed = Math.ceil(target / avgSpend);
+              const progress = count > 0 ? Math.min(1, count / needed) : 0;
+              const gap = Math.max(0, needed - count);
               const achieved = gap === 0;
               const pct = Math.round(progress * 100);
 
@@ -257,10 +294,7 @@ export default function BusinessMathPage() {
                           ✓
                         </span>
                       )}
-                      <span
-                        className="text-[16px] font-bold tabular-nums"
-                        style={{ color: "var(--text)" }}
-                      >
+                      <span className="text-[16px] font-bold tabular-nums" style={{ color: "var(--text)" }}>
                         {fmtPln(target)}
                       </span>
                     </div>
@@ -271,21 +305,15 @@ export default function BusinessMathPage() {
                       >
                         {needed} kl.
                       </span>
-                      {!achieved && numClients > 0 && (
-                        <span
-                          className="text-[11px]"
-                          style={{ color: "var(--muted)" }}
-                        >
+                      {!achieved && count > 0 && (
+                        <span className="text-[11px]" style={{ color: "var(--muted)" }}>
                           +{gap} brakuje
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div
-                    className="h-2 rounded-full overflow-hidden"
-                    style={{ background: "var(--ba-4)" }}
-                  >
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--ba-4)" }}>
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{
@@ -297,11 +325,8 @@ export default function BusinessMathPage() {
                     />
                   </div>
 
-                  {numClients > 0 && (
-                    <div
-                      className="text-[10px] mt-1"
-                      style={{ color: "var(--muted)" }}
-                    >
+                  {count > 0 && (
+                    <div className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>
                       {achieved
                         ? "Cel osiągnięty przy obecnej bazie"
                         : `${pct}% drogi — brakuje ${gap} ${gap === 1 ? "klientki" : "klientek"}`}
@@ -318,32 +343,21 @@ export default function BusinessMathPage() {
       {hasChartData && (
         <div
           className="rounded-2xl px-5 py-4"
-          style={{
-            background: "var(--panel-solid)",
-            border: "1px solid var(--border)",
-          }}
+          style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}
         >
-          <div
-            className="text-[10px] font-semibold uppercase tracking-widest mb-1"
-            style={{ color: "var(--muted)" }}
-          >
+          <div className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>
             Przychody z systemu · ostatnie 6 miesięcy
           </div>
           {data?.avgMonthlyRevenue ? (
             <div className="text-[13px] mb-3" style={{ color: "var(--muted)" }}>
               Śr.{" "}
-              <strong style={{ color: "var(--text)" }}>
-                {fmtPln(data.avgMonthlyRevenue)}
-              </strong>{" "}
+              <strong style={{ color: "var(--text)" }}>{fmtPln(data.avgMonthlyRevenue)}</strong>{" "}
               / mies. z wprowadzonych płatności
             </div>
           ) : null}
           <div style={{ height: 56 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={chartData}
-                margin={{ top: 2, right: 0, left: 0, bottom: 14 }}
-              >
+              <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 14 }}>
                 <defs>
                   <linearGradient id="bm-fill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#FF4C00" stopOpacity={0.18} />

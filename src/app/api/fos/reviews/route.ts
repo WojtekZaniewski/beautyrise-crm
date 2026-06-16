@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { isWeeklyReviewDay, WEEKLY_REVIEW_LOCKED_MESSAGE } from "@/lib/fos-types";
 
 export async function GET(req: NextRequest) {
   const supabase = createServiceClient();
@@ -18,6 +19,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Twarda blokada: weekly review można zapisać tylko w niedzielę (Europe/Warsaw).
+  if (!isWeeklyReviewDay())
+    return NextResponse.json(
+      { error: WEEKLY_REVIEW_LOCKED_MESSAGE, code: "NOT_SUNDAY" },
+      { status: 403 },
+    );
+
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
   const { data: { user } } = await supabase.auth.getUser();

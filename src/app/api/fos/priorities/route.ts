@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
-import { displayName } from "@/app/api/me/route";
+import { displayName } from "@/lib/display-name";
 
 export async function GET(req: NextRequest) {
   const supabase = createServiceClient();

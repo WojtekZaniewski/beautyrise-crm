@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { FosWeeklyReview } from "@/lib/fos-types";
-import { getWeekStart } from "@/lib/fos-types";
+import { getWeekStart, isWeeklyReviewDay } from "@/lib/fos-types";
 
 const QUESTIONS = [
   { key: "done_this_week", label: "1. Co zostało wykonane?", placeholder: "Opisz, co udało się zrealizować..." },
@@ -58,7 +58,7 @@ export function WeeklyReviewForm() {
 
   useEffect(() => { loadWeek(week); }, [week]);
   useEffect(() => { if (showHistory) loadAll(); }, [showHistory]);
-  useEffect(() => { setIsSunday(new Date().getDay() === 0); }, []);
+  useEffect(() => { setIsSunday(isWeeklyReviewDay()); }, []);
 
   const save = async () => {
     setSaving(true); setSaved(false);
@@ -72,6 +72,9 @@ export function WeeklyReviewForm() {
       setExistingId(json.data?.id ?? existingId);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
+    } else if (res.status === 403) {
+      // Niedziela minęła, gdy karta była otwarta — serwer odrzucił zapis. Zablokuj UI.
+      setIsSunday(false);
     }
     setSaving(false);
   };

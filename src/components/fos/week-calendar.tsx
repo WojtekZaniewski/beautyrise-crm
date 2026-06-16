@@ -3,8 +3,7 @@
 import { useState } from "react";
 import type { FosWeeklyPriority } from "@/lib/fos-types";
 
-const OWNERS = ["Kuba", "Wojtek"] as const;
-type Owner = (typeof OWNERS)[number];
+type Owner = string;
 const WEEKDAYS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
 
 function addDays(dateStr: string, n: number): string {
@@ -98,7 +97,6 @@ export function WeekCalendar({
   onAdd: (owner: Owner | "", scope: "today" | "week", title: string, deadline?: string) => void;
   onSetDeadline: (id: string, date: string | null) => void;
 }) {
-  const [owner, setOwner] = useState<Owner | "">("");
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const tasks = priorities.filter((p) => !p.is_company_goal);
   const unscheduled = tasks.filter((p) => !p.deadline);
@@ -107,18 +105,6 @@ export function WeekCalendar({
     <div className="glass-card rounded-xl px-4 py-4 mb-3">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>🗓️ Plan tygodnia</div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px]" style={{ color: "var(--muted)" }}>Dodaj jako</span>
-          <select
-            value={owner}
-            onChange={(e) => setOwner(e.target.value as Owner | "")}
-            className="text-[11px] px-2 py-1 rounded-lg outline-none"
-            style={{ background: "var(--ba-4)", border: "1px solid var(--border)", color: "var(--text)" }}
-          >
-            <option value="">—</option>
-            {OWNERS.map((o) => <option key={o}>{o}</option>)}
-          </select>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
@@ -131,7 +117,7 @@ export function WeekCalendar({
             tasks={tasks.filter((t) => t.deadline === date)}
             onToggle={onToggle}
             onDelete={onDelete}
-            onAdd={(title) => onAdd(owner, "week", title, date)}
+            onAdd={(title) => onAdd("", "week", title, date)}
           />
         ))}
       </div>

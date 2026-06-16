@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { isWeeklyReviewDay, WEEKLY_REVIEW_LOCKED_MESSAGE } from "@/lib/fos-types";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Twarda blokada: edycja weekly review możliwa tylko w niedzielę (Europe/Warsaw).
+  if (!isWeeklyReviewDay())
+    return NextResponse.json(
+      { error: WEEKLY_REVIEW_LOCKED_MESSAGE, code: "NOT_SUNDAY" },
+      { status: 403 },
+    );
+
   const { id } = await params;
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
