@@ -100,16 +100,17 @@ function FunnelBar({ label, value, total, color }: { label: string; value: numbe
 const CHART_STYLE = {
   contentStyle: {
     fontSize: 12,
-    background: "#0C0C0C",
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: 10,
+    background: "rgba(255,255,255,0.96)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
     padding: "8px 12px",
-    color: "rgba(255,255,255,0.88)",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.30)",
+    color: "var(--text)",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+    backdropFilter: "blur(8px)",
   },
-  itemStyle: { color: "rgba(255,255,255,0.70)" },
-  labelStyle: { color: "rgba(255,255,255,0.45)", marginBottom: 4, fontSize: 11 },
-  cursor: { stroke: "rgba(255,76,0,0.25)", strokeWidth: 1 },
+  itemStyle: { color: "#44403c" },
+  labelStyle: { color: "#78716C", marginBottom: 4, fontSize: 11 },
+  cursor: { stroke: "rgba(255,76,0,0.35)", strokeWidth: 1 },
 };
 
 const META_FILTER_COLOR: Record<MetaFilter, string> = {
@@ -260,7 +261,7 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={64} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => pln(v as number)} />
@@ -383,7 +384,7 @@ export function UnifiedCampaignChart({
                         <stop offset="95%" stopColor={META_FILTER_COLOR[metaFilter]} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                     <YAxis
                       tick={{ fontSize: 10, fill: "var(--muted)" }}
@@ -467,13 +468,13 @@ export function UnifiedCampaignChart({
                 return (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
                       <Tooltip
                         {...CHART_STYLE}
                         formatter={(v: unknown) => [String(v), ""]}
-                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        cursor={{ fill: "rgba(0,0,0,0.04)" }}
                       />
                       <Bar dataKey="value" radius={[5, 5, 0, 0]}>
                         {bars.map((entry, i) => (
@@ -519,7 +520,7 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor={EMAIL_COLOR[emailFilter]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => [String(v), EMAIL_LABEL[emailFilter]]} />
@@ -568,13 +569,13 @@ export function UnifiedCampaignChart({
                 return (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
                       <Tooltip
                         {...CHART_STYLE}
                         formatter={(v: unknown) => [String(v), ""]}
-                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        cursor={{ fill: "rgba(0,0,0,0.04)" }}
                       />
                       <Bar dataKey="value" radius={[5, 5, 0, 0]}>
                         {bars.map((entry, i) => (
@@ -620,7 +621,7 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor={SMS_COLOR[smsFilter]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => [String(v), SMS_LABEL[smsFilter]]} />

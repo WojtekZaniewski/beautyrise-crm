@@ -374,11 +374,11 @@ export function Sidebar({
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
       `}
       style={{
-        background: "linear-gradient(127.09deg, rgba(6,11,40,0.94) 19.41%, rgba(10,14,35,0.49) 76.65%)",
-        backdropFilter: "blur(42px)",
-        WebkitBackdropFilter: "blur(42px)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0px 20px 27px 0px rgba(0,0,0,0.05)",
+        background: "rgba(255,255,255,0.72)",
+        backdropFilter: "saturate(180%) blur(30px)",
+        WebkitBackdropFilter: "saturate(180%) blur(30px)",
+        border: "1px solid rgba(255,255,255,0.85)",
+        boxShadow: "0 8px 28px rgba(0,0,0,0.07), 0 2px 6px rgba(0,0,0,0.04)",
       }}
     >
       {/* Mobile close button */}

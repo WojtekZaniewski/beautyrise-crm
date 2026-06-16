@@ -215,7 +215,7 @@ export function DashboardFosInteractive({
       <div
         className="rounded-xl px-4 py-4 mb-3"
         style={{
-          background: "linear-gradient(126.97deg, rgba(6,11,40,0.74) 28.26%, rgba(10,14,35,0.71) 91.2%)",
+          background: "linear-gradient(135deg, rgba(255,76,0,0.10) 0%, rgba(255,255,255,0.95) 100%)",
           border: "2px solid rgba(255,76,0,0.25)",
         }}
       >

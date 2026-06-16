@@ -3,60 +3,64 @@
 @tailwind utilities;
 
 :root {
-  /* ── Vision UI Dark Theme — BeautyRise ─────────────────────────────── */
-  --bg:             #030c1d;
-  --bg-2:           #090d2e;
-  --surface:        rgba(19, 26, 60, 0.97);
-  --surface-raised: rgba(25, 30, 70, 0.98);
-  --panel:          rgba(6, 11, 40, 0.82);
-  --panel-solid:    #0d1137;
-  --border:         rgba(255, 255, 255, 0.10);
-  --border-strong:  rgba(255, 255, 255, 0.20);
-  --border-muted:   rgba(255, 255, 255, 0.05);
-  --muted:          #a0aec0;
-  --text:           #ffffff;
+  /* ── Core palette — BeautyRise light (white · orange · black) ────────── */
+  --bg: #FAFAF9;
+  --bg-2: #F4F3F1;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --panel: rgba(255, 255, 255, 0.85);
+  --panel-solid: #FFFFFF;
+  --border: rgba(0, 0, 0, 0.07);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-muted: rgba(0, 0, 0, 0.05);
+  --muted: #78716C;
+  --text: #0C0A08;
 
-  /* Accent — orange (replaces Vision UI blue #0075ff) */
-  --accent:              #FF4C00;
-  --accent-2:            #FF6B35;
-  --accent-glow:         rgba(255, 76, 0, 0.30);
-  --accent-subtle:       rgba(255, 76, 0, 0.18);
-  --accent-subtle-hover: rgba(255, 76, 0, 0.26);
-  --heat-4:  rgba(255, 76, 0, 0.04);
-  --heat-8:  rgba(255, 76, 0, 0.08);
+  /* Accent — heat (BeautyRise orange) */
+  --accent: #FF4C00;
+  --accent-2: #FF5C14;
+  --accent-glow: rgba(255, 76, 0, 0.15);
+  --accent-subtle: rgba(255, 76, 0, 0.06);
+  --accent-subtle-hover: rgba(255, 76, 0, 0.10);
+  --heat-4: rgba(255, 76, 0, 0.04);
+  --heat-8: rgba(255, 76, 0, 0.08);
   --heat-12: rgba(255, 76, 0, 0.12);
   --heat-20: rgba(255, 76, 0, 0.20);
 
-  /* White alpha — tints on dark surfaces */
-  --ba-2:  rgba(255, 255, 255, 0.02);
-  --ba-3:  rgba(255, 255, 255, 0.03);
-  --ba-4:  rgba(255, 255, 255, 0.04);
-  --ba-6:  rgba(255, 255, 255, 0.06);
-  --ba-8:  rgba(255, 255, 255, 0.08);
-  --ba-12: rgba(255, 255, 255, 0.12);
-  --ba-16: rgba(255, 255, 255, 0.16);
-  --ba-24: rgba(255, 255, 255, 0.24);
-  --ba-40: rgba(255, 255, 255, 0.40);
-  --ba-56: rgba(255, 255, 255, 0.56);
+  /* Black alpha */
+  --ba-2: rgba(0, 0, 0, 0.02);
+  --ba-3: rgba(0, 0, 0, 0.03);
+  --ba-4: rgba(0, 0, 0, 0.04);
+  --ba-6: rgba(0, 0, 0, 0.06);
+  --ba-8: rgba(0, 0, 0, 0.08);
+  --ba-12: rgba(0, 0, 0, 0.12);
+  --ba-16: rgba(0, 0, 0, 0.16);
+  --ba-24: rgba(0, 0, 0, 0.24);
+  --ba-40: rgba(0, 0, 0, 0.40);
+  --ba-56: rgba(0, 0, 0, 0.56);
 
-  /* Status — brighter for dark background */
-  --success:    #48bb78;
-  --success-bg: rgba(72, 187, 120, 0.15);
-  --warning:    #f6ad55;
-  --warning-bg: rgba(246, 173, 85, 0.15);
-  --danger:     #fc8181;
-  --danger-bg:  rgba(252, 129, 129, 0.15);
-  --info:       #63b3ed;
-  --info-bg:    rgba(99, 179, 237, 0.15);
+  /* Status — one shade per meaning */
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.12);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.12);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.12);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.12);
 
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.55);
+  /* Shadows — soft, Creative Tim depth */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
 
   /* Orange gradient for CTAs */
-  --metal:       linear-gradient(160deg, #FF5C14 0%, #FF4400 60%, #E03200 100%);
+  --metal: linear-gradient(160deg, #FF5C14 0%, #FF4400 60%, #E03200 100%);
   --metal-hover: linear-gradient(160deg, #FF6A2B 0%, #FF5010 60%, #F03C00 100%);
+
+  /* Border radius — Creative Tim / Vision UI scale */
+  --radius-button: 12px;
+  --radius-card: 20px;
 
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -68,22 +72,14 @@
 html, body {
   background: var(--bg);
   color: var(--text);
-  color-scheme: dark;
-  font-family: "Plus Jakarta Display", "Helvetica", "Arial", sans-serif;
+  color-scheme: light;
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", "Helvetica", "Arial", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/* Vision UI cover gradient — ambient page backdrop */
-body {
-  background-image:
-    radial-gradient(ellipse 1200px 700px at 75% -10%, rgba(255, 76, 0, 0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 900px 600px at 10% 5%, rgba(67, 24, 255, 0.06) 0%, transparent 50%);
-  background-attachment: fixed;
-}
-
-/* Hardware-accelerated transitions */
+/* Hardware-accelerated transitions limited to non-layout properties */
 button, a, [role="button"], input, select, textarea {
   transition:
     background-color var(--dur-base) var(--ease-out),
@@ -94,73 +90,79 @@ button, a, [role="button"], input, select, textarea {
     opacity var(--dur-base) var(--ease-out);
 }
 
-/* ─── Dark glass card — Vision UI style ─────────────────────────────────── */
-/* backdrop-filter: blur(120px) matches the exact Creative Tim spec */
+/* ─── Glass card — Creative Tim form, white frosted ─────────────────────── */
 .glass-card {
-  background: linear-gradient(126.97deg, rgba(6,11,40,0.74) 28.26%, rgba(10,14,35,0.71) 91.2%);
-  backdrop-filter: blur(120px);
-  -webkit-backdrop-filter: blur(120px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 20px;
-  box-shadow: 0px 20px 27px 0px rgba(0, 0, 0, 0.05);
-}
-
-/* ─── Glass — subtle transparent surface ─────────────────────────────────── */
-.glass {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-card);
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.30);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.07),
+    0 2px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-/* ─── Panel — solid dark surface ─────────────────────────────────────────── */
+/* ─── Glass — translucent surface ───────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ─── Panel — solid white surface ───────────────────────────────────────── */
 .panel {
   background: var(--panel-solid);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
 }
 
-/* ─── Primary button ─────────────────────────────────────────────────────── */
+/* ─── Primary button — orange gradient, Creative Tim depth ──────────────── */
 .btn-primary {
   background: var(--metal);
   color: #fff;
   font-weight: 600;
   letter-spacing: 0.01em;
+  border-radius: var(--radius-button);
   box-shadow:
-    0 0 0 1px rgba(255, 68, 0, 0.35),
-    0 2px 8px rgba(255, 76, 0, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    0 0 0 1px rgba(255, 68, 0, 0.30),
+    0 4px 12px rgba(255, 76, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }
 .btn-primary:hover {
   background: var(--metal-hover);
   transform: translateY(-1px);
   box-shadow:
-    0 0 0 1px rgba(255, 68, 0, 0.45),
-    0 4px 14px rgba(255, 76, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    0 0 0 1px rgba(255, 68, 0, 0.40),
+    0 8px 20px rgba(255, 76, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 .btn-primary:active {
   transform: scale(0.985) translateY(0);
   box-shadow:
-    0 0 0 1px rgba(255, 68, 0, 0.32),
-    0 1px 4px rgba(255, 76, 0, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 0 0 1px rgba(255, 68, 0, 0.30),
+    0 2px 6px rgba(255, 76, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
-/* ─── Ghost / outlined button ────────────────────────────────────────────── */
+/* ─── Ghost / outlined button ───────────────────────────────────────────── */
 .btn-ghost {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid var(--border-strong);
   color: var(--text);
+  border-radius: var(--radius-button);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .btn-ghost:hover {
-  background: var(--ba-8);
+  background: #fff;
   border-color: var(--ba-24);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
 }
 
-/* ─── Chip / pill badge ──────────────────────────────────────────────────── */
+/* ─── Chip / pill badge ─────────────────────────────────────────────────── */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -169,39 +171,39 @@ button, a, [role="button"], input, select, textarea {
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 500;
-  background: var(--ba-8);
+  background: var(--ba-4);
   border: 1px solid var(--border);
 }
 
-/* ─── Scrollbars — thin, dark-mode ───────────────────────────────────────── */
-* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.10) transparent; }
+/* ─── Scrollbars — thin, neutral ────────────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.12) transparent; }
 *::-webkit-scrollbar { width: 5px; height: 5px; }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.12);
   border-radius: 999px;
 }
-*::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+*::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.20); }
 *::-webkit-scrollbar-track { background: transparent; }
 
-/* ─── Focus ring — orange tinted ─────────────────────────────────────────── */
+/* ─── Focus ring — orange tinted ────────────────────────────────────────── */
 *:focus-visible {
-  outline: 2px solid rgba(255, 76, 0, 0.65);
+  outline: 2px solid rgba(255, 76, 0, 0.55);
   outline-offset: 2px;
   border-radius: 5px;
 }
 
-/* ─── Table row hover ────────────────────────────────────────────────────── */
+/* ─── Table row hover ───────────────────────────────────────────────────── */
 .table-row-hover:hover {
-  background: var(--ba-4);
+  background: var(--ba-2);
 }
 
-/* ─── Text selection ─────────────────────────────────────────────────────── */
+/* ─── Text selection ────────────────────────────────────────────────────── */
 ::selection {
   background-color: var(--heat-20);
   color: var(--text);
 }
 
-/* ─── Dot grid background ────────────────────────────────────────────────── */
+/* ─── Dot grid background ───────────────────────────────────────────────── */
 .dot-grid {
   position: relative;
 }
@@ -209,7 +211,7 @@ button, a, [role="button"], input, select, textarea {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.055) 1px, transparent 1px);
   background-size: 20px 20px;
   background-position: 0 0;
   pointer-events: none;
@@ -228,7 +230,7 @@ button, a, [role="button"], input, select, textarea {
   z-index: 2;
 }
 
-/* ─── Orange ambient glow ────────────────────────────────────────────────── */
+/* ─── Orange ambient glow ───────────────────────────────────────────────── */
 .heat-glow {
   position: relative;
   overflow: hidden;
@@ -237,7 +239,7 @@ button, a, [role="button"], input, select, textarea {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 800px 400px at 50% -60px, rgba(255, 76, 0, 0.10) 0%, transparent 70%);
+  background: radial-gradient(ellipse 800px 400px at 50% -60px, rgba(255, 76, 0, 0.06) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -246,7 +248,7 @@ button, a, [role="button"], input, select, textarea {
   z-index: 1;
 }
 
-/* ─── Page enter animations ──────────────────────────────────────────────── */
+/* ─── Page enter animations ─────────────────────────────────────────────── */
 @keyframes fc-fade-up {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -272,7 +274,7 @@ button, a, [role="button"], input, select, textarea {
   animation: fc-fade-in 250ms var(--ease-out) both;
 }
 
-/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+/* ─── Reduced motion ────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
