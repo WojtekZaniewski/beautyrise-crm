@@ -427,7 +427,7 @@ export default async function Dashboard({
   ];
 
   return (
-    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page">
+    <div className="px-4 py-4 sm:px-7 sm:py-7 max-w-6xl mx-auto anim-page heat-glow">
       <DashboardFosSection />
 
       {/* CRM section header */}
@@ -435,16 +435,19 @@ export default async function Dashboard({
         className="flex flex-wrap items-center justify-between gap-y-3 pt-5 pb-5 mb-5 -mx-4 sm:-mx-7 px-4 sm:px-7"
         style={{ borderTop: "1px solid var(--border)" }}
       >
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <span
-              className="text-[11px] uppercase tracking-widest font-bold"
-              style={{ color: "var(--muted)" }}
-            >
-              CRM
-            </span>
+        <div className="flex items-center gap-3">
+          <div style={{ width: 3, height: 36, background: "var(--accent)", borderRadius: 2, flexShrink: 0 }} />
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span
+                className="text-[11px] uppercase tracking-widest font-bold"
+                style={{ color: "var(--muted)" }}
+              >
+                CRM
+              </span>
+            </div>
+            <h1 className="text-[20px] font-bold tracking-tight">Dashboard</h1>
           </div>
-          <h1 className="text-[18px] font-semibold tracking-tight">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
           <DateRangePicker from={fromDate} to={toDate} />
@@ -459,15 +462,14 @@ export default async function Dashboard({
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-lg p-5"
-            style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
+            className="glass-card rounded-xl p-5"
           >
-            <div className="text-[11.5px] font-medium text-[var(--muted)] uppercase tracking-wide mb-3">
+            <div className="text-[10.5px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>
               {s.label}
             </div>
             <div
-              className="text-[28px] font-semibold leading-none tracking-tight"
-              style={s.accent ? { color: "var(--accent-2)" } : undefined}
+              className="text-[30px] font-bold leading-none tracking-tight"
+              style={s.accent ? { color: "var(--accent)", textShadow: "0 0 24px rgba(255,76,0,0.25)" } : { color: "var(--text)" }}
             >
               {s.value}
             </div>
@@ -480,10 +482,7 @@ export default async function Dashboard({
       <div className="lg:col-span-2 flex flex-col gap-5">
 
       {/* Pipeline */}
-      <section
-        className="rounded-lg p-5"
-        style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      >
+      <section className="glass-card rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[13.5px] font-semibold tracking-tight">Pipeline leadów</h2>
           <Link href="/leads/kanban" className="text-[12px] font-medium transition-colors" style={{ color: "var(--accent-2)" }}>
@@ -556,10 +555,7 @@ export default async function Dashboard({
       />
 
       {/* Campaigns */}
-      <section
-        className="rounded-lg p-5"
-        style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      >
+      <section className="glass-card rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[13.5px] font-semibold tracking-tight">Kampanie Meta Ads</h2>
           <Link href="/campaigns" className="text-[12px] font-medium" style={{ color: "var(--accent-2)" }}>
@@ -674,10 +670,7 @@ export default async function Dashboard({
 
       {/* Right column — Recent lead notes + Journal */}
       <div className="lg:col-span-1 flex flex-col gap-5">
-        <section
-          className="rounded-lg p-5"
-          style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-        >
+        <section className="glass-card rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[13.5px] font-semibold tracking-tight">Ostatnie notatki</h2>
             <Link href="/leads/kanban" className="text-[12px] font-medium" style={{ color: "var(--accent-2)" }}>

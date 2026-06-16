@@ -5,8 +5,8 @@ import Link from "next/link";
 import type { FosSprint, FosWeeklyPriority, FosPriorityStatus } from "@/lib/fos-types";
 
 const STATUS_CONFIG: Record<FosPriorityStatus, { label: string; color: string }> = {
-  not_started: { label: "Nie started", color: "#6b7280" },
-  in_progress: { label: "W toku", color: "#3b82f6" },
+  not_started: { label: "Nie started", color: "#a3a3a3" },
+  in_progress: { label: "W toku", color: "#FF8C42" },
   completed: { label: "Ukończone", color: "#22c55e" },
   blocked: { label: "Zablokowane", color: "#ef4444" },
 };
@@ -111,13 +111,11 @@ export async function DashboardFosSection() {
 
       {/* Sprint card */}
       <div
-        className="rounded-xl px-5 py-4 mb-3"
-        style={{
-          background: sprint
-            ? "linear-gradient(135deg, var(--accent-subtle) 0%, var(--panel-solid) 60%)"
-            : "var(--panel-solid)",
-          border: "1px solid var(--border)",
-        }}
+        className="glass-card rounded-xl px-5 py-4 mb-3"
+        style={sprint ? {
+          background: "linear-gradient(135deg, rgba(255,76,0,0.08) 0%, rgba(255,255,255,0.92) 60%)",
+          borderLeft: "3px solid var(--accent)",
+        } : undefined}
       >
         {!sprint ? (
           <div className="flex items-center justify-between">
@@ -208,11 +206,11 @@ export async function DashboardFosSection() {
           return (
             <div
               key={label}
-              className="rounded-lg px-3 py-3"
-              style={{
-                background: isDangerous ? "#ef444410" : "var(--panel-solid)",
-                border: `1px solid ${isDangerous ? "#ef444430" : "var(--border)"}`,
-              }}
+              className={`rounded-xl px-3 py-3 ${isDangerous ? "" : "glass-card"}`}
+              style={isDangerous ? {
+                background: "#ef444410",
+                border: "1px solid #ef444430",
+              } : undefined}
             >
               <div
                 className="text-[9.5px] font-semibold uppercase tracking-wide mb-1.5"
@@ -233,10 +231,7 @@ export async function DashboardFosSection() {
       </div>
 
       {/* Weekly Priorities preview */}
-      <div
-        className="rounded-xl px-4 py-3"
-        style={{ background: "var(--panel-solid)", border: "1px solid var(--border)" }}
-      >
+      <div className="glass-card rounded-xl px-4 py-3">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
             Ten tydzień · Priorytety

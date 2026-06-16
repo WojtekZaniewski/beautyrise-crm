@@ -49,9 +49,9 @@
   --info-bg: rgba(37, 99, 235, 0.12);
 
   /* Shadows — light theme */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.07);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.08);
 
   /* Orange gradient for CTAs */
   --metal: linear-gradient(160deg, #FF5C14 0%, #FF4400 60%, #E03200 100%);
@@ -84,12 +84,54 @@ button, a, [role="button"], input, select, textarea {
     opacity var(--dur-base) var(--ease-out);
 }
 
-/* Glass — light, subtle */
+/* ─── Dark sidebar scope — overrides CSS vars for all children ─────────────── */
+.sidebar-dark {
+  --bg:            #0C0C0C;
+  --surface:       #161616;
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-muted:  rgba(255, 255, 255, 0.04);
+  --muted:         rgba(255, 255, 255, 0.38);
+  --text:          rgba(255, 255, 255, 0.92);
+  --ba-2:  rgba(255, 255, 255, 0.02);
+  --ba-4:  rgba(255, 255, 255, 0.05);
+  --ba-6:  rgba(255, 255, 255, 0.06);
+  --ba-8:  rgba(255, 255, 255, 0.08);
+  --ba-12: rgba(255, 255, 255, 0.12);
+  --ba-16: rgba(255, 255, 255, 0.16);
+  --accent-subtle:       rgba(255, 76, 0, 0.18);
+  --accent-subtle-hover: rgba(255, 76, 0, 0.24);
+}
+
+.sidebar-dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+}
+.sidebar-dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+}
+.sidebar-dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Glass — stronger blur, Creative Tim inspired */
 .glass {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Glass card — for dashboard content cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.70);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.07),
+    0 1px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
 }
 
 /* Panel — solid white surface */

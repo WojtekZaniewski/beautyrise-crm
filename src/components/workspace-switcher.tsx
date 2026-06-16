@@ -53,8 +53,10 @@ export function WorkspaceSwitcher({
       <button
         onClick={() => setOpen(!open)}
         disabled={switching}
-        className="w-full flex items-center gap-3 px-3.5 py-3.5 hover:bg-[var(--ba-4)] transition-colors"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        className="w-full flex items-center gap-3 px-3.5 py-3.5 transition-colors"
+        style={{ borderBottom: "1px solid var(--border)", background: "transparent" }}
+        onMouseEnter={e => (e.currentTarget.style.background = "var(--ba-4)")}
+        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
       >
         <Image
           src="/logo.png"

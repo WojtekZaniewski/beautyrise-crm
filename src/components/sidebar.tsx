@@ -239,6 +239,7 @@ function NavLink({
           ? "bg-[var(--accent-subtle)] text-[var(--accent)]"
           : "text-[var(--muted)] hover:bg-[var(--ba-4)] hover:text-[var(--text)]"
       }`}
+      style={active ? { boxShadow: "inset 3px 0 0 var(--accent)" } : undefined}
     >
       <span className="shrink-0">{icon}</span>
       <span className="tracking-tight flex-1">{label}</span>
@@ -366,6 +367,7 @@ export function Sidebar({
 
     <aside
       className={`
+        sidebar-dark
         fixed inset-y-0 left-0 z-50 lg:relative lg:inset-auto lg:z-auto
         w-[220px] shrink-0 flex flex-col h-screen lg:sticky lg:top-0
         transition-transform duration-250 ease-in-out
@@ -373,7 +375,7 @@ export function Sidebar({
       `}
       style={{
         borderRight: "1px solid var(--border)",
-        background: "var(--surface)",
+        background: "var(--bg)",
       }}
     >
       {/* Mobile close button */}

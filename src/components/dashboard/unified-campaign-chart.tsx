@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   AreaChart, Area, BarChart, Bar, Cell,
-  XAxis, YAxis, Tooltip,
+  XAxis, YAxis, Tooltip, Legend, ReferenceLine,
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 
@@ -45,18 +45,31 @@ function pln(v: number) {
 
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="flex flex-col px-4 py-2.5 rounded-lg" style={{ background: `${color}10`, border: `1px solid ${color}30` }}>
-      <span className="text-[10px] font-medium uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>{label}</span>
-      <span className="text-[18px] font-semibold tabular-nums leading-none" style={{ color }}>{value}</span>
+    <div
+      className="flex flex-col px-4 py-3 rounded-xl"
+      style={{
+        background: `linear-gradient(135deg, ${color}12 0%, ${color}06 100%)`,
+        border: `1px solid ${color}28`,
+        boxShadow: `0 0 0 1px ${color}0A`,
+      }}
+    >
+      <span style={{ color: "var(--muted)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{label}</span>
+      <span style={{ color, fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</span>
     </div>
   );
 }
 
 function RateCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-lg px-4 py-3" style={{ background: `${color}08`, border: `1px solid ${color}25` }}>
-      <div className="text-[10px] mb-1 font-medium" style={{ color: "var(--muted)" }}>{label}</div>
-      <div className="text-[24px] font-semibold tabular-nums leading-none" style={{ color }}>{value}</div>
+    <div
+      className="rounded-xl px-4 py-3"
+      style={{
+        background: `linear-gradient(135deg, ${color}10 0%, ${color}05 100%)`,
+        border: `1px solid ${color}25`,
+      }}
+    >
+      <div style={{ color: "var(--muted)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{label}</div>
+      <div style={{ color, fontSize: 26, fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
     </div>
   );
 }
@@ -65,7 +78,7 @@ function FunnelBar({ label, value, total, color }: { label: string; value: numbe
   const pct = total > 0 ? Math.min((value / total) * 100, 100) : 0;
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1.5">
         <span className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>{label}</span>
         <span className="text-[11px] tabular-nums">
           <span className="font-semibold">{value.toLocaleString("pl-PL")}</span>
@@ -74,10 +87,10 @@ function FunnelBar({ label, value, total, color }: { label: string; value: numbe
           )}
         </span>
       </div>
-      <div className="h-[7px] rounded-full overflow-hidden" style={{ background: "var(--ba-4)" }}>
+      <div className="h-[6px] rounded-full overflow-hidden" style={{ background: "var(--ba-8)" }}>
         <div
           className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: color }}
+          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color} 0%, ${color}CC 100%)` }}
         />
       </div>
     </div>
@@ -87,29 +100,40 @@ function FunnelBar({ label, value, total, color }: { label: string; value: numbe
 const CHART_STYLE = {
   contentStyle: {
     fontSize: 12,
-    background: "var(--panel-solid)",
-    border: "1px solid var(--border)",
-    borderRadius: 8,
-    padding: "6px 10px",
+    background: "#0C0C0C",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 10,
+    padding: "8px 12px",
+    color: "rgba(255,255,255,0.88)",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.30)",
   },
+  itemStyle: { color: "rgba(255,255,255,0.70)" },
+  labelStyle: { color: "rgba(255,255,255,0.45)", marginBottom: 4, fontSize: 11 },
+  cursor: { stroke: "rgba(255,76,0,0.25)", strokeWidth: 1 },
 };
 
 const META_FILTER_COLOR: Record<MetaFilter, string> = {
-  spend: "#3b82f6", revenue: "#22c55e", both: "#3b82f6",
-  cpl: "#f97316", cpc: "#8b5cf6", ctr: "#ec4899",
-  clicks: "#f59e0b", leads: "#06b6d4", impressions: "#6b7280",
+  spend:       "#FF4C00",
+  revenue:     "#22c55e",
+  both:        "#FF4C00",
+  cpl:         "#FF8C42",
+  cpc:         "#f59e0b",
+  ctr:         "#fbbf24",
+  clicks:      "#FF6B35",
+  leads:       "#FF4C00",
+  impressions: "#a3a3a3",
 };
 
-const EMAIL_COLOR: Record<EmailFilter, string> = { sent: "#8b5cf6", opened: "#3b82f6", clicked: "#22c55e" };
+const EMAIL_COLOR: Record<EmailFilter, string> = { sent: "#FF4C00", opened: "#FF8C42", clicked: "#fbbf24" };
 const EMAIL_LABEL: Record<EmailFilter, string> = { sent: "Wysłane", opened: "Otwarte", clicked: "Kliknięte" };
-const SMS_COLOR: Record<SmsFilter, string> = { sent: "#22c55e", replied: "#f97316" };
+const SMS_COLOR: Record<SmsFilter, string> = { sent: "#FF4C00", replied: "#22c55e" };
 const SMS_LABEL: Record<SmsFilter, string> = { sent: "Wysłane", replied: "Odpowiedzi" };
 
 const INTEGRATIONS: { key: Integration; label: string; color: string }[] = [
-  { key: "combined", label: "Łączne", color: "var(--accent-2)" },
-  { key: "meta",     label: "Meta Ads", color: "#3b82f6" },
-  { key: "email",    label: "E-mail",   color: "#8b5cf6" },
-  { key: "sms",      label: "SMS",      color: "#f97316" },
+  { key: "combined", label: "Łączne",   color: "#FF4C00" },
+  { key: "meta",     label: "Meta Ads", color: "#FF4C00" },
+  { key: "email",    label: "E-mail",   color: "#FF8C42" },
+  { key: "sms",      label: "SMS",      color: "#fbbf24" },
 ];
 
 function CampaignSelect({
@@ -179,10 +203,7 @@ export function UnifiedCampaignChart({
   const activeInt = INTEGRATIONS.find(i => i.key === integration)!;
 
   return (
-    <section
-      className="rounded-lg p-5"
-      style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-    >
+    <section className="glass-card rounded-xl p-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-[13.5px] font-semibold tracking-tight">
@@ -224,28 +245,36 @@ export function UnifiedCampaignChart({
             <StatCard label="SMS wysłane"      value={smsTotalSent.toLocaleString("pl-PL")}   color="#f97316" />
           </div>
 
-          {hasMetaData ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={metaChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="ucGrSp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="ucGrRv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
-                <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={64} />
-                <Tooltip {...CHART_STYLE} formatter={(v: unknown) => pln(v as number)} />
-                <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#3b82f6" fill="url(#ucGrSp)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
-                <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#ucGrRv)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
+          {hasMetaData ? (() => {
+            const avgSpend = metaChartData.length > 0 ? totalSpend / metaChartData.length : 0;
+            return (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={metaChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="ucGrSp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#FF4C00" stopOpacity={0.20} />
+                      <stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="ucGrRv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
+                  <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={64} />
+                  <Tooltip {...CHART_STYLE} formatter={(v: unknown) => pln(v as number)} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "var(--muted)" }} iconType="circle" iconSize={7} />
+                  {avgSpend > 0 && (
+                    <ReferenceLine y={avgSpend} stroke="#FF4C00" strokeDasharray="4 3" strokeOpacity={0.4}
+                      label={{ value: "śr.", fill: "#FF4C00", fontSize: 9, position: "right" }} />
+                  )}
+                  <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#FF4C00" fill="url(#ucGrSp)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
+                  <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#ucGrRv)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            );
+          })() : (
             <p className="text-[13px] text-center py-8" style={{ color: "var(--muted)" }}>
               Brak danych finansowych w wybranym okresie.
             </p>
@@ -340,21 +369,21 @@ export function UnifiedCampaignChart({
               )}
 
               {hasMetaData ? (
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer width="100%" height={240}>
                   <AreaChart data={metaChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id="mGrA" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} /><stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#FF4C00" stopOpacity={0.20} /><stop offset="95%" stopColor="#FF4C00" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="mGrB" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} /><stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.18} /><stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="mGrM" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={META_FILTER_COLOR[metaFilter]} stopOpacity={0.15} />
+                        <stop offset="5%" stopColor={META_FILTER_COLOR[metaFilter]} stopOpacity={0.20} />
                         <stop offset="95%" stopColor={META_FILTER_COLOR[metaFilter]} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                     <YAxis
                       tick={{ fontSize: 10, fill: "var(--muted)" }}
@@ -374,14 +403,15 @@ export function UnifiedCampaignChart({
                         return (v as number).toLocaleString("pl-PL");
                       }}
                     />
+                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "var(--muted)" }} iconType="circle" iconSize={7} />
                     {(metaFilter === "spend" || metaFilter === "both") && (
-                      <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#3b82f6" fill="url(#mGrA)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+                      <Area type="monotone" dataKey="spend"   name="Wydatki"  stroke="#FF4C00" fill="url(#mGrA)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                     )}
                     {(metaFilter === "revenue" || metaFilter === "both") && (
-                      <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#mGrB)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+                      <Area type="monotone" dataKey="revenue" name="Przychód" stroke="#22c55e" fill="url(#mGrB)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                     )}
                     {!["spend", "revenue", "both"].includes(metaFilter) && (
-                      <Area type="monotone" dataKey={metaFilter} name={metaFilter} stroke={META_FILTER_COLOR[metaFilter]} fill="url(#mGrM)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+                      <Area type="monotone" dataKey={metaFilter} name={metaFilter} stroke={META_FILTER_COLOR[metaFilter]} fill="url(#mGrM)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                     )}
                   </AreaChart>
                 </ResponsiveContainer>
@@ -435,9 +465,9 @@ export function UnifiedCampaignChart({
                   ...(selectedEmail.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedEmail.leadsWon, color: "#06b6d4" }] : []),
                 ];
                 return (
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
                       <Tooltip
@@ -445,9 +475,9 @@ export function UnifiedCampaignChart({
                         formatter={(v: unknown) => [String(v), ""]}
                         cursor={{ fill: "rgba(0,0,0,0.04)" }}
                       />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="value" radius={[5, 5, 0, 0]}>
                         {bars.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                          <Cell key={i} fill={entry.color} fillOpacity={0.90} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -481,19 +511,20 @@ export function UnifiedCampaignChart({
                 })}
               </div>
 
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={emailChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="eGr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={EMAIL_COLOR[emailFilter]} stopOpacity={0.15} />
+                      <stop offset="5%"  stopColor={EMAIL_COLOR[emailFilter]} stopOpacity={0.20} />
                       <stop offset="95%" stopColor={EMAIL_COLOR[emailFilter]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => [String(v), EMAIL_LABEL[emailFilter]]} />
-                  <Area type="monotone" dataKey={emailFilter} name={EMAIL_LABEL[emailFilter]} stroke={EMAIL_COLOR[emailFilter]} fill="url(#eGr)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "var(--muted)" }} iconType="circle" iconSize={7} />
+                  <Area type="monotone" dataKey={emailFilter} name={EMAIL_LABEL[emailFilter]} stroke={EMAIL_COLOR[emailFilter]} fill="url(#eGr)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                 </AreaChart>
               </ResponsiveContainer>
             </>
@@ -535,9 +566,9 @@ export function UnifiedCampaignChart({
                   ...(selectedSms.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedSms.leadsWon, color: "#06b6d4" }] : []),
                 ];
                 return (
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
                       <Tooltip
@@ -545,9 +576,9 @@ export function UnifiedCampaignChart({
                         formatter={(v: unknown) => [String(v), ""]}
                         cursor={{ fill: "rgba(0,0,0,0.04)" }}
                       />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="value" radius={[5, 5, 0, 0]}>
                         {bars.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                          <Cell key={i} fill={entry.color} fillOpacity={0.90} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -581,19 +612,20 @@ export function UnifiedCampaignChart({
                 })}
               </div>
 
-              <ResponsiveContainer width="100%" height={180}>
+              <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={smsChartData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="sGr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={SMS_COLOR[smsFilter]} stopOpacity={0.15} />
+                      <stop offset="5%"  stopColor={SMS_COLOR[smsFilter]} stopOpacity={0.20} />
                       <stop offset="95%" stopColor={SMS_COLOR[smsFilter]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => [String(v), SMS_LABEL[smsFilter]]} />
-                  <Area type="monotone" dataKey={smsFilter} name={SMS_LABEL[smsFilter]} stroke={SMS_COLOR[smsFilter]} fill="url(#sGr)" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8, color: "var(--muted)" }} iconType="circle" iconSize={7} />
+                  <Area type="monotone" dataKey={smsFilter} name={SMS_LABEL[smsFilter]} stroke={SMS_COLOR[smsFilter]} fill="url(#sGr)" strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: "white" }} />
                 </AreaChart>
               </ResponsiveContainer>
             </>
