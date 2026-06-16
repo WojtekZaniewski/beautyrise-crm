@@ -179,7 +179,7 @@ export function JournalWidget() {
   const total = todos.length;
 
   return (
-    <div className="rounded-lg flex flex-col overflow-hidden" style={{ background: "var(--panel-solid)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
+    <div className="glass-card rounded-xl flex flex-col overflow-hidden">
 
       {/* Header */}
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>

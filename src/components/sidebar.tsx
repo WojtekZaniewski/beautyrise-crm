@@ -367,15 +367,18 @@ export function Sidebar({
 
     <aside
       className={`
-        sidebar-dark
         fixed inset-y-0 left-0 z-50 lg:relative lg:inset-auto lg:z-auto
-        w-[220px] shrink-0 flex flex-col h-screen lg:sticky lg:top-0
-        transition-transform duration-250 ease-in-out
+        w-[250px] shrink-0 flex flex-col
+        h-screen lg:h-[calc(100vh-32px)] lg:my-4 lg:ml-4 lg:rounded-[20px] lg:sticky lg:top-4
+        transition-transform duration-200 ease-in-out
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
       `}
       style={{
-        borderRight: "1px solid var(--border)",
-        background: "var(--bg)",
+        background: "linear-gradient(127.09deg, rgba(6,11,40,0.94) 19.41%, rgba(10,14,35,0.49) 76.65%)",
+        backdropFilter: "blur(42px)",
+        WebkitBackdropFilter: "blur(42px)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0px 20px 27px 0px rgba(0,0,0,0.05)",
       }}
     >
       {/* Mobile close button */}

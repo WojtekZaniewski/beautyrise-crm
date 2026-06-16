@@ -234,14 +234,14 @@ export function UnifiedCampaignChart({
       {integration === "combined" && (
         <>
           <div className="flex flex-wrap gap-3 mb-5">
-            <StatCard label={`Wydatki Meta (${rangeLabel})`} value={pln(totalSpend)} color="#3b82f6" />
+            <StatCard label={`Wydatki Meta (${rangeLabel})`} value={pln(totalSpend)} color="#FF4C00" />
             <StatCard label={`Przychód (${rangeLabel})`}     value={pln(totalRevenue)} color="#22c55e" />
             <StatCard
               label={profit >= 0 ? "Zysk" : "Strata"}
               value={pln(Math.abs(profit))}
               color={profit >= 0 ? "#22c55e" : "#ef4444"}
             />
-            <StatCard label="E-maile wysłane" value={emailTotalSent.toLocaleString("pl-PL")} color="#8b5cf6" />
+            <StatCard label="E-maile wysłane" value={emailTotalSent.toLocaleString("pl-PL")} color="#FF8C42" />
             <StatCard label="SMS wysłane"      value={smsTotalSent.toLocaleString("pl-PL")}   color="#f97316" />
           </div>
 
@@ -260,7 +260,7 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v} zł`} width={64} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => pln(v as number)} />
@@ -298,12 +298,12 @@ export function UnifiedCampaignChart({
 
           {selectedMeta ? (
             <div className="flex flex-wrap gap-3">
-              <StatCard label="Wydatki"     value={pln(selectedMeta.spend)}                           color="#3b82f6" />
+              <StatCard label="Wydatki"     value={pln(selectedMeta.spend)}                           color="#FF4C00" />
               <StatCard label="Kliknięcia"  value={selectedMeta.clicks.toLocaleString("pl-PL")}      color="#f59e0b" />
-              <StatCard label="Leady"       value={selectedMeta.leads.toLocaleString("pl-PL")}       color="#06b6d4" />
+              <StatCard label="Leady"       value={selectedMeta.leads.toLocaleString("pl-PL")}       color="#FF6B35" />
               <StatCard label="Wyświetlenia" value={selectedMeta.impressions.toLocaleString("pl-PL")} color="#6b7280" />
               {selectedMeta.cpl != null && <StatCard label="Śr. CPL" value={pln(selectedMeta.cpl)} color="#f97316" />}
-              {selectedMeta.ctr != null && <StatCard label="CTR" value={`${(selectedMeta.ctr * 100).toFixed(2)}%`} color="#ec4899" />}
+              {selectedMeta.ctr != null && <StatCard label="CTR" value={`${(selectedMeta.ctr * 100).toFixed(2)}%`} color="#fbbf24" />}
             </div>
           ) : (
             <>
@@ -327,10 +327,10 @@ export function UnifiedCampaignChart({
 
               {/* Meta stats panel */}
               {metaStats && (
-                <div className="rounded-lg p-3 mb-4" style={{ background: "rgba(59,130,246,0.04)", border: "1px solid rgba(59,130,246,0.14)" }}>
+                <div className="rounded-lg p-3 mb-4" style={{ background: "rgba(255,76,0,0.05)", border: "1px solid rgba(255,76,0,0.16)" }}>
                   <div className="flex items-center gap-1.5 mb-2.5">
-                    <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(59,130,246,0.15)", color: "#3b82f6" }}>f</div>
-                    <span className="text-[10.5px] font-semibold" style={{ color: "#3b82f6" }}>
+                    <div className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: "rgba(255,76,0,0.18)", color: "#FF4C00" }}>f</div>
+                    <span className="text-[10.5px] font-semibold" style={{ color: "#FF4C00" }}>
                       Meta Ads ({rangeLabel}) — kliknij wskaźnik, aby zobaczyć wykres
                     </span>
                   </div>
@@ -362,7 +362,7 @@ export function UnifiedCampaignChart({
               {/* Summary chips */}
               {(metaFilter === "spend" || metaFilter === "revenue" || metaFilter === "both") && (
                 <div className="flex flex-wrap gap-3 mb-5">
-                  <StatCard label={`Wydatki (${rangeLabel})`}  value={pln(totalSpend)}        color="#3b82f6" />
+                  <StatCard label={`Wydatki (${rangeLabel})`}  value={pln(totalSpend)}        color="#FF4C00" />
                   <StatCard label={`Przychód (${rangeLabel})`} value={pln(totalRevenue)}       color="#22c55e" />
                   <StatCard label={profit >= 0 ? "Zysk" : "Strata"} value={pln(Math.abs(profit))} color={profit >= 0 ? "#22c55e" : "#ef4444"} />
                 </div>
@@ -383,7 +383,7 @@ export function UnifiedCampaignChart({
                         <stop offset="95%" stopColor={META_FILTER_COLOR[metaFilter]} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                     <YAxis
                       tick={{ fontSize: 10, fill: "var(--muted)" }}
@@ -442,15 +442,15 @@ export function UnifiedCampaignChart({
           {selectedEmail ? (
             <>
               <div className="flex flex-wrap gap-3 mb-5">
-                <StatCard label="Wysłane"    value={selectedEmail.sent.toLocaleString("pl-PL")}    color="#8b5cf6" />
-                <StatCard label="Otwarte"    value={selectedEmail.opened.toLocaleString("pl-PL")}  color="#3b82f6" />
+                <StatCard label="Wysłane"    value={selectedEmail.sent.toLocaleString("pl-PL")}    color="#FF8C42" />
+                <StatCard label="Otwarte"    value={selectedEmail.opened.toLocaleString("pl-PL")}  color="#FF4C00" />
                 <StatCard label="Kliknięcia" value={selectedEmail.clicked.toLocaleString("pl-PL")} color="#22c55e" />
                 <StatCard label="Odpowiedzi" value={selectedEmail.replied.toLocaleString("pl-PL")} color="#f59e0b" />
-                <StatCard label="Open Rate"  value={`${selectedEmail.openRate.toFixed(1)}%`}       color="#3b82f6" />
+                <StatCard label="Open Rate"  value={`${selectedEmail.openRate.toFixed(1)}%`}       color="#FF4C00" />
                 <StatCard label="Click Rate" value={`${selectedEmail.clickRate.toFixed(1)}%`}      color="#22c55e" />
                 <StatCard label="Reply Rate" value={`${selectedEmail.replyRate.toFixed(1)}%`}      color="#f59e0b" />
                 {selectedEmail.leadsWon > 0 && (
-                  <StatCard label="Leady zamknięte" value={selectedEmail.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
+                  <StatCard label="Leady zamknięte" value={selectedEmail.leadsWon.toLocaleString("pl-PL")} color="#FF6B35" />
                 )}
                 {selectedEmail.revenue > 0 && (
                   <StatCard label="Przychód (Kanban)" value={pln(selectedEmail.revenue)} color="#22c55e" />
@@ -458,22 +458,22 @@ export function UnifiedCampaignChart({
               </div>
               {(() => {
                 const bars = [
-                  { name: "Wysłane",    value: selectedEmail.sent,    color: "#8b5cf6" },
-                  { name: "Otwarte",    value: selectedEmail.opened,  color: "#3b82f6" },
+                  { name: "Wysłane",    value: selectedEmail.sent,    color: "#FF8C42" },
+                  { name: "Otwarte",    value: selectedEmail.opened,  color: "#FF4C00" },
                   { name: "Kliknięcia", value: selectedEmail.clicked, color: "#22c55e" },
                   { name: "Odpowiedzi", value: selectedEmail.replied, color: "#f59e0b" },
-                  ...(selectedEmail.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedEmail.leadsWon, color: "#06b6d4" }] : []),
+                  ...(selectedEmail.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedEmail.leadsWon, color: "#FF6B35" }] : []),
                 ];
                 return (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
                       <Tooltip
                         {...CHART_STYLE}
                         formatter={(v: unknown) => [String(v), ""]}
-                        cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
                       />
                       <Bar dataKey="value" radius={[5, 5, 0, 0]}>
                         {bars.map((entry, i) => (
@@ -488,7 +488,7 @@ export function UnifiedCampaignChart({
           ) : (
             <>
               <div className="grid grid-cols-2 gap-2 mb-3">
-                <RateCard label="Open Rate"  value={`${emailOpenRate.toFixed(1)}%`}  color="#3b82f6" />
+                <RateCard label="Open Rate"  value={`${emailOpenRate.toFixed(1)}%`}  color="#FF4C00" />
                 <RateCard label="Click Rate" value={`${emailClickRate.toFixed(1)}%`} color="#22c55e" />
               </div>
 
@@ -519,7 +519,7 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor={EMAIL_COLOR[emailFilter]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => [String(v), EMAIL_LABEL[emailFilter]]} />
@@ -553,7 +553,7 @@ export function UnifiedCampaignChart({
                 <StatCard label="Odpowiedzi" value={selectedSms.replied.toLocaleString("pl-PL")} color="#f97316" />
                 <StatCard label="Reply Rate" value={`${selectedSms.replyRate.toFixed(1)}%`}      color="#f97316" />
                 {selectedSms.leadsWon > 0 && (
-                  <StatCard label="Leady zamknięte" value={selectedSms.leadsWon.toLocaleString("pl-PL")} color="#06b6d4" />
+                  <StatCard label="Leady zamknięte" value={selectedSms.leadsWon.toLocaleString("pl-PL")} color="#FF6B35" />
                 )}
                 {selectedSms.revenue > 0 && (
                   <StatCard label="Przychód (Kanban)" value={pln(selectedSms.revenue)} color="#22c55e" />
@@ -563,18 +563,18 @@ export function UnifiedCampaignChart({
                 const bars = [
                   { name: "Wysłane",    value: selectedSms.sent,    color: "#22c55e" },
                   { name: "Odpowiedzi", value: selectedSms.replied, color: "#f97316" },
-                  ...(selectedSms.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedSms.leadsWon, color: "#06b6d4" }] : []),
+                  ...(selectedSms.leadsWon > 0 ? [{ name: "Zamknięte", value: selectedSms.leadsWon, color: "#FF6B35" }] : []),
                 ];
                 return (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={bars} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
                       <Tooltip
                         {...CHART_STYLE}
                         formatter={(v: unknown) => [String(v), ""]}
-                        cursor={{ fill: "rgba(0,0,0,0.04)" }}
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
                       />
                       <Bar dataKey="value" radius={[5, 5, 0, 0]}>
                         {bars.map((entry, i) => (
@@ -620,7 +620,7 @@ export function UnifiedCampaignChart({
                       <stop offset="95%" stopColor={SMS_COLOR[smsFilter]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.09)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} interval={4} />
                   <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip {...CHART_STYLE} formatter={(v: unknown) => [String(v), SMS_LABEL[smsFilter]]} />

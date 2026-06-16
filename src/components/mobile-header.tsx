@@ -9,8 +9,10 @@ export function MobileHeader() {
     <div
       className="lg:hidden flex items-center gap-3 px-4 h-12 shrink-0"
       style={{
-        background: "#0C0C0C",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        background: "linear-gradient(127.09deg, rgba(6,11,40,0.94) 19.41%, rgba(10,14,35,0.49) 76.65%)",
+        backdropFilter: "blur(42px)",
+        WebkitBackdropFilter: "blur(42px)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}
     >
       <button
