@@ -3,21 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const CAMPAIGN_TYPES: Record<string, { label: string; color: string }> = {
-  outreach:  { label: "Outreach",       color: "#3b82f6" },
-  followup:  { label: "Follow-up",      color: "#8b5cf6" },
-  promo:     { label: "Promocja",       color: "#f59e0b" },
-  reminder:  { label: "Przypomnienie",  color: "#22c55e" },
-  info:      { label: "Informacja",     color: "#6b7280" },
-  other:     { label: "Inne",           color: "#94a3b8" },
-};
-
-const SMS_STATUS: Record<string, { bg: string; color: string; label: string }> = {
-  sending: { bg: "#f59e0b1a", color: "#d97706", label: "Wysyłanie" },
-  sent:    { bg: "#22c55e1a", color: "#16a34a", label: "Wysłana" },
-  draft:   { bg: "rgba(0,0,0,0.05)", color: "#78716C", label: "Szkic" },
-};
+import { StatusBadge } from "@/components/ui/status-badge";
+import { campaignType, campaignStatus } from "@/lib/status-colors";
 
 type Campaign = {
   id: string;
@@ -119,10 +106,10 @@ export default function SmsCampaignsPage() {
             ) : (
               campaigns.map((c) => {
                 const { type, name } = parseName(c.name);
-                const typeInfo = type ? CAMPAIGN_TYPES[type] : null;
+                const typeInfo = type ? campaignType(type) : null;
                 const replied = c.replied ?? 0;
                 const replyRate = c.total_sent > 0 ? Math.round((replied / c.total_sent) * 100) : 0;
-                const st = SMS_STATUS[c.status] ?? SMS_STATUS.sent;
+                const st = campaignStatus(c.status);
                 const isConfirming = confirmId === c.id;
                 const isDeleting = deletingId === c.id;
 
@@ -143,23 +130,13 @@ export default function SmsCampaignsPage() {
                     </td>
                     <td className="px-4 py-3">
                       {typeInfo ? (
-                        <span
-                          className="inline-flex px-2 py-0.5 rounded-full text-[11.5px] font-medium"
-                          style={{ backgroundColor: typeInfo.color + "18", color: typeInfo.color, border: `1px solid ${typeInfo.color}30` }}
-                        >
-                          {typeInfo.label}
-                        </span>
+                        <StatusBadge label={typeInfo.label} tone={typeInfo.tone} />
                       ) : (
                         <span style={{ color: "var(--muted)" }}>—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className="inline-flex px-2 py-0.5 rounded-full text-[11.5px] font-medium"
-                        style={{ backgroundColor: st.bg, color: st.color }}
-                      >
-                        {st.label}
-                      </span>
+                      <StatusBadge label={st.label} tone={st.tone} />
                     </td>
                     <td className="px-4 py-3 tabular-nums" style={{ color: "var(--muted)" }}>
                       {c.total_sent}
