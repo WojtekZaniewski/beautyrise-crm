@@ -825,16 +825,20 @@ export default function FosCommandCenter() {
   const [businessMath, setBusinessMath] = useState<{ months: { month: string; income: number }[]; avgMonthlyRevenue: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<{ id: string; name: string } | null>(null);
+  const [members, setMembers] = useState<{ id: string; name: string; role: string }[]>([]);
   const weekStart = getWeekStart();
   const today = getTodayStr();
 
-  // Owners shown as columns = real accounts: whoever already has tasks, plus me (so I can always add).
+  // Kolumny = centrum zespołu: KAŻDY członek workspace ma stałą kolumnę (nawet bez zadań),
+  // plus ktokolwiek ma już zadania (gdyby owner_label nie pasował do aktualnej nazwy członka),
+  // plus ja na początku (żebym zawsze mógł dodawać).
   const owners = useMemo<string[]>(() => {
     const set = new Set<string>();
+    for (const m of members) if (m.name) set.add(m.name);
     for (const p of priorities) if (!p.is_company_goal && p.owner_label) set.add(p.owner_label);
     const arr = [...set].sort();
     return me?.name ? [me.name, ...arr.filter((n) => n !== me.name)] : arr;
-  }, [priorities, me]);
+  }, [members, priorities, me]);
 
   // Midnight auto-refresh
   useEffect(() => {
@@ -848,9 +852,10 @@ export default function FosCommandCenter() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [meRes, sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes, historyRes, bmRes] =
+    const [meRes, membersRes, sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes, historyRes, bmRes] =
       await Promise.all([
         fetch("/api/me").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/workspace/members").then((r) => (r.ok ? r.json() : null)).catch(() => null),
         fetch("/api/fos/sprints").then((r) => r.json()),
         fetch(`/api/fos/priorities?week=${weekStart}`).then((r) => r.json()),
         fetch("/api/fos/metrics").then((r) => r.json()),
@@ -866,6 +871,7 @@ export default function FosCommandCenter() {
     const active = (sprintRes.data ?? []).find((s: FosSprint) => s.status === "active") ?? null;
     setSprint(active);
     setMe(meRes && meRes.id ? { id: meRes.id, name: meRes.name } : null);
+    setMembers(membersRes?.data ?? []);
     setPriorities(priRes.data ?? []);
     setMetrics(metricsRes);
     setIdeas(ideasRes.data ?? []);
