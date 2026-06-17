@@ -98,7 +98,7 @@ export function WeekCalendar({
   onSetDeadline: (id: string, date: string | null) => void;
 }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  const tasks = priorities.filter((p) => !p.is_company_goal);
+  const tasks = priorities.filter((p) => !p.is_company_goal && p.kind !== "priority");
   const unscheduled = tasks.filter((p) => !p.deadline);
 
   return (

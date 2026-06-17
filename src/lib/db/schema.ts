@@ -424,6 +424,7 @@ export const fosWeeklyPriorities = pgTable("fos_weekly_priorities", {
   deadline: text("deadline"),
   status: fosPriorityStatusEnum("status").notNull().default("not_started"),
   isCompanyGoal: boolean("is_company_goal").notNull().default(false),
+  kind: text("kind").notNull().default("task"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

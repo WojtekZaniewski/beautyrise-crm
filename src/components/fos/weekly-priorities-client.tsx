@@ -42,7 +42,7 @@ export function WeeklyPrioritiesClient() {
     setLoading(true);
     fetch(`/api/fos/priorities?week=${w}`)
       .then((r) => r.json())
-      .then((d) => { setPriorities(d.data ?? []); setLoading(false); });
+      .then((d) => { setPriorities((d.data ?? []).filter((p: FosWeeklyPriority) => !p.is_company_goal && p.kind === "priority")); setLoading(false); });
   };
 
   useEffect(() => { load(); }, [week]);
@@ -53,7 +53,7 @@ export function WeeklyPrioritiesClient() {
     const res = await fetch("/api/fos/priorities", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, week_start: week }),
+      body: JSON.stringify({ ...form, week_start: week, kind: "priority" }),
     });
     const json = await res.json();
     if (!res.ok) {

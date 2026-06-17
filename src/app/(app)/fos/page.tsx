@@ -213,8 +213,8 @@ function CompanyGoalCard({
 }) {
   const goals = priorities.filter((p) => p.is_company_goal);
   if (goals.length === 0) return null;
-  const tasks = priorities.filter((p) => !p.is_company_goal);
-  // Ring reflects week task completion; with no supporting tasks it falls back
+  const tasks = priorities.filter((p) => !p.is_company_goal && p.kind === "priority");
+  // Ring reflects weekly-priority completion; with no supporting tasks it falls back
   // to the goal's own status (check the goal → 100%), so it never sticks at 0/0.
   const hasTasks = tasks.length > 0;
   const total = hasTasks ? tasks.length : goals.length;
@@ -938,14 +938,14 @@ export default function FosCommandCenter() {
     const optimistic: FosWeeklyPriority = {
       id: tempId, workspace_id: "", sprint_id: sprint?.id ?? null, week_start: weekStart,
       title, description: null, owner_id: me?.id ?? null, owner_label: me?.name ?? null, deadline: deadline ?? null,
-      status: "not_started", is_company_goal: false, is_fire: false, completed_at: null,
+      status: "not_started", is_company_goal: false, kind: "task", is_fire: false, completed_at: null,
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
     setPriorities((prev) => [...prev, optimistic]);
     const res = await fetch("/api/fos/priorities", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, week_start: weekStart, deadline, sprint_id: sprint?.id ?? null }),
+      body: JSON.stringify({ title, week_start: weekStart, deadline, sprint_id: sprint?.id ?? null, kind: "task" }),
     });
     const data = await res.json();
     if (data.data) setPriorities((prev) => prev.map((x) => (x.id === tempId ? data.data : x)));
@@ -1108,7 +1108,7 @@ export default function FosCommandCenter() {
             key={owner}
             owner={owner}
             canAdd={!!me && owner === me.name}
-            tasks={priorities.filter((p) => p.owner_label === owner && !p.is_company_goal)}
+            tasks={priorities.filter((p) => p.owner_label === owner && !p.is_company_goal && p.kind !== "priority")}
             today={today}
             onToggle={toggleStatus}
             onDelete={deleteTask}

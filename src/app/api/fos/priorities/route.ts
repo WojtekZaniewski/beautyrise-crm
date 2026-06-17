@@ -38,14 +38,18 @@ export async function POST(req: NextRequest) {
     week_start,
     is_company_goal,
     sprint_id,
+    kind: kindRaw,
   } = body;
   if (!title || !week_start)
     return NextResponse.json({ error: "title and week_start required" }, { status: 400 });
 
-  // Count existing priorities for this week
+  // 'task' = codzienny task (bez limitu) · 'priority' = priorytet tygodnia (maks 3).
+  const kind: "task" | "priority" = kindRaw === "priority" ? "priority" : "task";
+
+  // Count existing for this week
   const { data: existing } = await supabase
     .from("fos_weekly_priorities")
-    .select("id, is_company_goal")
+    .select("id, is_company_goal, kind")
     .eq("workspace_id", workspaceId)
     .eq("week_start", week_start);
   const existing_ = existing ?? [];
@@ -57,13 +61,14 @@ export async function POST(req: NextRequest) {
         { error: "Można mieć tylko 1 Company Goal na tydzień.", code: "GOAL_LIMIT" },
         { status: 422 },
       );
-  } else {
-    const majorCount = existing_.filter((p) => !p.is_company_goal).length;
-    if (majorCount >= 3)
+  } else if (kind === "priority") {
+    // Tylko priorytety tygodnia są limitowane do 3. Codzienne taski są bez limitu.
+    const priorityCount = existing_.filter((p) => !p.is_company_goal && p.kind === "priority").length;
+    if (priorityCount >= 3)
       return NextResponse.json(
         {
           error:
-            "Zbyt wiele priorytetów obniża skuteczność wykonania. Maksimum to 3 Major Priorities.",
+            "Zbyt wiele priorytetów obniża skuteczność wykonania. Maksimum to 3 priorytety tygodnia.",
           code: "LIMIT_EXCEEDED",
         },
         { status: 422 },
@@ -81,6 +86,7 @@ export async function POST(req: NextRequest) {
       deadline: deadline ?? null,
       week_start,
       is_company_goal: is_company_goal ?? false,
+      kind,
       sprint_id: sprint_id ?? null,
     })
     .select()
@@ -88,7 +94,11 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await broadcastActivity(workspaceId, {
     actor: ownerName,
-    message: is_company_goal ? `ustawił(a) cel tygodnia: „${title}”` : `dodał(a) zadanie: „${title}”`,
+    message: is_company_goal
+      ? `ustawił(a) cel tygodnia: „${title}”`
+      : kind === "priority"
+        ? `dodał(a) priorytet: „${title}”`
+        : `dodał(a) zadanie: „${title}”`,
   });
   return NextResponse.json({ data });
 }

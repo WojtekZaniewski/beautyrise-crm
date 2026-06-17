@@ -29,6 +29,7 @@ export interface FosWeeklyPriority {
   deadline: string | null;
   status: FosPriorityStatus;
   is_company_goal: boolean;
+  kind: "task" | "priority";
   is_fire: boolean;
   completed_at: string | null;
   created_at: string;
