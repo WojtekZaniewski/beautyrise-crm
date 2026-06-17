@@ -50,8 +50,9 @@ export async function DashboardFosSection() {
   const accountabilityScore =
     completed.length > 0 ? Math.round((onTime.length / completed.length) * 100) : 100;
 
-  // Cel tygodnia = aktywny sprint (jedno źródło prawdy). Zadania = pozostałe priorytety.
-  const majorItems = priorities.filter((p) => !p.is_company_goal);
+  // Cel tygodnia = aktywny sprint. Na dashboardzie (podsumowanie) pokazujemy tylko
+  // priorytety tygodnia — codzienne taski są na /fos i nie zaśmiecają overview.
+  const majorItems = priorities.filter((p) => !p.is_company_goal && p.kind === "priority");
 
   const metrics = [
     { label: "Ukończone", value: tasksCompletedThisWeek, suffix: "" },

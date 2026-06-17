@@ -159,7 +159,7 @@ export function DashboardFosInteractive({
       {tasks.length > 0 && (
         <div className="glass-card rounded-xl px-4 py-3 mb-3">
           <div className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>
-            Ten tydzień · Zadania
+            Ten tydzień · Priorytety
           </div>
           <div className="space-y-1">
             {tasks.map((t) => (
