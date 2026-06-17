@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { broadcastActivity } from "@/lib/activity";
+import { displayName } from "@/lib/display-name";
 
 export async function GET(request: Request) {
   try {
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    await broadcastActivity(workspaceId, { actor: displayName(user), message: "dodał(a) notatkę w dzienniku" });
     return NextResponse.json({ note: data });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

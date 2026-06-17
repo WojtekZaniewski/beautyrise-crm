@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
 import { displayName } from "@/lib/display-name";
+import { broadcastActivity } from "@/lib/activity";
 
 export async function GET(req: NextRequest) {
   const supabase = createServiceClient();
@@ -85,5 +86,9 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await broadcastActivity(workspaceId, {
+    actor: ownerName,
+    message: is_company_goal ? `ustawił(a) cel tygodnia: „${title}”` : `dodał(a) zadanie: „${title}”`,
+  });
   return NextResponse.json({ data });
 }
