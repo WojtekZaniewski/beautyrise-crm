@@ -1,10 +1,15 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
+import { displayName } from "@/lib/display-name";
 import { WorkspaceSettingsForm } from "@/components/settings/workspace-settings-form";
+import { AccountNameForm } from "@/components/settings/account-name-form";
 
 export default async function WorkspaceSettingsPage() {
   const supabase = createServiceClient();
   const workspaceId = await getCurrentWorkspaceId();
+  const userClient = await createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+  const meName = user ? displayName(user) : "";
 
   const [{ data: workspace }, { data: membersRaw }] = await Promise.all([
     supabase
@@ -57,6 +62,7 @@ export default async function WorkspaceSettingsPage() {
         </p>
       </div>
 
+      <AccountNameForm initialName={meName} />
       <WorkspaceSettingsForm workspace={workspace} members={members} />
     </div>
   );
