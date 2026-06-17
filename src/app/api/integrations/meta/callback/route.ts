@@ -7,6 +7,7 @@ import {
   exchangeCodeForToken,
   getLongLivedToken,
   MetaClient,
+  META_CALLBACK_PATH,
 } from "@/lib/meta/client";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentWorkspaceId } from "@/lib/workspace";
@@ -51,7 +52,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const shortToken = await exchangeCodeForToken(code);
+    // Ten sam redirect_uri co w kroku autoryzacji (ta sama domena = origin).
+    const redirectUri = url.origin + META_CALLBACK_PATH;
+    const shortToken = await exchangeCodeForToken(code, redirectUri);
     const longToken = await getLongLivedToken(shortToken.access_token);
 
     const client = new MetaClient(longToken.access_token);

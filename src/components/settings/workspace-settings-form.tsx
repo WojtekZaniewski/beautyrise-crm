@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Workspace = { id: string; name: string; slug: string; created_at: string };
 type Member = { id: string; user_id: string; role: string; email: string | null; name: string | null };
@@ -17,6 +17,9 @@ export function WorkspaceSettingsForm({
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Realny host aplikacji do podglądu sluga; liczony po mount (brak window na serwerze).
+  const [host, setHost] = useState("");
+  useEffect(() => { setHost(window.location.host); }, []);
 
   const dirty = name !== workspace.name || slug !== workspace.slug;
 
@@ -76,7 +79,7 @@ export function WorkspaceSettingsForm({
             <label className="block text-[13px] font-medium mb-1.5">Slug (URL)</label>
             <div className="flex items-center gap-2">
               <span className="text-[13px]" style={{ color: "var(--muted)" }}>
-                beautyrise-crm.vercel.app/
+                {host && `${host}/`}
               </span>
               <input
                 value={slug}

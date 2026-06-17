@@ -121,25 +121,33 @@ export class MetaClient {
 
 // ─── OAuth helpers ────────────────────────────────────────────────────────────
 
+// Ścieżka callbacku OAuth — wspólna, by krok autoryzacji i wymiany kodu budowały
+// identyczny redirect_uri (Facebook wymaga zgodności znak w znak).
+export const META_CALLBACK_PATH = "/api/integrations/meta/callback";
+
 type TokenResponse = {
   access_token: string;
   token_type?: string;
   expires_in?: number;
 };
 
-export async function exchangeCodeForToken(code: string): Promise<TokenResponse> {
+export async function exchangeCodeForToken(
+  code: string,
+  redirectUri?: string,
+): Promise<TokenResponse> {
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
-  const redirectUri = process.env.META_REDIRECT_URI;
+  // Dynamiczny redirect_uri (z origin requestu); env jako fallback.
+  const uri = redirectUri ?? process.env.META_REDIRECT_URI;
 
-  if (!appId || !appSecret || !redirectUri) {
+  if (!appId || !appSecret || !uri) {
     throw new Error("Brakuje META_APP_ID / META_APP_SECRET / META_REDIRECT_URI");
   }
 
   const url = new URL(`${BASE}/oauth/access_token`);
   url.searchParams.set("client_id", appId);
   url.searchParams.set("client_secret", appSecret);
-  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("redirect_uri", uri);
   url.searchParams.set("code", code);
 
   const res = await fetch(url.toString());
@@ -171,10 +179,11 @@ export async function getLongLivedToken(shortToken: string): Promise<TokenRespon
   return res.json() as Promise<TokenResponse>;
 }
 
-export function buildOAuthUrl(state: string): string {
+export function buildOAuthUrl(state: string, redirectUri?: string): string {
   const appId = process.env.META_APP_ID;
-  const redirectUri = process.env.META_REDIRECT_URI;
-  if (!appId || !redirectUri) {
+  // Dynamiczny redirect_uri (z origin requestu); env jako fallback.
+  const uri = redirectUri ?? process.env.META_REDIRECT_URI;
+  if (!appId || !uri) {
     throw new Error("Brakuje META_APP_ID lub META_REDIRECT_URI");
   }
 
@@ -193,7 +202,7 @@ export function buildOAuthUrl(state: string): string {
 
   const url = new URL(`https://www.facebook.com/${API_VERSION}/dialog/oauth`);
   url.searchParams.set("client_id", appId);
-  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("redirect_uri", uri);
   url.searchParams.set("state", state);
   url.searchParams.set("scope", scopes.join(","));
   url.searchParams.set("response_type", "code");
