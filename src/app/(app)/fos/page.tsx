@@ -7,6 +7,7 @@ import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 import { JournalWidget } from "@/components/dashboard/journal-widget";
 import { WeeklyProductivity } from "@/components/fos/weekly-productivity";
 import { WeekCalendar } from "@/components/fos/week-calendar";
+import { createClient } from "@/lib/supabase/client";
 import type {
   FosSprint,
   FosWeeklyPriority,
@@ -824,7 +825,7 @@ export default function FosCommandCenter() {
   const [history, setHistory] = useState<FosWeekHistory[]>([]);
   const [businessMath, setBusinessMath] = useState<{ months: { month: string; income: number }[]; avgMonthlyRevenue: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [me, setMe] = useState<{ id: string; name: string } | null>(null);
+  const [me, setMe] = useState<{ id: string; name: string; workspaceId: string } | null>(null);
   const [members, setMembers] = useState<{ id: string; name: string; role: string }[]>([]);
   const weekStart = getWeekStart();
   const today = getTodayStr();
@@ -850,8 +851,8 @@ export default function FosCommandCenter() {
     return () => clearTimeout(t);
   }, [router]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     const [meRes, membersRes, sprintRes, priRes, metricsRes, ideasRes, activityRes, pendingRes, decidedRes, waitingRes, journalRes, historyRes, bmRes] =
       await Promise.all([
         fetch("/api/me").then((r) => (r.ok ? r.json() : null)).catch(() => null),
@@ -870,7 +871,7 @@ export default function FosCommandCenter() {
       ]);
     const active = (sprintRes.data ?? []).find((s: FosSprint) => s.status === "active") ?? null;
     setSprint(active);
-    setMe(meRes && meRes.id ? { id: meRes.id, name: meRes.name } : null);
+    setMe(meRes && meRes.id ? { id: meRes.id, name: meRes.name, workspaceId: meRes.workspaceId } : null);
     setMembers(membersRes?.data ?? []);
     setPriorities(priRes.data ?? []);
     setMetrics(metricsRes);
@@ -888,6 +889,21 @@ export default function FosCommandCenter() {
   }, [weekStart, today]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Live sync: when anyone in the workspace changes something, silently re-fetch the board.
+  useEffect(() => {
+    if (!me?.workspaceId) return;
+    const supabase = createClient();
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const ch = supabase
+      .channel(`activity:${me.workspaceId}`)
+      .on("broadcast", { event: "fos-activity" }, () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => { load(true); }, 700);
+      })
+      .subscribe();
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(ch); };
+  }, [me?.workspaceId, load]);
 
   // ── Task actions ─────────────────────────────────────────────────────────────
   const toggleStatus = useCallback(async (p: FosWeeklyPriority) => {
